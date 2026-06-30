@@ -1,0 +1,31 @@
+{
+  "name": "crucidrive---app",
+  "version": "1.0.0",
+  "description": "Servidor Express.js y conexión con Supabase para la aplicación hiperlocal de transporte CruciDrive.",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DavidCevallos15/Crucidrive---APP.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/DavidCevallos15/Crucidrive---APP/issues"
+  },
+  "homepage": "https://github.com/DavidCevallos15/Crucidrive---APP#readme",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.110.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
