@@ -1,7 +1,11 @@
+# ========================
+# Monorepo CruciDrive
+# ========================
+
 # Dependencias
 node_modules/
 
-# Entornos y Credenciales
+# Entornos y Credenciales (backend y frontend)
 .env
 .env.local
 .env.development.local
@@ -21,3 +25,26 @@ yarn-error.log*
 *.njsproj
 *.sln
 *.sw?
+
+# ========================
+# Backend (Node.js / Express)
+# ========================
+backend/node_modules/
+backend/.env
+
+# ========================
+# Frontend (React Native / Expo)
+# ========================
+frontend/node_modules/
+frontend/.expo/
+frontend/dist/
+frontend/web-build/
+frontend/.env
+
+# Compilaciones nativas de Expo
+frontend/android/
+frontend/ios/
+
+# Archivos de build de Metro Bundler
+*.jsbundle
+*.hbc
