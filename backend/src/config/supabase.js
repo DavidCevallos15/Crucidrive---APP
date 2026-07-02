@@ -8,10 +8,13 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Faltan las variables de entorno de Supabase en el archivo .env');
+  console.warn(
+    '[CruciDrive] Faltan las variables de entorno de Supabase (SUPABASE_URL, SUPABASE_ANON_KEY). El backend no se iniciara hasta configurarlas.'
+  );
 }
 
-// Crear el cliente de Supabase
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Crear el cliente de Supabase (null si no esta configurado)
+const supabase =
+  supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
 module.exports = { supabase };

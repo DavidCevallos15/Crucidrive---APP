@@ -7,7 +7,7 @@ const { supabase } = require('./config/supabase');
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 4000;
 
 // Middlewares globales
 app.use(cors());
@@ -41,10 +41,16 @@ app.get('/', async (req, res) => {
   }
 });
 
-// Iniciar la escucha del servidor en el puerto especificado
-app.listen(port, () => {
-  console.log(`=================================================`);
-  console.log(` Servidor de CruciDrive corriendo en el puerto: ${port}`);
-  console.log(` URL local: http://localhost:${port}`);
-  console.log(`=================================================`);
-});
+// Iniciar la escucha del servidor solo si Supabase esta configurado
+if (supabase) {
+  app.listen(port, () => {
+    console.log(`=================================================`);
+    console.log(` Servidor de CruciDrive corriendo en el puerto: ${port}`);
+    console.log(` URL local: http://localhost:${port}`);
+    console.log(`=================================================`);
+  });
+} else {
+  console.warn(
+    '[CruciDrive] Backend en espera: configura SUPABASE_URL y SUPABASE_ANON_KEY para iniciarlo.'
+  );
+}
