@@ -1,0 +1,112 @@
+@import 'tailwindcss';
+@import 'leaflet/dist/leaflet.css';
+
+@theme inline {
+  --font-sans: var(--font-outfit), 'Inter', sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-primary-light: var(--primary-light);
+  --color-secondary: var(--secondary);
+  --color-secondary-light: var(--secondary-light);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-glass: var(--glass);
+  --color-glass-border: var(--glass-border);
+
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+}
+
+:root {
+  /* CruciDrive Glass Design - modo oscuro (océano nocturno) */
+  --background: #0b0f19;
+  --foreground: #f1f5f9;
+  --muted-foreground: #94a3b8;
+  --primary: #0d9488;
+  --primary-light: #14b8a6;
+  --secondary: #f59e0b;
+  --secondary-light: #fbbf24;
+  --danger: #ef4444;
+  --success: #10b981;
+  --glass: rgba(255, 255, 255, 0.07);
+  --glass-border: rgba(255, 255, 255, 0.12);
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Contenedor glassmorphic estándar */
+.glass {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-strong {
+  background: rgba(11, 15, 25, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* Micro-interacción táctil */
+.press {
+  transition: transform 150ms ease;
+}
+.press:active {
+  transform: scale(0.97);
+}
+
+/* Pulso de sonar para el botón SOS */
+@keyframes sonar {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+.sonar::before,
+.sonar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: var(--danger);
+  animation: sonar 2s ease-out infinite;
+  z-index: -1;
+}
+.sonar::after {
+  animation-delay: 1s;
+}
+
+/* Marcadores del mapa */
+.marker-pin {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+}
+
+/* Leaflet oscuro: quitar fondos blancos por defecto */
+.leaflet-container {
+  background: #0b0f19;
+  font-family: var(--font-sans);
+}
+.leaflet-control-attribution {
+  background: rgba(11, 15, 25, 0.6) !important;
+  color: #64748b !important;
+  font-size: 10px;
+}
+.leaflet-control-attribution a {
+  color: #94a3b8 !important;
+}
