@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "CruciDrive",
+    "slug": "crucidrive",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "crucidrive",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.crucidrive.app",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0B0F19",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "package": "com.crucidrive.app",
+      "predictiveBackGestureEnabled": true
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "CruciDrive necesita acceder a tu ubicación para mostrarte tricimotos cercanas y compartir tu posición durante el viaje.",
+          "locationWhenInUsePermission": "CruciDrive necesita acceder a tu ubicación para mostrarte tricimotos cercanas.",
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ],
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

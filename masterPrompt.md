@@ -1,157 +1,96 @@
-1. ARQUITECTURA.md
-Markdown
-# Arquitectura del Sistema: CRUCIDRIVE APP
+# Master Prompt de Generación de Frontend: CruciDrive App (Stitch & Glassmorphism)
 
-## Descripción General
-CRUCIDRIVE es una plataforma hiperlocal de movilidad (MVP) diseñada para la parroquia Crucita. El sistema opera bajo un entorno de alta disponibilidad y bajo costo operativo utilizando un modelo Cliente-Servidor con comunicación en tiempo real.
+> **Rol del Agente de IA:** Actúa como un Senior Frontend Engineer con experiencia en desarrollo móvil nativo en React Native (Expo) y optimización de rendimiento en interfaces Glassmorphic. Tu objetivo es generar y estructurar todo el frontend bajo la carpeta `/frontend` siguiendo fielmente la especificación de diseño de **Google Stitch** definida en el archivo `DESIGN.md`.
 
-## Stack Tecnológico
-- **Frontend (Mobile Multiplataforma):** React Native (Expo) para garantizar compilación nativa simultánea en Android e iOS.
-- **Backend (API & Lógica):** Node.js con Express.
-- **Base de Datos:** PostgreSQL (con extensión PostGIS para geolocalización) alojado en Supabase.
-- **Comunicación en Tiempo Real:** Socket.io (WebSockets) para el tracking GPS de las tricimotos.
-- **Estilos y UI:** Tailwind CSS (NativeWind) aplicado bajo el concepto de diseño "Glassmorphism" (translucidez, desenfoques de fondo y bordes de cristal) impulsado por Reanimated para animaciones fluidas a 60fps.
+---
 
-## Patrones de Diseño
-- Arquitectura basada en microservicios modulares dentro de un monolito (Modular Monolith) en el backend.
-- Patrón MVC (Model-View-Controller) simplificado en Node.js.
-- Estado global en el frontend manejado mediante Zustand o Context API.
-2. PLAN.md
-Markdown
-# Plan de Ejecución del Proyecto
+## 1. Contexto del Proyecto y Misión
+**CruciDrive** es una plataforma móvil hiperlocal de movilidad diseñada para la parroquia de Crucita en Ecuador. El sistema permite a pasajeros solicitar viajes en tricimotos locales, visualizar vehículos en tiempo real mediante geolocalización, comunicarse por chat en vivo con el conductor asignado y contar con un Botón de Pánico en caso de emergencias.
 
-Este proyecto se desarrollará de forma iterativa priorizando la funcionalidad núcleo del MVP.
+El frontend está estructurado como una aplicación multiplataforma con **React Native (Expo)** bajo el monorepo en `/frontend`.
 
-- **Fase 1: Configuración Base (Actual)**
-  - Inicialización del monorepo (`/frontend` y `/backend`).
-  - Configuración del enrutamiento (Expo Router) y dependencias de UI (Glassmorphism).
-  - Configuración del servidor Node.js y conexión a PostgreSQL/Supabase.
+---
 
-- **Fase 2: Autenticación y Seguridad**
-  - Login/Registro de usuarios y conductores (Validación por SMS/Token).
-  - RBAC (Role-Based Access Control).
+## 2. Stack Tecnológico de Frontend
+- **Plataforma:** React Native mediante el SDK de Expo (Expo Router para la navegación jerárquica basada en directorios).
+- **Estilos:** Tailwind CSS aplicado con **NativeWind** para la consistencia y rapidez de diseño de componentes.
+- **Efectos Visuales:** `expo-blur` para el renderizado del efecto esmerilado del Glassmorphism.
+- **Animaciones:** `react-native-reanimated` para micro-interacciones de gestos y animaciones fluidas a 60fps.
+- **Gestión de Estado:** **Zustand** para el manejo global y liviano del estado del viaje, geolocalización e información del perfil.
+- **Comunicación en Tiempo Real:** **Socket.io-client** para WebSockets de GPS y mensajería en vivo.
 
-- **Fase 3: Core de Geolocalización (WebSockets)**
-  - Emisión de coordenadas del conductor en background.
-  - Renderizado de tricimotos activas en el mapa del pasajero (OpenStreetMap/Mapbox).
+---
 
-- **Fase 4: Flujo de Viaje y Emergencia**
-  - Algoritmo de cálculo de tarifa fija por sector geocercado.
-  - Implementación del "Botón de Pánico" y compartición de ruta.
+## 3. Especificación de Diseño (Stitch Design)
+Antes de escribir cualquier componente de la interfaz, **DEBES leer y cumplir estrictamente** con la especificación de diseño detallada en [DESIGN.md](file:///c:/Users/David/Documents/Proyectos/PLANIFICACIÓN%20DE%20PROYECTO-%20CRUCIDRIVE/CruciDrive%20-%20APP/DESIGN.md).
 
-- **Fase 5: Pulido y Despliegue**
-  - Optimización de animaciones de interfaz.
-  - Pruebas de estrés de consumo de datos móviles (límite: 15MB/jornada).
-3. CASOSDEUSO.md
-Markdown
-# Casos de Uso Principales
+### Reglas Clave de Estilo:
+- **Efecto de Cristal (Glassmorphic Container):**
+  - Implementar fondos semitransparentes mediante clases de NativeWind como `bg-white/10` (claro) o `bg-slate-900/40` (oscuro).
+  - Aplicar desenfoque físico usando el componente `<BlurView intensity={20}>` de `expo-blur` que envuelve el contenido de las tarjetas y modales.
+  - Usar bordes finos de cristal como `border border-white/20` o `border-slate-800/50`.
+  - Crear sombras amplias y suaves usando sombras de color (`shadow-lg shadow-black/25`).
+- **Accesibilidad y Legibilidad:** Mantener un alto contraste de tipografía (blanco o slate oscuro) sobre las capas de cristal.
+- **Micro-animaciones de Toque:** Todo botón o tarjeta interactiva debe reducir ligeramente su escala (`0.97` de escala mediante `Animated.View` o `reanimated`) cuando el usuario pulsa sobre ella.
 
-## 1. Actor: Pasajero
-- **CU-P01:** Registrarse e iniciar sesión de forma segura.
-- **CU-P02:** Visualizar en un mapa interactivo las tricimotos disponibles en un radio cercano.
-- **CU-P03:** Solicitar un viaje indicando sector de origen y destino (con visualización de tarifa pre-calculada).
-- **CU-P04:** Activar botón de pánico que notifique al panel administrador y comparta ruta de emergencia.
+---
 
-## 2. Actor: Conductor
-- **CU-C01:** Iniciar sesión con credenciales previamente verificadas por administración.
-- **CU-C02:** Alternar estado operativo (Disponible / Ocupado) mediante un switch de alta accesibilidad visual.
-- **CU-C03:** Recibir notificación de solicitud de viaje con interfaz de aceptación rápida (botones grandes).
-- **CU-C04:** Transmitir ubicación GPS en tiempo real de forma eficiente (ahorro de batería y datos).
-
-## 3. Actor: Administrador (Panel Web)
-- **CU-A01:** Aprobar, suspender o auditar documentación de conductores.
-- **CU-A02:** Recibir alertas visuales y sonoras inmediatas cuando se activa un botón de pánico.
-- **CU-A03:** Consultar logs inmutables del historial de viajes.
-4. ESTRUCTURA.md
-Markdown
-# Estructura del Monorepo
-
-El proyecto está dividido estrictamente en dos entornos principales en la raíz para mantener la separación de responsabilidades.
+## 4. Estructura de Carpetas del Frontend
+Debes organizar los archivos en el directorio `/frontend/src/` respetando estrictamente la siguiente jerarquía:
 
 ```text
-crucidrive-app/
-├── backend/                  # Entorno Node.js / Express
-│   ├── src/
-│   │   ├── config/           # Conexión a BD, variables de entorno
-│   │   ├── controllers/      # Lógica de negocio
-│   │   ├── middlewares/      # Autenticación, manejo de errores, seguridad
-│   │   ├── models/           # Esquemas de Prisma ORM / PostgreSQL
-│   │   ├── routes/           # Definición de endpoints REST
-│   │   ├── sockets/          # Eventos de Socket.io (Tracking en vivo)
-│   │   └── index.js          # Entry point del servidor
-│   ├── package.json
-│   └── .env
-│
-├── frontend/                 # Entorno React Native (Expo) - UI/UX
-│   ├── src/
-│   │   ├── assets/           # Imágenes, iconos, fuentes
-│   │   ├── components/       # Componentes reutilizables (Botones Glass, Tarjetas)
-│   │   ├── constants/        # Paleta de colores, configuraciones, sectores
-│   │   ├── hooks/            # Custom hooks (ej. useLocation, useSocket)
-│   │   ├── navigation/       # Configuración de Expo Router
-│   │   ├── screens/          # Pantallas principales (Map, Login, RideRequest)
-│   │   ├── store/            # Estado global (Zustand)
-│   │   ├── styles/           # Utilidades para Glassmorphism (Tailwind/Estilos globales)
-│   │   └── utils/            # Funciones helper (cálculo de distancias, formateo)
-│   ├── app.json
-│   ├── package.json
-│   └── babel.config.js
-│
-├── REGISTRO_CAMBIOS.md       # Log de actividad del Agente de IA
-├── ARQUITECTURA.md           # Definición técnica
-├── PLAN.md                   # Fases del proyecto
-├── CASOSDEUSO.md             # Requerimientos funcionales
-├── SEGURIDAD.md              # Normativas LOPDP y encriptación
-└── SKILLS.md                 # Directrices del agente
-Directriz de UI (Frontend): Toda la interfaz debe implementar "Glassmorphism". Los contenedores (modales, tarjetas de información, barras de navegación) deben tener fondos semitransparentes (ej. rgba(255, 255, 255, 0.1)), desenfoque de fondo (backdrop-blur), bordes sutiles y sombras suaves para dar un aspecto premium y moderno. Las transiciones de pantallas y estados de carga deben usar animaciones fluidas.
-
+/frontend/src/
+├── assets/           # Logotipos, iconos personalizados, fuentes (Outfit, Inter)
+├── components/       # Componentes visuales genéricos y de cristal (GlassCard, GlassButton, InputField, BlurContainer)
+├── constants/        # Colores del tema, sectores geográficos y configuración de red
+├── hooks/            # Custom hooks encapsulados (useLocation para geolocalización, useSocket para WebSockets)
+├── navigation/       # Rutas protegidas y públicas administradas por Expo Router
+├── screens/          # Pantallas de la aplicación (LoginScreen, MapScreen, RideDetailScreen, DriverConsoleScreen, ChatScreen)
+├── store/            # Almacenes Zustand (useAuthStore, useRideStore, useLocationStore)
+├── styles/           # Configuración base de NativeWind y estilos globales de Tailwind
+└── utils/            # Utilidades de negocio (cálculo de tarifas fijas por geocerca, formateadores de distancia)
+```
 
 ---
 
-### 5. `SKILLS.md`
-```markdown
-# Habilidades y Reglas Técnicas del Agente
+## 5. Instrucciones de Implementación por Flujo
 
-Como asistente de IA (Cursor/Windsurf), debes acatar estrictamente las siguientes reglas al generar o refactorizar código:
+### A. Flujo de Autenticación (Login con Teléfono/SMS)
+1. **Interfaz:** Diseñar una tarjeta Glassmorphic central flotante sobre un gradiente de fondo radial que evoca los colores marinos de Crucita.
+2. **Lógica:** Consumir el endpoint REST `/api/auth/registro` del backend. Solicitar el ingreso del número telefónico (único y obligatorio), validar formato y recibir el token JWT para almacenarlo de forma segura en la sesión del usuario.
+3. **Roles:** Al iniciar sesión, dirigir al usuario a la pantalla correspondiente según su rol: `pasajero` o `conductor`.
 
-1. **Stack Estricto:** Eres un desarrollador Senior en React Native, Node.js, Express, PostgreSQL, Tailwind CSS y Socket.io. No sugieras ni instales dependencias fuera de este stack sin consultar primero.
-2. **Código Limpio (Clean Code):** Escribe funciones modulares, cortas y descriptivas. Aplica DRY (Don't Repeat Yourself) y maneja las excepciones (`try/catch`) en todas las operaciones asíncronas.
-3. **Comentarios de Calidad:** Documenta la lógica compleja (cálculos de GPS, webhooks, seguridad) usando JSDoc.
-4. **Respeto a la Estructura:** No crees archivos fuera de la arquitectura definida en `ESTRUCTURA.md`. Mantén la lógica de frontend en `/frontend` y la del servidor en `/backend`.
-5. **Idioma:** Todo el código (variables, funciones) debe estar en inglés por estándar internacional, pero los comentarios explicativos y los textos de la interfaz de usuario (UI) deben estar en **Español**.
-6. REGISTRO_CAMBIOS.md (El Tracker Automático)
-Markdown
-# Registro de Cambios (Changelog y Logs del Agente)
+### B. Geolocalización e Integración de Mapas (Pasajero)
+1. **Fondo de Pantalla:** Cargar un mapa interactivo de pantalla completa (Mapbox o alternativa como OpenStreetMap).
+2. **WebSockets:** Suscribirse automáticamente a la sala del sector en el que se encuentra el usuario (ej. `sector:${sectorId}`) usando Socket.io.
+3. **Tracking:** Renderizar marcadores personalizados (tricimotos) que se muevan suavemente por el mapa a medida que el backend emite eventos de coordenadas `update_location`.
+4. **Búsqueda de Destino:** Una caja flotante estilo píldora de cristal en la parte superior que permite buscar el sector de llegada.
 
-**INSTRUCCIÓN OBLIGATORIA PARA EL AGENTE DE IA:** 
-Cada vez que finalices la creación de un archivo, modifiques una lógica, ejecutes un comando en la terminal o completes un requerimiento del usuario, **DEBES ABRIR ESTE ARCHIVO Y REGISTRAR EL CAMBIO AUTOMÁTICAMENTE** en la parte superior del log antes de dar tu respuesta final por chat.
+### C. Ficha de Viaje y Ciclo de Solicitud (Bottom Sheet)
+1. **Diseño:** Un modal deslizante (Bottom Sheet) translúcido con desenfoque de fondo.
+2. **Cálculo de Tarifa:** Utilizar el módulo de utilidad local para mostrar la tarifa fija precalculada basada en la geocerca de origen y destino.
+3. **Flujo del Viaje:**
+   - Botón grande de cristal naranja (`#F59E0B`) para "Solicitar Tricimoto". El viaje se inserta en estado `solicitado`.
+   - Mostrar estado de búsqueda ("Buscando Conductor...") con un spinner animado en rotación y pulso continuo.
+   - Al ser aceptado por un conductor (estado `aceptado`), actualizar dinámicamente la ficha mostrando la foto, nombre del conductor, número de placa de la tricimoto, y abrir el canal de chat interactivo.
 
-## Formato Requerido para cada entrada:
-- **[Fecha/Hora]:** 
-- **Acción Realizada:** (Ej: Creación del controlador de login / Instalación de dependencias de Expo).
-- **Archivos Modificados:** (Ej: `/backend/src/routes/auth.js`)
-- **Estado:** [Completado / Pendiente de revisión]
+### D. Botón de Pánico (SOS)
+- Un botón circular rojo flotante (`#EF4444`) con un efecto visual de pulsación continua (ondas concéntricas transparentes que se expanden hacia afuera).
+- Al pulsar y mantener presionado por 2 segundos, emitir una señal HTTP/WebSocket inmediata que registre la emergencia y comparta las coordenadas GPS en tiempo real con el panel de administración.
+
+### E. Consola del Conductor (Modo Conductor)
+- **Cabecera de Cristal:** Contiene un Switch táctil grande para alternar el estado entre `disponible` (verde `#10B981`) y `ocupado`/`inactivo`.
+- **Modo Background:** Al estar activo, ejecutar el hook de tracking GPS en segundo plano transmitiendo la ubicación a baja frecuencia para optimizar la batería y el consumo de datos (límite: 15MB por jornada).
+- **Notificación Flotante de Viaje:** Al recibir un viaje, mostrar un modal de cristal elástico y prioritario con botones grandes para aceptar o rechazar en 15 segundos.
+
+### F. Chat en Tiempo Real
+- **Diseño de Burbujas:** Textos legibles sobre fondos translúcidos de burbujas (verdes para enviados, grises para recibidos) flotando sobre la pantalla de mapa activa.
+- **Canal Seguro:** Conectarse al socket en la sala `chat:${threadId}` y validar mediante JWT que el ID del usuario pertenece a los miembros habilitados en la carrera.
 
 ---
-## HISTORIAL DE LOGS:
 
-- **[Inicio de Proyecto]:** Inicialización de la estructura `.md` base y directrices del sistema.
-7. Mi Recomendación: SEGURIDAD.md
-Este archivo es crucial. Le indica al agente que está trabajando con datos reales y sensibles (geolocalización de personas en Ecuador) y fuerza estándares de seguridad desde la primera línea de código.
-
-Markdown
-# Directrices de Seguridad y Normativa (LOPDP)
-
-Este proyecto maneja datos críticos de usuarios (cédulas, ubicaciones GPS, números telefónicos). El Agente de IA debe aplicar los siguientes escudos de seguridad por defecto:
-
-1. **Cumplimiento LOPDP (Ecuador):**
-   - Nunca almacenar contraseñas en texto plano. Obligatorio usar `bcrypt` para hashing antes de guardar en PostgreSQL.
-   - Las coordenadas GPS históricas (logs de viajes) no deben ser accesibles públicamente y deben estar vinculadas a un ID anónimo, no al nombre del usuario.
-
-2. **Gestión de Entorno:**
-   - Jamás quemar (hardcode) credenciales, claves de API (Supabase, JWT secrets), ni URLs en el código fuente. Obligatorio inyectarlas a través de archivos `.env`.
-   - Generar un archivo `.env.example` para documentar qué variables se necesitan.
-
-3. **Seguridad en WebSockets y API:**
-   - Todo endpoint de la API (`/backend/src/routes/`) debe estar protegido por un middleware de autenticación (JWT) excepto las rutas públicas (Login/Registro).
-   - Las conexiones de Socket.io
+## 6. Reglas de Codificación y Calidad (Clean Code)
+1. **Idioma Estricto:** Escribe todo el código técnico, nombres de variables, funciones, bases de datos y configuraciones en **Inglés**. Escribe todos los comentarios explicativos y los textos visuales de cara al usuario en **Español**.
+2. **Tratamiento de Excepciones:** Aplica bloques `try/catch` con logs estructurados en todas las promesas y solicitudes de red.
+3. **Seguridad Absoluta:** No quemes credenciales. Lee las URLs del backend y claves de API de las variables de entorno usando un archivo `.env` configurado mediante Expo Config (`app.json` / `eas.json`).
+4. **Optimización de Renderizado:** Memoriza componentes pesados del mapa usando `React.memo` y callbacks (`useCallback`) para evitar repeticiones innecesarias de renderizado gráfico de marcadores.
