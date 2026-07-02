@@ -4,7 +4,8 @@
   "description": "Servidor Express.js y conexión con Supabase para la aplicación hiperlocal de transporte CruciDrive.",
   "main": "src/index.js",
   "scripts": {
-    "dev": "nodemon src/index.js",
+    "dev": "cd .. && pnpm exec next dev --port 3000",
+    "dev:api": "nodemon src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
