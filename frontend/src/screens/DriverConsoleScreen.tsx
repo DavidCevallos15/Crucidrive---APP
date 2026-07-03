@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -7,7 +7,7 @@ import {
   Dimensions,
   Modal,
 } from 'react-native';
-import MapView, { Marker, type Region } from '../components/Map';
+import MapView from '../components/Map';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -21,10 +21,11 @@ import { GlassButton } from '../components/GlassButton';
 import { BlurContainer } from '../components/BlurContainer';
 import { useLocation } from '../hooks/useLocation';
 import { useSocket } from '../hooks/useSocket';
+import { useMapRegion } from '../hooks/useMapRegion';
 import { useAuthStore } from '../store/useAuthStore';
-import { useLocationStore } from '../store/useLocationStore';
 import { LOCATION_CONFIG, API_CONFIG } from '../constants/config';
 import { COLORS, FONTS, SPACING, SHAPES, ANIMATION } from '../constants/theme';
+import { authFetch } from '../utils/authFetch';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -52,7 +53,6 @@ interface IncomingRideRequest {
  */
 export const DriverConsoleScreen: React.FC = () => {
   const profile = useAuthStore((s) => s.profile);
-  const session = useAuthStore((s) => s.session);
   const { userCoords, currentSectorId } = useLocation(true);
   const { updateLocation, onEvent } = useSocket();
 
@@ -64,15 +64,7 @@ export const DriverConsoleScreen: React.FC = () => {
   const [isAccepting, setIsAccepting] = useState(false);
 
   // ─── Región del mapa ──────────────────────────────────────
-  const region: Region = useMemo(
-    () => ({
-      latitude: userCoords?.lat ?? LOCATION_CONFIG.defaultRegion.latitude,
-      longitude: userCoords?.lng ?? LOCATION_CONFIG.defaultRegion.longitude,
-      latitudeDelta: LOCATION_CONFIG.defaultRegion.latitudeDelta,
-      longitudeDelta: LOCATION_CONFIG.defaultRegion.longitudeDelta,
-    }),
-    [userCoords]
-  );
+  const region = useMapRegion(userCoords);
 
   // ─── Emitir ubicación GPS al backend ──────────────────────
   useEffect(() => {
@@ -121,17 +113,10 @@ export const DriverConsoleScreen: React.FC = () => {
     try {
       setIsAccepting(true);
 
-      const response = await fetch(
-        `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.rides.accept}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session?.access_token}`,
-          },
-          body: JSON.stringify({ viaje_id: incomingRequest.id }),
-        }
-      );
+      const response = await authFetch(API_CONFIG.endpoints.rides.accept, {
+        method: 'POST',
+        body: JSON.stringify({ viaje_id: incomingRequest.id }),
+      });
 
       if (!response.ok) {
         throw new Error('Error al aceptar el viaje');
@@ -145,7 +130,7 @@ export const DriverConsoleScreen: React.FC = () => {
     } finally {
       setIsAccepting(false);
     }
-  }, [incomingRequest, session]);
+  }, [incomingRequest]);
 
   // ─── Rechazar viaje ───────────────────────────────────────
   const handleRejectRide = useCallback(() => {

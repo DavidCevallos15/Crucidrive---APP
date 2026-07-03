@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 import { supabase } from '../utils/supabaseClient';
 import { useAuthStore } from '../store/useAuthStore';
 import { API_CONFIG } from '../constants/config';
+import { authFetch } from '../utils/authFetch';
 import type { UserProfile } from '../store/useAuthStore';
 
 /**
@@ -167,23 +168,10 @@ export const useSupabaseAuth = () => {
     try {
       setAuthError(null);
 
-      const token = session?.access_token;
-      if (!token) {
-        setAuthError('No hay sesión activa.');
-        return false;
-      }
-
-      const response = await fetch(
-        `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.auth.register}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(profileData),
-        }
-      );
+      const response = await authFetch(API_CONFIG.endpoints.auth.register, {
+        method: 'POST',
+        body: JSON.stringify(profileData),
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -191,7 +179,6 @@ export const useSupabaseAuth = () => {
         return false;
       }
 
-      // Recargar el perfil tras el registro
       if (user) {
         await fetchProfile(user.id);
       }
@@ -202,7 +189,7 @@ export const useSupabaseAuth = () => {
       setAuthError(message);
       return false;
     }
-  }, [session, user, fetchProfile]);
+  }, [user, fetchProfile]);
 
   // ─── Cerrar sesión ─────────────────────────────────────────
   const signOut = useCallback(async () => {

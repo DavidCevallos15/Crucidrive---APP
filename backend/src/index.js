@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const { supabase } = require('./config/supabase');
+const { errorResponse } = require('./utils/response');
 
 // Importar enrutadores REST
 const authRoutes = require('./routes/authRoutes');
@@ -46,11 +47,7 @@ app.get('/', async (req, res) => {
     const { data, error } = await supabase.auth.getSession();
     
     if (error) {
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error en la conexión con Supabase',
-        details: error.message
-      });
+      return errorResponse(res, 500, 'Error en la conexión con Supabase', error.message);
     }
 
     res.json({
@@ -59,11 +56,7 @@ app.get('/', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (err) {
-    res.status(500).json({
-      status: 'error',
-      message: 'Error interno en el servidor backend',
-      details: err.message
-    });
+    errorResponse(res, 500, 'Error interno en el servidor backend', err.message);
   }
 });
 
