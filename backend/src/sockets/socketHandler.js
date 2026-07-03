@@ -1,4 +1,6 @@
 const { supabase } = require('../config/supabase');
+const { toWKT } = require('../utils/geo');
+const { checkThreadMembership } = require('../utils/supabaseHelpers');
 
 /**
  * Registra y maneja los eventos de Socket.io para geolocalización y chat en tiempo real.
@@ -16,21 +18,18 @@ const initSocketHandler = (io) => {
         return next(new Error('Error de autenticación: Token no suministrado.'));
       }
 
-      // Validar el token con Supabase Auth
       const { data: { user }, error } = await supabase.auth.getUser(token);
 
       if (error || !user) {
         return next(new Error('Error de autenticación: Token inválido o expirado.'));
       }
 
-      // Obtener el perfil asociado para conocer el rol
       const { data: perfil } = await supabase
         .from('perfiles')
         .select('rol, nombre')
         .eq('id', user.id)
         .single();
 
-      // Guardar información del usuario autenticado en la sesión del socket
       socket.user = {
         id: user.id,
         email: user.email,
@@ -44,17 +43,11 @@ const initSocketHandler = (io) => {
     }
   });
 
-  // Manejo de conexiones activas
   io.on('connection', (socket) => {
     console.log(`[Socket.io] Nuevo cliente conectado: ${socket.user.nombre} (${socket.user.rol}) - ID: ${socket.id}`);
 
     // --- MÓDULO 1: GEOLOCALIZACIÓN Y GEOCERCAS ---
 
-    /**
-     * Permite suscribir a un cliente (pasajero o conductor) a un sector geográfico.
-     * @param {Object} data
-     * @param {string} data.sectorId - Identificador del sector (ej: 'centro', 'playa').
-     */
     socket.on('join_sector', ({ sectorId }) => {
       if (!sectorId) return;
       const room = `sector:${sectorId}`;
@@ -62,14 +55,6 @@ const initSocketHandler = (io) => {
       console.log(`[Socket.io] Usuario ${socket.user.nombre} se unió a la sala del sector: ${room}`);
     });
 
-    /**
-     * Permite a los conductores emitir sus coordenadas GPS en tiempo real.
-     * Guarda la ubicación en la base de datos y la retransmite a los pasajeros de la sala de geocerca.
-     * @param {Object} data
-     * @param {string} data.sectorId - Sector geográfico donde opera actualmente.
-     * @param {Object} data.coords - Coordenadas del conductor { lat, lng }.
-     * @param {string} data.estado - Estado del conductor ('disponible', 'ocupado', 'inactivo').
-     */
     socket.on('update_location', async ({ sectorId, coords, estado }) => {
       try {
         if (socket.user.rol !== 'conductor') {
@@ -80,13 +65,10 @@ const initSocketHandler = (io) => {
           return socket.emit('error_message', 'Parámetros de ubicación incompletos.');
         }
 
-        // 1. Guardar la ubicación en la base de datos (PostGIS point: POINT(longitude latitude))
-        const locationWKT = `POINT(${coords.lng} ${coords.lat})`;
-        
         const { error } = await supabase
           .from('tricimotos')
           .update({
-            ubicacion_actual: locationWKT,
+            ubicacion_actual: toWKT(coords.lng, coords.lat),
             estado: estado || 'disponible',
             updated_at: new Date().toISOString()
           })
@@ -97,7 +79,6 @@ const initSocketHandler = (io) => {
           return;
         }
 
-        // 2. Retransmitir la ubicación en tiempo real únicamente a la sala del sector
         const room = `sector:${sectorId}`;
         socket.to(room).emit('location_updated', {
           conductorId: socket.user.id,
@@ -113,22 +94,11 @@ const initSocketHandler = (io) => {
 
     // --- MÓDULO 2: CHAT EN TIEMPO REAL ---
 
-    /**
-     * Permite a un usuario unirse a la sala de chat de un viaje activo.
-     * @param {Object} data
-     * @param {string} data.threadId - Identificador del hilo de chat.
-     */
     socket.on('join_chat', async ({ threadId }) => {
       try {
         if (!threadId) return;
 
-        // Validar seguridad: ¿el usuario es miembro del hilo de chat?
-        const { data: member, error } = await supabase
-          .from('thread_members')
-          .select('id')
-          .eq('thread_id', threadId)
-          .eq('user_id', socket.user.id)
-          .maybeSingle();
+        const { member, error } = await checkThreadMembership(threadId, socket.user.id);
 
         if (error || !member) {
           console.warn(`[Socket.io] Acceso denegado a chat. Usuario ${socket.user.nombre} intentó ingresar a thread ${threadId}`);
@@ -143,19 +113,12 @@ const initSocketHandler = (io) => {
       }
     });
 
-    /**
-     * Envía un mensaje en un chat activo, lo guarda en la base de datos y lo retransmite en vivo.
-     * @param {Object} data
-     * @param {string} data.threadId - ID del hilo de chat.
-     * @param {string} data.content - Mensaje de texto.
-     */
     socket.on('send_message', async ({ threadId, content }) => {
       try {
         if (!threadId || !content || content.trim() === '') {
           return socket.emit('error_message', 'Contenido del mensaje vacío o threadId faltante.');
         }
 
-        // 1. Guardar mensaje en Supabase (Se disparan las políticas RLS a nivel de base de datos)
         const { data: message, error } = await supabase
           .from('messages')
           .insert([
@@ -183,7 +146,6 @@ const initSocketHandler = (io) => {
           return socket.emit('error_message', 'No se pudo guardar el mensaje.');
         }
 
-        // 2. Retransmitir mensaje en tiempo real a la sala del chat (incluyendo al remitente para confirmación)
         const room = `chat:${threadId}`;
         io.to(room).emit('message_received', message);
 

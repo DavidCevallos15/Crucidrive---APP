@@ -18,6 +18,7 @@ import { useSocket } from '../hooks/useSocket';
 import { useAuthStore } from '../store/useAuthStore';
 import { useRideStore } from '../store/useRideStore';
 import { API_CONFIG } from '../constants/config';
+import { authFetch } from '../utils/authFetch';
 import { COLORS, FONTS, SPACING, SHAPES } from '../constants/theme';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import {
@@ -62,7 +63,6 @@ export const ChatScreen: React.FC = () => {
   const [inputText, setInputText] = useState('');
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const flatListRef = useRef<FlatList>(null);
-  const session = useAuthStore((s) => s.session);
 
   const threadId = activeRide?.chatThreadId;
 
@@ -73,13 +73,8 @@ export const ChatScreen: React.FC = () => {
     const loadHistory = async () => {
       try {
         setIsLoadingHistory(true);
-        const response = await fetch(
-          `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.chat.messages(threadId)}`,
-          {
-            headers: {
-              Authorization: `Bearer ${session?.access_token}`,
-            },
-          }
+        const response = await authFetch(
+          API_CONFIG.endpoints.chat.messages(threadId)
         );
 
         if (response.ok) {
@@ -94,7 +89,7 @@ export const ChatScreen: React.FC = () => {
     };
 
     loadHistory();
-  }, [threadId, session]);
+  }, [threadId]);
 
   // ─── Unirse a la sala de chat ──────────────────────────────
   useEffect(() => {

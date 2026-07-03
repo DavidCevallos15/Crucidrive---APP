@@ -5,7 +5,7 @@ import {
   Text,
   Dimensions,
 } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE, type Region } from '../components/Map';
+import MapView, { Marker } from '../components/Map';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
@@ -17,12 +17,13 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 import { useLocation } from '../hooks/useLocation';
 import { useSocket } from '../hooks/useSocket';
 import { useTariff } from '../hooks/useTariff';
+import { useMapRegion } from '../hooks/useMapRegion';
 import { useLocationStore, type NearbyDriver } from '../store/useLocationStore';
 import { useRideStore } from '../store/useRideStore';
-import { useAuthStore } from '../store/useAuthStore';
 import { SECTORS } from '../constants/sectors';
 import { LOCATION_CONFIG, API_CONFIG } from '../constants/config';
 import { COLORS, FONTS, SPACING, SHAPES, Z_INDEX } from '../constants/theme';
+import { authFetch } from '../utils/authFetch';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -43,7 +44,6 @@ export const MapScreen: React.FC = () => {
   const nearbyDrivers = useLocationStore((s) => s.nearbyDrivers);
   const updateNearbyDriver = useLocationStore((s) => s.updateNearbyDriver);
   const { activeRide, isRequesting, setActiveRide, setRequesting } = useRideStore();
-  const session = useAuthStore((s) => s.session);
 
   const [selectedDestination, setSelectedDestination] = useState<string | null>(null);
   const [showRideSheet, setShowRideSheet] = useState(false);
@@ -58,15 +58,7 @@ export const MapScreen: React.FC = () => {
   } = useTariff(currentSectorId, selectedDestination);
 
   // ─── Región inicial del mapa ───────────────────────────────
-  const initialRegion: Region = useMemo(
-    () => ({
-      latitude: userCoords?.lat ?? LOCATION_CONFIG.defaultRegion.latitude,
-      longitude: userCoords?.lng ?? LOCATION_CONFIG.defaultRegion.longitude,
-      latitudeDelta: LOCATION_CONFIG.defaultRegion.latitudeDelta,
-      longitudeDelta: LOCATION_CONFIG.defaultRegion.longitudeDelta,
-    }),
-    [userCoords]
-  );
+  const initialRegion = useMapRegion(userCoords);
 
   // ─── Suscribirse al sector cuando se determina ────────────
   useEffect(() => {
@@ -103,20 +95,13 @@ export const MapScreen: React.FC = () => {
     try {
       setRequesting(true);
 
-      const response = await fetch(
-        `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.rides.request}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session?.access_token}`,
-          },
-          body: JSON.stringify({
-            sector_origen: currentSectorId,
-            sector_destino: selectedDestination,
-          }),
-        }
-      );
+      const response = await authFetch(API_CONFIG.endpoints.rides.request, {
+        method: 'POST',
+        body: JSON.stringify({
+          sector_origen: currentSectorId,
+          sector_destino: selectedDestination,
+        }),
+      });
 
       if (!response.ok) {
         throw new Error('Error al solicitar el viaje');
@@ -147,7 +132,6 @@ export const MapScreen: React.FC = () => {
     currentSectorId,
     selectedDestination,
     tariff,
-    session,
     originName,
     destinationName,
     setActiveRide,
