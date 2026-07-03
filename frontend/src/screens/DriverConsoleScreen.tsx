@@ -130,7 +130,7 @@ export const DriverConsoleScreen: React.FC = () => {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${session?.access_token}`,
           },
-          body: JSON.stringify({ viaje_id: incomingRequest.id }),
+          body: JSON.stringify({ viajeId: incomingRequest.id }),
         }
       );
 

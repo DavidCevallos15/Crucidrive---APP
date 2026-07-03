@@ -128,7 +128,7 @@ export const MapScreen: React.FC = () => {
       const data = await response.json();
 
       setActiveRide({
-        id: data.viaje?.id ?? '',
+        id: data.data?.id ?? '',
         status: 'solicitado',
         originSectorId: currentSectorId,
         originName,
