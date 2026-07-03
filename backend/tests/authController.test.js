@@ -1,0 +1,219 @@
+const { registerProfile } = require('../src/controllers/authController');
+
+jest.mock('../src/config/supabase', () => {
+  const mockSingle = jest.fn();
+  const mockSelect = jest.fn(() => ({ single: mockSingle }));
+  const mockInsert = jest.fn(() => ({ select: mockSelect }));
+  const mockDeleteEq = jest.fn();
+  const mockDelete = jest.fn(() => ({ eq: mockDeleteEq }));
+  const mockFrom = jest.fn((table) => ({
+    insert: mockInsert,
+    delete: mockDelete,
+  }));
+
+  return {
+    supabase: { from: mockFrom },
+    __mockFrom: mockFrom,
+    __mockInsert: mockInsert,
+    __mockSelect: mockSelect,
+    __mockSingle: mockSingle,
+    __mockDelete: mockDelete,
+    __mockDeleteEq: mockDeleteEq,
+  };
+});
+
+const {
+  __mockFrom,
+  __mockInsert,
+  __mockSelect,
+  __mockSingle,
+  __mockDelete,
+  __mockDeleteEq,
+} = require('../src/config/supabase');
+
+describe('authController - registerProfile', () => {
+  let req, res;
+
+  beforeEach(() => {
+    req = {
+      body: {},
+      user: { id: 'user-123' },
+    };
+    res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+    };
+    jest.clearAllMocks();
+
+    // Default mock chain
+    __mockFrom.mockReturnValue({
+      insert: __mockInsert,
+      delete: __mockDelete,
+    });
+    __mockInsert.mockReturnValue({ select: __mockSelect });
+    __mockSelect.mockReturnValue({ single: __mockSingle });
+    __mockDelete.mockReturnValue({ eq: __mockDeleteEq });
+  });
+
+  it('should return 400 if rol is missing', async () => {
+    req.body = { nombre: 'Juan', telefono: '0999999999' };
+
+    await registerProfile(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'error',
+        message: expect.stringContaining('Faltan campos requeridos'),
+      })
+    );
+  });
+
+  it('should return 400 if nombre is missing', async () => {
+    req.body = { rol: 'pasajero', telefono: '0999999999' };
+
+    await registerProfile(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it('should return 400 if telefono is missing', async () => {
+    req.body = { rol: 'pasajero', nombre: 'Juan' };
+
+    await registerProfile(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it('should return 400 if rol is invalid', async () => {
+    req.body = { rol: 'admin', nombre: 'Juan', telefono: '0999999999' };
+
+    await registerProfile(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining('El rol debe ser'),
+      })
+    );
+  });
+
+  it('should return 400 if rol is conductor but placa is missing', async () => {
+    req.body = { rol: 'conductor', nombre: 'Carlos', telefono: '0999999999' };
+
+    await registerProfile(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining('placa es obligatoria'),
+      })
+    );
+  });
+
+  it('should register a pasajero profile successfully', async () => {
+    req.body = { rol: 'pasajero', nombre: 'Maria', telefono: '0988888888' };
+    const mockPerfil = { id: 'user-123', rol: 'pasajero', nombre: 'Maria', telefono: '0988888888', activo: true };
+    __mockSingle.mockResolvedValue({ data: mockPerfil, error: null });
+
+    await registerProfile(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'success',
+        data: {
+          perfil: mockPerfil,
+          tricimoto: null,
+        },
+      })
+    );
+  });
+
+  it('should register a conductor profile with tricimoto', async () => {
+    req.body = { rol: 'conductor', nombre: 'Carlos', telefono: '0977777777', placa: 'ABC-123' };
+    const mockPerfil = { id: 'user-123', rol: 'conductor', nombre: 'Carlos', telefono: '0977777777', activo: true };
+    const mockTricimoto = { conductor_id: 'user-123', placa: 'ABC-123', estado: 'inactivo' };
+
+    // First call for perfiles insert, second call for tricimotos insert
+    let callCount = 0;
+    __mockFrom.mockImplementation((table) => {
+      if (table === 'perfiles') {
+        return { insert: jest.fn(() => ({ select: jest.fn(() => ({ single: jest.fn().mockResolvedValue({ data: mockPerfil, error: null }) })) })), delete: __mockDelete };
+      }
+      if (table === 'tricimotos') {
+        return { insert: jest.fn(() => ({ select: jest.fn(() => ({ single: jest.fn().mockResolvedValue({ data: mockTricimoto, error: null }) })) })) };
+      }
+    });
+
+    await registerProfile(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'success',
+        data: expect.objectContaining({
+          perfil: mockPerfil,
+          tricimoto: mockTricimoto,
+        }),
+      })
+    );
+  });
+
+  it('should return 400 if profile insert fails', async () => {
+    req.body = { rol: 'pasajero', nombre: 'Ana', telefono: '0966666666' };
+    __mockSingle.mockResolvedValue({ data: null, error: { message: 'Duplicate key' } });
+
+    await registerProfile(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'error',
+        message: expect.stringContaining('Error al registrar el perfil'),
+      })
+    );
+  });
+
+  it('should rollback profile and return 400 if tricimoto insert fails', async () => {
+    req.body = { rol: 'conductor', nombre: 'Pedro', telefono: '0955555555', placa: 'XYZ-789' };
+    const mockPerfil = { id: 'user-123', rol: 'conductor', nombre: 'Pedro' };
+
+    __mockFrom.mockImplementation((table) => {
+      if (table === 'perfiles') {
+        return {
+          insert: jest.fn(() => ({ select: jest.fn(() => ({ single: jest.fn().mockResolvedValue({ data: mockPerfil, error: null }) })) })),
+          delete: jest.fn(() => ({ eq: jest.fn() })),
+        };
+      }
+      if (table === 'tricimotos') {
+        return { insert: jest.fn(() => ({ select: jest.fn(() => ({ single: jest.fn().mockResolvedValue({ data: null, error: { message: 'Placa duplicada' } }) })) })) };
+      }
+    });
+
+    await registerProfile(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'error',
+        message: expect.stringContaining('tricimoto'),
+      })
+    );
+  });
+
+  it('should return 500 on unexpected exception', async () => {
+    req.body = { rol: 'pasajero', nombre: 'Ana', telefono: '0966666666' };
+    __mockSingle.mockRejectedValue(new Error('Connection lost'));
+
+    await registerProfile(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'error',
+        details: 'Connection lost',
+      })
+    );
+  });
+});
