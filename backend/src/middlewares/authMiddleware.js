@@ -26,8 +26,7 @@ const authMiddleware = async (req, res, next) => {
     if (error || !user) {
       return res.status(401).json({
         status: 'error',
-        message: 'Token inválido o expirado.',
-        details: error ? error.message : null
+        message: 'Token inválido o expirado.'
       });
     }
 
@@ -35,10 +34,10 @@ const authMiddleware = async (req, res, next) => {
     req.user = user;
     next();
   } catch (err) {
+    console.error('[Auth Middleware] Error interno:', err.message);
     res.status(500).json({
       status: 'error',
-      message: 'Error interno en el middleware de autenticación.',
-      details: err.message
+      message: 'Error interno en el middleware de autenticación.'
     });
   }
 };

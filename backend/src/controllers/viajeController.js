@@ -1,6 +1,21 @@
 const { supabase } = require('../config/supabase');
 
 /**
+ * Valida que un valor sea una coordenada numérica finita dentro de rangos geográficos.
+ * @param {*} lat - Latitud a validar
+ * @param {*} lng - Longitud a validar
+ * @returns {boolean}
+ */
+const isValidCoordinate = (lat, lng) => {
+  return (
+    typeof lat === 'number' && typeof lng === 'number' &&
+    Number.isFinite(lat) && Number.isFinite(lng) &&
+    lat >= -90 && lat <= 90 &&
+    lng >= -180 && lng <= 180
+  );
+};
+
+/**
  * Crea una nueva solicitud de viaje para el pasajero autenticado.
  * 
  * @param {import('express').Request} req - Objeto de petición Express.
@@ -11,20 +26,31 @@ const solicitarViaje = async (req, res) => {
     const { origen, destino } = req.body;
     const pasajeroId = req.user.id;
 
-    if (!origen || !destino || !origen.lat || !origen.lng || !destino.lat || !origen.lng) {
+    if (!origen || !destino || origen.lat == null || origen.lng == null || destino.lat == null || destino.lng == null) {
       return res.status(400).json({
         status: 'error',
         message: 'Las coordenadas de origen (lat, lng) y destino (lat, lng) son obligatorias.'
       });
     }
 
+    const origenLat = Number(origen.lat);
+    const origenLng = Number(origen.lng);
+    const destinoLat = Number(destino.lat);
+    const destinoLng = Number(destino.lng);
+
+    if (!isValidCoordinate(origenLat, origenLng) || !isValidCoordinate(destinoLat, destinoLng)) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Las coordenadas proporcionadas no son válidas.'
+      });
+    }
+
     // Para el MVP en Crucita, asignaremos una tarifa fija estándar de $1.50 USD
-    // En el futuro, se puede integrar una fórmula de cálculo por cuadrantes de geocercas
     const tarifa = 1.50;
 
-    // Convertir coordenadas al formato Well-Known Text (WKT) de PostGIS: POINT(longitude latitude)
-    const origenWKT = `POINT(${origen.lng} ${origen.lat})`;
-    const destinoWKT = `POINT(${destino.lng} ${destino.lat})`;
+    // Coordenadas validadas numéricamente antes de interpolación WKT
+    const origenWKT = `POINT(${origenLng} ${origenLat})`;
+    const destinoWKT = `POINT(${destinoLng} ${destinoLat})`;
 
     // Insertar el nuevo viaje en la base de datos
     const { data: viaje, error } = await supabase
@@ -42,10 +68,10 @@ const solicitarViaje = async (req, res) => {
       .single();
 
     if (error) {
+      console.error('[Viaje] Error al registrar solicitud:', error.message);
       return res.status(400).json({
         status: 'error',
-        message: 'Error al registrar la solicitud del viaje.',
-        details: error.message
+        message: 'Error al registrar la solicitud del viaje.'
       });
     }
 
@@ -55,10 +81,10 @@ const solicitarViaje = async (req, res) => {
       data: viaje
     });
   } catch (err) {
+    console.error('[Viaje] Error interno al solicitar viaje:', err.message);
     res.status(500).json({
       status: 'error',
-      message: 'Error interno al solicitar el viaje.',
-      details: err.message
+      message: 'Error interno al solicitar el viaje.'
     });
   }
 };
@@ -75,7 +101,7 @@ const aceptarViaje = async (req, res) => {
     const { viajeId } = req.body;
     const conductorId = req.user.id;
 
-    if (!viajeId) {
+    if (!viajeId || typeof viajeId !== 'string') {
       return res.status(400).json({
         status: 'error',
         message: 'El identificador del viaje (viajeId) es requerido.'
@@ -92,8 +118,7 @@ const aceptarViaje = async (req, res) => {
     if (getError || !viaje) {
       return res.status(404).json({
         status: 'error',
-        message: 'No se encontró el viaje solicitado.',
-        details: getError ? getError.message : null
+        message: 'No se encontró el viaje solicitado.'
       });
     }
 
@@ -118,10 +143,10 @@ const aceptarViaje = async (req, res) => {
       .single();
 
     if (updateError) {
+      console.error('[Viaje] Error al aceptar viaje:', updateError.message);
       return res.status(400).json({
         status: 'error',
-        message: 'Error al aceptar el viaje.',
-        details: updateError.message
+        message: 'Error al aceptar el viaje.'
       });
     }
 
@@ -135,10 +160,10 @@ const aceptarViaje = async (req, res) => {
     if (threadError) {
       // Intentamos revertir el viaje a solicitado si falla la creación del chat
       await supabase.from('viajes').update({ conductor_id: null, estado: 'solicitado' }).eq('id', viajeId);
+      console.error('[Viaje] Error al crear thread de chat:', threadError.message);
       return res.status(500).json({
         status: 'error',
-        message: 'Error al inicializar el hilo de comunicación del viaje.',
-        details: threadError.message
+        message: 'Error al inicializar el hilo de comunicación del viaje.'
       });
     }
 
@@ -157,10 +182,10 @@ const aceptarViaje = async (req, res) => {
       await supabase.from('threads').delete().eq('id', thread.id);
       await supabase.from('viajes').update({ conductor_id: null, estado: 'solicitado' }).eq('id', viajeId);
       
+      console.error('[Viaje] Error al registrar miembros del chat:', membersError.message);
       return res.status(500).json({
         status: 'error',
-        message: 'Error al registrar los participantes en el chat del viaje.',
-        details: membersError.message
+        message: 'Error al registrar los participantes en el chat del viaje.'
       });
     }
 
@@ -175,10 +200,10 @@ const aceptarViaje = async (req, res) => {
       }
     });
   } catch (err) {
+    console.error('[Viaje] Error interno al aceptar viaje:', err.message);
     res.status(500).json({
       status: 'error',
-      message: 'Error interno al aceptar el viaje.',
-      details: err.message
+      message: 'Error interno al aceptar el viaje.'
     });
   }
 };
@@ -213,8 +238,7 @@ const cambiarEstadoViaje = async (req, res) => {
     if (getError || !viaje) {
       return res.status(404).json({
         status: 'error',
-        message: 'No se encontró el viaje solicitado.',
-        details: getError ? getError.message : null
+        message: 'No se encontró el viaje solicitado.'
       });
     }
 
@@ -260,10 +284,10 @@ const cambiarEstadoViaje = async (req, res) => {
       .single();
 
     if (updateError) {
+      console.error('[Viaje] Error al actualizar estado:', updateError.message);
       return res.status(400).json({
         status: 'error',
-        message: 'Error al actualizar el estado del viaje.',
-        details: updateError.message
+        message: 'Error al actualizar el estado del viaje.'
       });
     }
 
@@ -273,10 +297,10 @@ const cambiarEstadoViaje = async (req, res) => {
       data: viajeActualizado
     });
   } catch (err) {
+    console.error('[Viaje] Error interno al cambiar estado:', err.message);
     res.status(500).json({
       status: 'error',
-      message: 'Error interno al cambiar el estado del viaje.',
-      details: err.message
+      message: 'Error interno al cambiar el estado del viaje.'
     });
   }
 };

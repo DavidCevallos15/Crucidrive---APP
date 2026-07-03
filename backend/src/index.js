@@ -2,6 +2,8 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
 const { supabase } = require('./config/supabase');
 
@@ -19,20 +21,46 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Orígenes permitidos para CORS (restringir en producción vía ALLOWED_ORIGINS)
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['http://localhost:3000', 'http://localhost:8081', 'http://localhost:19006'];
+
 // Crear servidor HTTP nativo acoplado a Express
 const server = http.createServer(app);
 
 // Inicializar el servidor de Socket.io
 const io = new Server(server, {
   cors: {
-    origin: '*', // Permitir conexiones desde cualquier origen en desarrollo
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PATCH']
   }
 });
 
-// Middlewares globales
-app.use(cors());
-app.use(express.json());
+// Middlewares globales de seguridad
+app.use(helmet());
+app.use(cors({ origin: allowedOrigins }));
+app.use(express.json({ limit: '1mb' }));
+
+// Rate limiting global
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { status: 'error', message: 'Demasiadas solicitudes. Intenta de nuevo más tarde.' }
+});
+app.use(globalLimiter);
+
+// Rate limiting estricto para autenticación
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { status: 'error', message: 'Demasiados intentos de autenticación. Intenta de nuevo más tarde.' }
+});
+app.use('/api/auth', authLimiter);
 
 // Registrar rutas REST de la API
 app.use('/api/auth', authRoutes);
@@ -46,10 +74,10 @@ app.get('/', async (req, res) => {
     const { data, error } = await supabase.auth.getSession();
     
     if (error) {
+      console.error('[Health] Error en conexión con Supabase:', error.message);
       return res.status(500).json({
         status: 'error',
-        message: 'Error en la conexión con Supabase',
-        details: error.message
+        message: 'Error en la conexión con Supabase'
       });
     }
 
@@ -59,10 +87,10 @@ app.get('/', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (err) {
+    console.error('[Health] Error interno:', err.message);
     res.status(500).json({
       status: 'error',
-      message: 'Error interno en el servidor backend',
-      details: err.message
+      message: 'Error interno en el servidor backend'
     });
   }
 });

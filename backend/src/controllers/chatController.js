@@ -28,10 +28,10 @@ const getHistorialChat = async (req, res) => {
       .maybeSingle();
 
     if (memberError) {
+      console.error('[Chat] Error al verificar afiliación:', memberError.message);
       return res.status(500).json({
         status: 'error',
-        message: 'Error al verificar la afiliación al hilo de chat.',
-        details: memberError.message
+        message: 'Error al verificar la afiliación al hilo de chat.'
       });
     }
 
@@ -60,10 +60,10 @@ const getHistorialChat = async (req, res) => {
       .order('created_at', { ascending: true });
 
     if (messagesError) {
+      console.error('[Chat] Error al recuperar mensajes:', messagesError.message);
       return res.status(400).json({
         status: 'error',
-        message: 'Error al recuperar los mensajes del chat.',
-        details: messagesError.message
+        message: 'Error al recuperar los mensajes del chat.'
       });
     }
 
@@ -72,10 +72,10 @@ const getHistorialChat = async (req, res) => {
       data: messages
     });
   } catch (err) {
+    console.error('[Chat] Error interno al obtener historial:', err.message);
     res.status(500).json({
       status: 'error',
-      message: 'Error interno al obtener el historial de chat.',
-      details: err.message
+      message: 'Error interno al obtener el historial de chat.'
     });
   }
 };

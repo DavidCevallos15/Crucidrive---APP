@@ -27,6 +27,24 @@ const registerProfile = async (req, res) => {
       });
     }
 
+    // Sanitizar y validar nombre (solo letras, espacios y caracteres latinos)
+    const nombreSanitizado = String(nombre).trim();
+    if (nombreSanitizado.length < 2 || nombreSanitizado.length > 100 || !/^[\p{L}\s.'-]+$/u.test(nombreSanitizado)) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'El nombre debe tener entre 2 y 100 caracteres válidos.'
+      });
+    }
+
+    // Validar formato de teléfono (E.164 o local ecuatoriano)
+    const telefonoSanitizado = String(telefono).trim();
+    if (!/^\+?[0-9]{7,15}$/.test(telefonoSanitizado)) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'El número de teléfono no tiene un formato válido.'
+      });
+    }
+
     // Validar placa si el rol es conductor
     if (rol === 'conductor' && !placa) {
       return res.status(400).json({
@@ -35,20 +53,31 @@ const registerProfile = async (req, res) => {
       });
     }
 
+    // Validar formato de placa ecuatoriana si se proporciona
+    if (placa) {
+      const placaSanitizada = String(placa).trim().toUpperCase();
+      if (!/^[A-Z]{3}-?[0-9]{3,4}$/.test(placaSanitizada)) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'La placa debe tener formato ecuatoriano válido (ej: ABC-1234).'
+        });
+      }
+    }
+
     // 1. Insertar en la tabla public.perfiles
     const { data: perfilData, error: perfilError } = await supabase
       .from('perfiles')
       .insert([
-        { id: userId, rol, nombre, telefono, activo: true }
+        { id: userId, rol, nombre: nombreSanitizado, telefono: telefonoSanitizado, activo: true }
       ])
       .select()
       .single();
 
     if (perfilError) {
+      console.error('[Auth] Error al registrar perfil:', perfilError.message);
       return res.status(400).json({
         status: 'error',
-        message: 'Error al registrar el perfil del usuario.',
-        details: perfilError.message
+        message: 'Error al registrar el perfil del usuario.'
       });
     }
 
@@ -56,10 +85,11 @@ const registerProfile = async (req, res) => {
 
     // 2. Si es conductor, registrar su unidad de tricimoto
     if (rol === 'conductor') {
+      const placaSanitizada = String(placa).trim().toUpperCase();
       const { data: motoData, error: motoError } = await supabase
         .from('tricimotos')
         .insert([
-          { conductor_id: userId, placa, estado: 'inactivo' }
+          { conductor_id: userId, placa: placaSanitizada, estado: 'inactivo' }
         ])
         .select()
         .single();
@@ -67,11 +97,11 @@ const registerProfile = async (req, res) => {
       if (motoError) {
         // Rollback manual eliminando el perfil si falla el registro de la tricimoto
         await supabase.from('perfiles').delete().eq('id', userId);
+        console.error('[Auth] Error al registrar tricimoto:', motoError.message);
 
         return res.status(400).json({
           status: 'error',
-          message: 'Error al registrar la tricimoto asociada. Registro cancelado.',
-          details: motoError.message
+          message: 'Error al registrar la tricimoto asociada. Registro cancelado.'
         });
       }
       tricimotoData = motoData;
@@ -86,10 +116,10 @@ const registerProfile = async (req, res) => {
       }
     });
   } catch (err) {
+    console.error('[Auth] Error interno al registrar perfil:', err.message);
     res.status(500).json({
       status: 'error',
-      message: 'Error interno al registrar el perfil.',
-      details: err.message
+      message: 'Error interno al registrar el perfil.'
     });
   }
 };

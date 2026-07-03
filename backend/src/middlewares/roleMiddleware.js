@@ -27,8 +27,7 @@ const roleMiddleware = (allowedRoles) => {
       if (error || !perfil) {
         return res.status(404).json({
           status: 'error',
-          message: 'No se encontró el perfil de usuario para validar el rol.',
-          details: error ? error.message : null
+          message: 'No se encontró el perfil de usuario para validar el rol.'
         });
       }
 
@@ -44,10 +43,10 @@ const roleMiddleware = (allowedRoles) => {
       req.user.rol = perfil.rol;
       next();
     } catch (err) {
+      console.error('[Role Middleware] Error interno:', err.message);
       res.status(500).json({
         status: 'error',
-        message: 'Error interno en el middleware de roles.',
-        details: err.message
+        message: 'Error interno en el middleware de roles.'
       });
     }
   };

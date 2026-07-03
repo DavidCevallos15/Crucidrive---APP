@@ -1,6 +1,18 @@
 const { supabase } = require('../config/supabase');
 
 /**
+ * Valida que un valor sea una coordenada numérica finita dentro de rangos geográficos.
+ */
+const isValidCoordinate = (lat, lng) => {
+  return (
+    typeof lat === 'number' && typeof lng === 'number' &&
+    Number.isFinite(lat) && Number.isFinite(lng) &&
+    lat >= -90 && lat <= 90 &&
+    lng >= -180 && lng <= 180
+  );
+};
+
+/**
  * Registra y maneja los eventos de Socket.io para geolocalización y chat en tiempo real.
  * 
  * @param {import('socket.io').Server} io - Instancia del servidor de Socket.io.
@@ -56,8 +68,10 @@ const initSocketHandler = (io) => {
      * @param {string} data.sectorId - Identificador del sector (ej: 'centro', 'playa').
      */
     socket.on('join_sector', ({ sectorId }) => {
-      if (!sectorId) return;
-      const room = `sector:${sectorId}`;
+      if (!sectorId || typeof sectorId !== 'string') return;
+      const sanitizedSectorId = sectorId.replace(/[^a-zA-Z0-9_-]/g, '');
+      if (!sanitizedSectorId) return;
+      const room = `sector:${sanitizedSectorId}`;
       socket.join(room);
       console.log(`[Socket.io] Usuario ${socket.user.nombre} se unió a la sala del sector: ${room}`);
     });
@@ -76,18 +90,28 @@ const initSocketHandler = (io) => {
           return socket.emit('error_message', 'Acción denegada. Solo los conductores pueden actualizar geolocalización.');
         }
 
-        if (!coords || !coords.lat || !coords.lng || !sectorId) {
+        if (!coords || coords.lat == null || coords.lng == null || !sectorId) {
           return socket.emit('error_message', 'Parámetros de ubicación incompletos.');
         }
 
+        const lat = Number(coords.lat);
+        const lng = Number(coords.lng);
+        if (!isValidCoordinate(lat, lng)) {
+          return socket.emit('error_message', 'Coordenadas geográficas inválidas.');
+        }
+
+        // Validar estado
+        const validEstados = ['disponible', 'ocupado', 'inactivo'];
+        const estadoSanitizado = validEstados.includes(estado) ? estado : 'disponible';
+
         // 1. Guardar la ubicación en la base de datos (PostGIS point: POINT(longitude latitude))
-        const locationWKT = `POINT(${coords.lng} ${coords.lat})`;
+        const locationWKT = `POINT(${lng} ${lat})`;
         
         const { error } = await supabase
           .from('tricimotos')
           .update({
             ubicacion_actual: locationWKT,
-            estado: estado || 'disponible',
+            estado: estadoSanitizado,
             updated_at: new Date().toISOString()
           })
           .eq('conductor_id', socket.user.id);
@@ -98,12 +122,13 @@ const initSocketHandler = (io) => {
         }
 
         // 2. Retransmitir la ubicación en tiempo real únicamente a la sala del sector
-        const room = `sector:${sectorId}`;
+        const sanitizedSectorId = String(sectorId).replace(/[^a-zA-Z0-9_-]/g, '');
+        const room = `sector:${sanitizedSectorId}`;
         socket.to(room).emit('location_updated', {
           conductorId: socket.user.id,
           nombre: socket.user.nombre,
-          coords,
-          estado: estado || 'disponible'
+          coords: { lat, lng },
+          estado: estadoSanitizado
         });
 
       } catch (err) {
@@ -151,18 +176,33 @@ const initSocketHandler = (io) => {
      */
     socket.on('send_message', async ({ threadId, content }) => {
       try {
-        if (!threadId || !content || content.trim() === '') {
+        if (!threadId || !content || String(content).trim() === '') {
           return socket.emit('error_message', 'Contenido del mensaje vacío o threadId faltante.');
         }
 
-        // 1. Guardar mensaje en Supabase (Se disparan las políticas RLS a nivel de base de datos)
+        // Validar que el usuario es miembro del hilo de chat
+        const { data: member, error: memberError } = await supabase
+          .from('thread_members')
+          .select('id')
+          .eq('thread_id', threadId)
+          .eq('user_id', socket.user.id)
+          .maybeSingle();
+
+        if (memberError || !member) {
+          return socket.emit('error_message', 'No tienes permiso para enviar mensajes en este chat.');
+        }
+
+        // Limitar longitud del mensaje
+        const sanitizedContent = String(content).trim().slice(0, 2000);
+
+        // 1. Guardar mensaje en Supabase
         const { data: message, error } = await supabase
           .from('messages')
           .insert([
             {
               thread_id: threadId,
               sender_id: socket.user.id,
-              content: content.trim()
+              content: sanitizedContent
             }
           ])
           .select(`
