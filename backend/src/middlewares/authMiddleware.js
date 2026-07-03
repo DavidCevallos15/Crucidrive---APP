@@ -1,44 +1,29 @@
 const { supabase } = require('../config/supabase');
+const { errorResponse } = require('../utils/response');
 
 /**
  * Middleware para autenticar las peticiones entrantes usando el JWT de Supabase.
  * Valida el token contra la API de Supabase Auth.
- * 
- * @param {import('express').Request} req - Objeto de petición Express.
- * @param {import('express').Response} res - Objeto de respuesta Express.
- * @param {import('express').NextFunction} next - Siguiente función middleware.
  */
 const authMiddleware = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        status: 'error',
-        message: 'No autorizado. Se requiere un token de tipo Bearer en la cabecera.'
-      });
+      return errorResponse(res, 401, 'No autorizado. Se requiere un token de tipo Bearer en la cabecera.');
     }
 
     const token = authHeader.split(' ')[1];
 
-    // Validar el token usando el cliente oficial de Supabase
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
     if (error || !user) {
-      return res.status(401).json({
-        status: 'error',
-        message: 'Token inválido o expirado.'
-      });
+      return errorResponse(res, 401, 'Token inválido o expirado.', error ? error.message : null);
     }
 
-    // Adjuntar los datos de la sesión del usuario verificado a la petición
     req.user = user;
     next();
   } catch (err) {
-    console.error('[Auth Middleware] Error interno:', err.message);
-    res.status(500).json({
-      status: 'error',
-      message: 'Error interno en el middleware de autenticación.'
-    });
+    errorResponse(res, 500, 'Error interno en el middleware de autenticación.', err.message);
   }
 };
 

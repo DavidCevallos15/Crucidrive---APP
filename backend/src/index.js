@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
 const { supabase } = require('./config/supabase');
+const { errorResponse } = require('./utils/response');
 
 // Importar enrutadores REST
 const authRoutes = require('./routes/authRoutes');
@@ -74,11 +75,7 @@ app.get('/', async (req, res) => {
     const { data, error } = await supabase.auth.getSession();
     
     if (error) {
-      console.error('[Health] Error en conexión con Supabase:', error.message);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error en la conexión con Supabase'
-      });
+      return errorResponse(res, 500, 'Error en la conexión con Supabase', error.message);
     }
 
     res.json({
@@ -87,11 +84,7 @@ app.get('/', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (err) {
-    console.error('[Health] Error interno:', err.message);
-    res.status(500).json({
-      status: 'error',
-      message: 'Error interno en el servidor backend'
-    });
+    errorResponse(res, 500, 'Error interno en el servidor backend', err.message);
   }
 });
 
