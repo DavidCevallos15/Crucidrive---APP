@@ -66,7 +66,10 @@ const registerProfile = async (req, res) => {
 
       if (motoError) {
         // Rollback manual eliminando el perfil si falla el registro de la tricimoto
-        await supabase.from('perfiles').delete().eq('id', userId);
+        const { error: rollbackError } = await supabase.from('perfiles').delete().eq('id', userId);
+        if (rollbackError) {
+          console.error(`[registerProfile] Error en rollback de perfil: ${rollbackError.message}`);
+        }
 
         return res.status(400).json({
           status: 'error',

@@ -11,7 +11,7 @@ const solicitarViaje = async (req, res) => {
     const { origen, destino } = req.body;
     const pasajeroId = req.user.id;
 
-    if (!origen || !destino || !origen.lat || !origen.lng || !destino.lat || !origen.lng) {
+    if (!origen || !destino || !origen.lat || !origen.lng || !destino.lat || !destino.lng) {
       return res.status(400).json({
         status: 'error',
         message: 'Las coordenadas de origen (lat, lng) y destino (lat, lng) son obligatorias.'
@@ -134,7 +134,10 @@ const aceptarViaje = async (req, res) => {
 
     if (threadError) {
       // Intentamos revertir el viaje a solicitado si falla la creación del chat
-      await supabase.from('viajes').update({ conductor_id: null, estado: 'solicitado' }).eq('id', viajeId);
+      const { error: rollbackError } = await supabase.from('viajes').update({ conductor_id: null, estado: 'solicitado' }).eq('id', viajeId);
+      if (rollbackError) {
+        console.error(`[aceptarViaje] Error en rollback de viaje tras fallo de thread: ${rollbackError.message}`);
+      }
       return res.status(500).json({
         status: 'error',
         message: 'Error al inicializar el hilo de comunicación del viaje.',
@@ -154,8 +157,14 @@ const aceptarViaje = async (req, res) => {
 
     if (membersError) {
       // Limpieza en caso de falla
-      await supabase.from('threads').delete().eq('id', thread.id);
-      await supabase.from('viajes').update({ conductor_id: null, estado: 'solicitado' }).eq('id', viajeId);
+      const { error: deleteThreadError } = await supabase.from('threads').delete().eq('id', thread.id);
+      if (deleteThreadError) {
+        console.error(`[aceptarViaje] Error al eliminar thread en rollback: ${deleteThreadError.message}`);
+      }
+      const { error: rollbackViajeError } = await supabase.from('viajes').update({ conductor_id: null, estado: 'solicitado' }).eq('id', viajeId);
+      if (rollbackViajeError) {
+        console.error(`[aceptarViaje] Error al revertir viaje en rollback: ${rollbackViajeError.message}`);
+      }
       
       return res.status(500).json({
         status: 'error',

@@ -82,12 +82,16 @@ export const ChatScreen: React.FC = () => {
           }
         );
 
-        if (response.ok) {
-          const data = await response.json();
-          setMessages(data.messages ?? []);
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          console.error('[Chat] Error al cargar historial:', errorData?.message ?? response.statusText);
+          return;
         }
+
+        const data = await response.json();
+        setMessages(data.data ?? data.messages ?? []);
       } catch (error) {
-        console.error('[Chat] Error al cargar historial:', error);
+        console.error('[Chat] Error de red al cargar historial:', error);
       } finally {
         setIsLoadingHistory(false);
       }

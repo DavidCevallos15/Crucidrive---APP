@@ -24,18 +24,27 @@ const initSocketHandler = (io) => {
       }
 
       // Obtener el perfil asociado para conocer el rol
-      const { data: perfil } = await supabase
+      const { data: perfil, error: perfilError } = await supabase
         .from('perfiles')
         .select('rol, nombre')
         .eq('id', user.id)
         .single();
 
+      if (perfilError) {
+        console.error(`[Socket.io] Error al obtener perfil para socket auth: ${perfilError.message}`);
+        return next(new Error('Error de autenticación: No se pudo verificar el perfil del usuario.'));
+      }
+
+      if (!perfil) {
+        return next(new Error('Error de autenticación: Perfil de usuario no encontrado.'));
+      }
+
       // Guardar información del usuario autenticado en la sesión del socket
       socket.user = {
         id: user.id,
         email: user.email,
-        rol: perfil?.rol || 'pasajero',
-        nombre: perfil?.nombre || ''
+        rol: perfil.rol,
+        nombre: perfil.nombre || ''
       };
 
       next();
@@ -56,7 +65,9 @@ const initSocketHandler = (io) => {
      * @param {string} data.sectorId - Identificador del sector (ej: 'centro', 'playa').
      */
     socket.on('join_sector', ({ sectorId }) => {
-      if (!sectorId) return;
+      if (!sectorId) {
+        return socket.emit('error_message', 'El identificador del sector (sectorId) es obligatorio.');
+      }
       const room = `sector:${sectorId}`;
       socket.join(room);
       console.log(`[Socket.io] Usuario ${socket.user.nombre} se unió a la sala del sector: ${room}`);
@@ -94,7 +105,7 @@ const initSocketHandler = (io) => {
 
         if (error) {
           console.error(`[Socket.io] Error al guardar GPS en DB: ${error.message}`);
-          return;
+          return socket.emit('error_message', 'Error al guardar la ubicación en la base de datos.');
         }
 
         // 2. Retransmitir la ubicación en tiempo real únicamente a la sala del sector
@@ -130,7 +141,12 @@ const initSocketHandler = (io) => {
           .eq('user_id', socket.user.id)
           .maybeSingle();
 
-        if (error || !member) {
+        if (error) {
+          console.error(`[Socket.io] Error al verificar membresía de chat: ${error.message}`);
+          return socket.emit('error_message', 'Error al verificar el acceso al chat.');
+        }
+
+        if (!member) {
           console.warn(`[Socket.io] Acceso denegado a chat. Usuario ${socket.user.nombre} intentó ingresar a thread ${threadId}`);
           return socket.emit('error_message', 'No tienes permiso para ingresar a este chat.');
         }
@@ -140,6 +156,7 @@ const initSocketHandler = (io) => {
         console.log(`[Socket.io] Usuario ${socket.user.nombre} ingresó a la sala de chat: ${room}`);
       } catch (err) {
         console.error(`[Socket.io] Error en join_chat: ${err.message}`);
+        socket.emit('error_message', 'Error interno al unirse al chat.');
       }
     });
 
@@ -189,6 +206,7 @@ const initSocketHandler = (io) => {
 
       } catch (err) {
         console.error(`[Socket.io] Error en send_message: ${err.message}`);
+        socket.emit('error_message', 'Error interno al enviar el mensaje.');
       }
     });
 

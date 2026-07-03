@@ -4,6 +4,7 @@ import {
   View,
   Text,
   Dimensions,
+  Alert,
 } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE, type Region } from '../components/Map';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -119,7 +120,9 @@ export const MapScreen: React.FC = () => {
       );
 
       if (!response.ok) {
-        throw new Error('Error al solicitar el viaje');
+        const errorData = await response.json().catch(() => null);
+        Alert.alert('Error', errorData?.message ?? 'No se pudo solicitar el viaje.');
+        return;
       }
 
       const data = await response.json();
@@ -140,6 +143,7 @@ export const MapScreen: React.FC = () => {
       });
     } catch (error) {
       console.error('[MapScreen] Error al solicitar viaje:', error);
+      Alert.alert('Error de conexión', 'No se pudo conectar con el servidor para solicitar el viaje.');
     } finally {
       setRequesting(false);
     }

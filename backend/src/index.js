@@ -67,6 +67,24 @@ app.get('/', async (req, res) => {
   }
 });
 
+// Manejar rutas no definidas (404)
+app.use((req, res) => {
+  res.status(404).json({
+    status: 'error',
+    message: `Ruta no encontrada: ${req.method} ${req.originalUrl}`
+  });
+});
+
+// Middleware global de errores
+app.use((err, req, res, _next) => {
+  console.error('[Express] Error no capturado:', err.message);
+  res.status(err.status || 500).json({
+    status: 'error',
+    message: 'Error interno del servidor.',
+    details: process.env.NODE_ENV !== 'production' ? err.message : undefined
+  });
+});
+
 // Inicializar los eventos y namespaces de Sockets en tiempo real
 initSocketHandler(io);
 
