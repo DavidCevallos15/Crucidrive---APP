@@ -11,7 +11,7 @@ export default function AppLayout() {
   const session = useAuthStore((s) => s.session);
 
   if (!session) {
-    return <Redirect href="/(auth)/login" />;
+    return <Redirect href="/" />;
   }
 
   return <Slot />;

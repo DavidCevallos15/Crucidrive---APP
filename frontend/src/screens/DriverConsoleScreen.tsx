@@ -7,7 +7,7 @@ import {
   Dimensions,
   Modal,
 } from 'react-native';
-import MapView, { Marker, type Region } from 'react-native-maps';
+import MapView, { Marker, type Region } from '../components/Map';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -16,15 +16,15 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { GlassCard } from '../../components/GlassCard';
-import { GlassButton } from '../../components/GlassButton';
-import { BlurContainer } from '../../components/BlurContainer';
-import { useLocation } from '../../hooks/useLocation';
-import { useSocket } from '../../hooks/useSocket';
-import { useAuthStore } from '../../store/useAuthStore';
-import { useLocationStore } from '../../store/useLocationStore';
-import { LOCATION_CONFIG, API_CONFIG } from '../../constants/config';
-import { COLORS, FONTS, SPACING, SHAPES, ANIMATION } from '../../constants/theme';
+import { GlassCard } from '../components/GlassCard';
+import { GlassButton } from '../components/GlassButton';
+import { BlurContainer } from '../components/BlurContainer';
+import { useLocation } from '../hooks/useLocation';
+import { useSocket } from '../hooks/useSocket';
+import { useAuthStore } from '../store/useAuthStore';
+import { useLocationStore } from '../store/useLocationStore';
+import { LOCATION_CONFIG, API_CONFIG } from '../constants/config';
+import { COLORS, FONTS, SPACING, SHAPES, ANIMATION } from '../constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 

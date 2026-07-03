@@ -13,12 +13,12 @@ import Animated, {
   FadeInDown,
   FadeInUp,
 } from 'react-native-reanimated';
-import { GlassCard } from '../../components/GlassCard';
-import { GlassButton } from '../../components/GlassButton';
-import { GlassInput } from '../../components/GlassInput';
-import { LoadingSpinner } from '../../components/LoadingSpinner';
-import { useSupabaseAuth } from '../../hooks/useSupabaseAuth';
-import { COLORS, FONTS, SPACING } from '../../constants/theme';
+import { GlassCard } from '../components/GlassCard';
+import { GlassButton } from '../components/GlassButton';
+import { GlassInput } from '../components/GlassInput';
+import { LoadingSpinner } from '../components/LoadingSpinner';
+import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
+import { COLORS, FONTS, SPACING } from '../constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 

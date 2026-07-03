@@ -11,21 +11,21 @@ import {
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { BlurContainer } from '../../components/BlurContainer';
-import { GlassInput } from '../../components/GlassInput';
-import { GlassCard } from '../../components/GlassCard';
-import { useSocket } from '../../hooks/useSocket';
-import { useAuthStore } from '../../store/useAuthStore';
-import { useRideStore } from '../../store/useRideStore';
-import { API_CONFIG } from '../../constants/config';
-import { COLORS, FONTS, SPACING, SHAPES } from '../../constants/theme';
+import { BlurContainer } from '../components/BlurContainer';
+import { GlassInput } from '../components/GlassInput';
+import { GlassCard } from '../components/GlassCard';
+import { useSocket } from '../hooks/useSocket';
+import { useAuthStore } from '../store/useAuthStore';
+import { useRideStore } from '../store/useRideStore';
+import { API_CONFIG } from '../constants/config';
+import { COLORS, FONTS, SPACING, SHAPES } from '../constants/theme';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import { ANIMATION } from '../../constants/theme';
+import { ANIMATION } from '../constants/theme';
 
 /**
  * Estructura de un mensaje de chat.

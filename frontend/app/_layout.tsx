@@ -20,7 +20,6 @@ import { COLORS } from '../src/constants/theme';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
-import { COLORS } from '../src/constants/theme';
 
 /**
  * Layout raíz de la aplicación CruciDrive.
@@ -28,7 +27,7 @@ import { COLORS } from '../src/constants/theme';
  * Responsabilidades:
  * 1. Proveer GestureHandlerRootView (requerido por react-native-gesture-handler)
  * 2. Verificar la sesión de autenticación al iniciar
- * 3. Redirigir al login o a la app según el estado de la sesión
+ * 3. Redirigir según sesión y rol; la ruta raíz muestra el mapa del pasajero
  */
 export default function RootLayout() {
   const { isLoading, isInitialized, session, profile } = useSupabaseAuth();
@@ -55,18 +54,19 @@ export default function RootLayout() {
     if (!isInitialized) return;
 
     const inAuthGroup = segments[0] === '(auth)';
+    const inAppGroup = segments[0] === '(app)';
     const hasSession = session !== null;
 
-    if (!hasSession && !inAuthGroup) {
-      // Sin sesión, redirigir al login
-      router.replace('/(auth)/login');
-    } else if (hasSession && inAuthGroup) {
+    if (hasSession && inAuthGroup) {
       // Con sesión, redirigir según el rol del usuario
       if (profile?.rol === 'conductor') {
         router.replace('/(app)/(driver)');
       } else {
         router.replace('/(app)/(passenger)');
       }
+    } else if (!hasSession && inAppGroup) {
+      // Rutas protegidas requieren sesión; volver al mapa público
+      router.replace('/');
     }
   }, [isInitialized, session, profile, segments]);
 
