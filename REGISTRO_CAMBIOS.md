@@ -16,7 +16,7 @@
 
 ### Cambiado (decisión D-08: 0,50 USD por persona, sin precio por ruta)
 - **BD (`0007_tarifa_por_persona.sql`, aplicada al proyecto real):** se eliminan `tarifas` y `obtener_tarifa`; `zonas.precio_por_persona` (0,50); `viajes.pasajeros`, `origen_descripcion` y `destino_descripcion`; trigger `private.fijar_tarifa_viaje` que fija `tarifa = precio × pasajeros` e ignora lo que envíe el cliente; sector nuevo `la_boca`.
-- **Coordenadas de sectores corregidas:** estaban ~19 km al sur de Crucita (lat −1,04). Ahora giran en torno al punto de la parroquia (−0,8706; −80,5375). **Son provisionales**; La Boca es aproximada. Pendiente T20.
+- **Coordenadas de sectores corregidas:** estaban ~19 km al sur de Crucita (lat −1,04). Ahora giran en torno al punto de la parroquia (−0,8706; −80,5375). **Son provisionales**; La Boca es aproximada. Pendiente T22b.
 - **Backend:** `POST /api/viajes/solicitar` acepta `pasajeros` (1–20), `sectorOrigenId`, `sectorDestinoId`, `origenDescripcion`, `destinoDescripcion`; ya no inserta `tarifa` (antes fijaba 1,50 para todos).
 - **Frontend:** `MapScreen` con selector de pasajeros, total en vivo y referencia de destino en texto; `sectors.ts` sin matriz de tarifas (`calculateFare`, `PRICE_PER_PERSON_USD`); consola del conductor muestra personas y referencia.
 
@@ -30,13 +30,16 @@
 
 ## [1.10.0] - 2026-10-08 (Hora Local)
 
-### Verificado (paso 001, T4–T8)
-- BD real "Crucidrive - APP": migraciones 0001–0006 aplicadas, 9 tablas con RLS, semilla de Crucita (5 sectores, 10 tarifas idénticas a `sectors.ts`), tarifa simétrica y `get_advisors(security)` sin hallazgos.
-- Pendiente del paso 001: T16 (prueba de humo con 2 usuarios reales) y T18 (deuda de tipos del frontend, se resuelve en 007).
+### Verificado en producción (Supabase)
+- Limpieza única ejecutada y migraciones 0001–0006 aplicadas por la integración Supabase–GitHub al fusionar #7.
+- 9 tablas con RLS, 20 políticas, semilla de Crucita (5 sectores, 10 tarifas), `obtener_tarifa` simétrica, PostGIS en `extensions`.
+- Linter de seguridad de Supabase: 0 hallazgos (antes 1 ERROR y 2 WARN).
 
-### Seguridad de dependencias (backend)
-- `npm audit fix` (sin `--force`): se actualizaron en el lockfile `express`/`proxy-addr` (crítica: suplantación de IP), `qs`, `engine.io` y `socket.io-parser`. Dependencias de producción: **0 vulnerabilidades** (`npm audit --omit=dev`). Backend 80/80.
-- Quedan avisos solo en herramientas de desarrollo (`jest`, `nodemon`); el "fix" que propone npm es bajar a jest 25 / nodemon 1.x, por lo que se descarta. No llegan a producción.
+### Seguridad
+- `npm audit fix` en backend: 0 vulnerabilidades en dependencias de producción (proxy-addr crítica, engine.io, socket.io-parser, qs). CI con `npm audit --omit=dev --audit-level=high`.
+
+### Añadido
+- `CLAUDE.md`: reglas de la constitución, flujo por specs, reglas de BD/backend y comandos para Claude Code.
 
 ---
 
