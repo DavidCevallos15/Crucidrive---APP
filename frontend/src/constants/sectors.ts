@@ -3,8 +3,7 @@
  *
  * Los sectores sirven para ubicar al usuario y despachar tricimotos cercanas.
  * NO fijan el precio: en Crucita se cobra por persona (D-08), sin importar la ruta.
- * Crucita, La Boca y Las Gilces son pines reales; Playa, Los Arenales y San Jacinto
- * son provisionales hasta recibir su pin (ver migración 0008).
+ * Los 5 centros son pines reales marcados en Google Maps (migración 0009).
  */
 
 export interface SectorCoordinate {
@@ -29,16 +28,10 @@ export interface Sector {
  */
 export const SECTORS: Sector[] = [
   {
-    id: 'centro',
-    name: 'Centro de Crucita',
-    center: { lat: -0.86297781, lng: -80.53690632 },
-    markerColor: '#0D9488',
-  },
-  {
-    id: 'playa',
-    name: 'Malecón / Playa',
-    center: { lat: -0.8652, lng: -80.5422 },
-    markerColor: '#14B8A6',
+    id: 'la_boca',
+    name: 'La Boca',
+    center: { lat: -0.80147852, lng: -80.52098189 },
+    markerColor: '#38BDF8',
   },
   {
     id: 'las_gilces',
@@ -49,20 +42,20 @@ export const SECTORS: Sector[] = [
   {
     id: 'los_arenales',
     name: 'Los Arenales',
-    center: { lat: -0.8702, lng: -80.5347 },
+    center: { lat: -0.8567572, lng: -80.53186699 },
     markerColor: '#FBBF24',
   },
   {
-    id: 'san_jacinto',
-    name: 'San Jacinto',
-    center: { lat: -0.8782, lng: -80.5307 },
-    markerColor: '#10B981',
+    id: 'malecon',
+    name: 'Malecón de Crucita',
+    center: { lat: -0.8699838, lng: -80.53995042 },
+    markerColor: '#14B8A6',
   },
   {
-    id: 'la_boca',
-    name: 'La Boca',
-    center: { lat: -0.80147852, lng: -80.52098189 },
-    markerColor: '#38BDF8',
+    id: 'la_loma',
+    name: 'La Loma',
+    center: { lat: -0.88463806, lng: -80.54802452 },
+    markerColor: '#10B981',
   },
 ];
 

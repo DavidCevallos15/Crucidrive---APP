@@ -19,7 +19,7 @@ end $$;
 grant execute on all functions in schema pg_temp to authenticated;
 
 \echo '--- criterio 2 y 3: catálogo ---'
-select (select count(*) from sectores) = 6 and (select count(*) from sectores where id = 'la_boca') = 1 as semilla_ok;
+select (select count(*) from sectores) = 5 and (select count(*) from sectores where id in ('la_boca','las_gilces','los_arenales','malecon','la_loma')) = 5 as semilla_ok;
 select (select precio_por_persona from zonas where id = 'crucita') = 0.50 as precio_por_persona_ok;
 select to_regclass('public.tarifas') is null and to_regproc('public.obtener_tarifa') is null as sin_tarifas_por_ruta;
 
@@ -43,7 +43,7 @@ select pg_temp.como('11111111-1111-1111-1111-111111111111');
 select pg_temp.debe_fallar($q$insert into tricimotos (conductor_id, placa) values ('11111111-1111-1111-1111-111111111111','PAS-001')$q$, 'pasajero registra tricimoto');
 select pg_temp.como('22222222-2222-2222-2222-222222222222');
 insert into tricimotos (conductor_id, placa) values ('22222222-2222-2222-2222-222222222222','ABC-123');
-update tricimotos set estado='disponible', sector_id='centro', ubicacion_actual=extensions.st_geogfromtext('SRID=4326;POINT(-80.5432 -1.0448)') where conductor_id='22222222-2222-2222-2222-222222222222';
+update tricimotos set estado='disponible', sector_id='malecon', ubicacion_actual=extensions.st_geogfromtext('SRID=4326;POINT(-80.5432 -1.0448)') where conductor_id='22222222-2222-2222-2222-222222222222';
 select pg_temp.debe_fallar($q$update tricimotos set placa='ZZZ-999' where conductor_id='22222222-2222-2222-2222-222222222222'$q$, 'cambiar su placa');
 select pg_temp.como('44444444-4444-4444-4444-444444444444');
 insert into tricimotos (conductor_id, placa) values ('44444444-4444-4444-4444-444444444444','DEF-456');
@@ -91,7 +91,7 @@ select updated_at > creado_en as trigger_updated_at_ok from viajes where id='aaa
 
 \echo '--- anon ---'
 reset role; set role anon;
-select count(*) = 6 as anon_lee_sectores from sectores;
+select count(*) = 5 as anon_lee_sectores from sectores;
 select count(*) = 0 as anon_no_lee_perfiles from perfiles;
 select count(*) = 0 as anon_no_lee_viajes from viajes;
 reset role;

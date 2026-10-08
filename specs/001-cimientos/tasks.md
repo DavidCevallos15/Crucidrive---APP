@@ -24,5 +24,5 @@ Cada tarea indica su prueba. Se tilda al cumplirse.
 - [x] T20 · `CLAUDE.md` en la raíz con la constitución y el flujo por specs para Claude Code
 - [x] T21 · Enmienda 1 (D-08): tarifa = 0,50 × personas. Migración `0007` (probada en Postgres 16 + PostGIS local, aplicada al proyecto real), backend (`pasajeros`, sectores, descripciones; sin `tarifa` en el INSERT), frontend (selector de pasajeros, nota de destino, `calculateFare`; sector `la_boca`), spec/constitución/docs → prueba: backend 89/89, frontend 71/71, RLS 17/17
 - [x] T22a · Pines reales de Crucita, La Boca y Las Gilces → migración `0008_centros_sectores_reales.sql`
-- [ ] T22b · Pines reales de Playa (Malecón), Los Arenales y San Jacinto; luego validar los seis en campo (paso 0)
+- [x] T22b · Sectores definitivos con pines reales (La Boca, Las Gilces, Los Arenales, Malecón, La Loma) → migración `0009_sectores_definitivos.sql`; se retiran Centro, Playa y San Jacinto. Falta validarlos en campo (paso 0)
 - [ ] T16 · Prueba de humo con 2 usuarios reales (pasajero y conductor) contra la BD nueva → registro, solicitud, aceptación y mensaje de chat

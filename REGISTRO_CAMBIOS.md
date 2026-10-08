@@ -2,6 +2,15 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.13.0] - 2026-10-08 (Hora Local)
+
+### Cambiado
+- **Sectores definitivos** (`0009_sectores_definitivos.sql`, aplicada al proyecto real): La Boca, Las Gilces, Los Arenales, Malecón de Crucita (las letras) y La Loma (parapente), con pines reales de Google Maps. Se retiran Centro, Playa y San Jacinto. Frontend (`sectors.ts`) y pruebas alineados.
+- Puntos extra para el catálogo de lugares del paso 003 (D-09): Los Ranchos (−0,84971; −80,53152) y Muelle de Crucita (−0,84791; −80,53351).
+- El guion de humo muestra un mensaje claro cuando el backend no está corriendo.
+
+---
+
 ## [1.12.0] - 2026-10-08 (Hora Local)
 
 ### Corregido
