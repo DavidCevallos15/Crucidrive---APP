@@ -25,15 +25,16 @@
       "predictiveBackGestureEnabled": true
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "output": "single"
     },
     "plugins": [
       "expo-router",
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "CruciDrive necesita acceder a tu ubicación para mostrarte tricimotos cercanas y compartir tu posición durante el viaje.",
-          "locationWhenInUsePermission": "CruciDrive necesita acceder a tu ubicación para mostrarte tricimotos cercanas.",
+          "locationAlwaysAndWhenInUsePermission": "CruciDrive necesita acceder a tu ubicaci\u00f3n para mostrarte tricimotos cercanas y compartir tu posici\u00f3n durante el viaje.",
+          "locationWhenInUsePermission": "CruciDrive necesita acceder a tu ubicaci\u00f3n para mostrarte tricimotos cercanas.",
           "isAndroidBackgroundLocationEnabled": true
         }
       ],
