@@ -18,7 +18,7 @@ Hoy cualquiera con una cuenta puede registrarse como `conductor` (el perfil se c
 4. **Dado** un usuario cualquiera, **cuando** intenta auto-asignarse el rol `admin` o modificar su estado de aprobación, **entonces** es rechazado (pruebas RLS).
 5. **Dado** la cédula y las fotos del conductor, **cuando** se almacenan, **entonces** están en un bucket **privado** de Supabase Storage y solo las leen el propio conductor y los administradores; un pasajero u otro conductor recibe acceso denegado (pruebas de políticas de Storage).
 6. **Dado** una foto tomada con el teléfono, **cuando** el conductor la sube, **entonces** la app la reduce antes de enviarla (máx. ~300 KB por imagen) para respetar el presupuesto de datos móviles (regla 5 de la constitución).
-7. **Dado** una contraseña de menos de 8 caracteres, **cuando** el usuario se registra, **entonces** la app y el backend la rechazan.
+7. **Dado** una contraseña de menos de 8 caracteres, **cuando** el usuario se registra, **entonces** la app y Supabase Auth la rechazan (la contraseña no pasa por nuestro backend).
 8. **Dado** la app, **cuando** el usuario abre por primera vez, **entonces** puede registrarse e iniciar sesión, y la sesión se mantiene al reabrir (sin pedir contraseña cada vez).
 9. **Dado** un viaje aceptado, **cuando** el pasajero lo consulta, **entonces** ve nombre, placa y teléfono del conductor aprobado, y nada más de su perfil.
 
