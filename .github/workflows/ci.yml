@@ -24,6 +24,9 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
       - run: npm test
+      # Solo dependencias de producción: las de desarrollo (jest, nodemon) no llegan al servidor.
+      - name: Auditoría de dependencias de producción
+        run: npm audit --omit=dev --audit-level=high
 
   frontend:
     runs-on: ubuntu-latest

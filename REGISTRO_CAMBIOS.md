@@ -2,6 +2,21 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.10.0] - 2026-10-08 (Hora Local)
+
+### Verificado en producción (Supabase)
+- Limpieza única ejecutada y migraciones 0001–0006 aplicadas por la integración Supabase–GitHub al fusionar #7.
+- 9 tablas con RLS, 20 políticas, semilla de Crucita (5 sectores, 10 tarifas), `obtener_tarifa` simétrica, PostGIS en `extensions`.
+- Linter de seguridad de Supabase: 0 hallazgos (antes 1 ERROR y 2 WARN).
+
+### Seguridad
+- `npm audit fix` en backend: 0 vulnerabilidades en dependencias de producción (proxy-addr crítica, engine.io, socket.io-parser, qs). CI con `npm audit --omit=dev --audit-level=high`.
+
+### Añadido
+- `CLAUDE.md`: reglas de la constitución, flujo por specs, reglas de BD/backend y comandos para Claude Code.
+
+---
+
 ## [1.9.0] - 2026-10-08 (Hora Local)
 
 ### Integrado (sustituye a los PR #1 y #2, que tenían conflictos con `main`)
