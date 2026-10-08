@@ -98,7 +98,7 @@ const conectarSocket = (token) =>
     return paso(`Registro de ${etiqueta} con consentimiento`, r.status === 201, `HTTP ${r.status}`);
   };
   await asegurarPerfil(pas, { rol: 'pasajero', nombre: 'Pasajero Prueba', telefono: '0990000001' }, 'pasajero');
-  await asegurarPerfil(con, { rol: 'conductor', nombre: 'Conductor Prueba', telefono: '0990000002', placa: 'SMK-001' }, 'conductor');
+  await asegurarPerfil(con, { rol: 'conductor', nombre: 'Conductor Prueba', telefono: '0990000003', placa: 'SMK-001' }, 'conductor');
 
   // 2. Verificación del conductor: fotos a Storage privado + cédula
   const estadoInicial = await http(con.token, 'GET', '/api/conductores/verificacion');
