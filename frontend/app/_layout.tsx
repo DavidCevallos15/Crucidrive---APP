@@ -17,6 +17,7 @@ import {
 } from '@expo-google-fonts/inter';
 import { useSupabaseAuth } from '../src/hooks/useSupabaseAuth';
 import { COLORS } from '../src/constants/theme';
+import { rutaInicial, rutaPermitida } from '../src/utils/routing';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -30,8 +31,10 @@ SplashScreen.preventAutoHideAsync();
  * 3. Redirigir según sesión y rol; la ruta raíz muestra el mapa del pasajero
  */
 export default function RootLayout() {
-  const { isLoading, isInitialized, session, profile } = useSupabaseAuth();
-  const segments = useSegments();
+  const {
+    isLoading, isInitialized, session, profile, profileChecked, verification, verificationChecked,
+  } = useSupabaseAuth({ bootstrap: true });
+  const segments = useSegments() as string[];
   const router = useRouter();
 
   const [fontsLoaded, fontError] = useFonts({
@@ -53,26 +56,40 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
-  // ─── Redirección basada en autenticación ──────────────────
+  // ─── Guardia de navegación por sesión, perfil y rol (spec 002) ─────
   useEffect(() => {
     if (!isInitialized) return;
 
     const inAuthGroup = segments[0] === '(auth)';
     const inAppGroup = segments[0] === '(app)';
-    const hasSession = session !== null;
 
-    if (hasSession && inAuthGroup) {
-      // Con sesión, redirigir según el rol del usuario
-      if (profile?.rol === 'conductor') {
-        router.replace('/(app)/(driver)');
-      } else {
-        router.replace('/(app)/(passenger)');
-      }
-    } else if (!hasSession && inAppGroup) {
-      // Rutas protegidas requieren sesión; volver al mapa público
-      router.replace('/');
+    // Sin sesión: el mapa y el login son públicos; el resto vuelve al mapa.
+    if (!session) {
+      if (inAppGroup) router.replace('/');
+      return;
     }
-  }, [isInitialized, session, profile, segments]);
+
+    // Con sesión: esperar a saber si ya tiene perfil.
+    if (!profileChecked) return;
+
+    // Cuenta creada pero sin perfil: debe completarlo (con el consentimiento).
+    if (!profile) {
+      if (!(inAuthGroup && segments[1] === 'perfil')) router.replace('/(auth)/perfil');
+      return;
+    }
+
+    // Un conductor necesita conocer el estado de su verificación para saber adónde ir.
+    if (profile.rol === 'conductor' && !verificationChecked) return;
+
+    const estado = verification?.estado ?? null;
+    const destino = rutaInicial(profile.rol, estado);
+
+    if (inAuthGroup) {
+      router.replace(destino as never);
+    } else if (inAppGroup && !rutaPermitida(segments, profile.rol, estado)) {
+      router.replace(destino as never);
+    }
+  }, [isInitialized, session, profile, profileChecked, verification, verificationChecked, segments]);
 
   // ─── Pantalla de carga mientras se verifica la sesión o cargan fuentes ─────
   if (!isInitialized || isLoading || (!fontsLoaded && !fontError)) {

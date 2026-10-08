@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { Session, User } from '@supabase/supabase-js';
+import type { EstadoVerificacion } from '../utils/routing';
 
 /**
  * Perfil del usuario tal como se almacena en la tabla 'perfiles' de Supabase.
@@ -9,9 +10,20 @@ export interface UserProfile {
   nombre: string;
   telefono: string;
   rol: 'pasajero' | 'conductor' | 'admin';
+  activo?: boolean;
+  // Aún no existen como columnas de 'perfiles'; las pantallas de perfil y consola los
+  // leen de forma opcional. Se definirán con las calificaciones (después del piloto).
   estado_operativo?: 'disponible' | 'ocupado' | 'inactivo';
   calificacion?: number;
   avatar_url?: string;
+}
+
+/**
+ * Estado de la verificación de un conductor (solo aplica al rol conductor).
+ */
+export interface VerificationInfo {
+  estado: EstadoVerificacion;
+  motivo_rechazo?: string | null;
 }
 
 /**
@@ -22,8 +34,14 @@ interface AuthState {
   session: Session | null;
   /** Datos del usuario de Supabase Auth */
   user: User | null;
-  /** Perfil extendido del usuario (tabla 'perfiles') */
+  /** Perfil extendido del usuario (tabla 'perfiles'); null si aún no completó su registro */
   profile: UserProfile | null;
+  /** true cuando ya se intentó cargar el perfil (distingue "cargando" de "no tiene perfil") */
+  profileChecked: boolean;
+  /** Verificación del conductor; null si no es conductor o aún no se consulta */
+  verification: VerificationInfo | null;
+  /** true cuando ya se consultó la verificación del conductor */
+  verificationChecked: boolean;
   /** Indica si se está cargando la sesión inicial */
   isLoading: boolean;
   /** Indica si se completó la verificación inicial de sesión */
@@ -32,8 +50,10 @@ interface AuthState {
   // ─── Acciones ──────────────────────────────────────────────
   /** Establece la sesión y el usuario tras el login */
   setSession: (session: Session | null) => void;
-  /** Establece el perfil del usuario */
+  /** Establece el perfil del usuario y marca que ya se consultó */
   setProfile: (profile: UserProfile | null) => void;
+  /** Establece la verificación del conductor y marca que ya se consultó */
+  setVerification: (verification: VerificationInfo | null) => void;
   /** Marca el store como cargado */
   setLoading: (loading: boolean) => void;
   /** Marca la inicialización como completada */
@@ -45,13 +65,16 @@ interface AuthState {
 /**
  * Store global de autenticación usando Zustand.
  *
- * Gestiona la sesión de Supabase Auth, el perfil del usuario
- * y el estado de carga inicial.
+ * Gestiona la sesión de Supabase Auth, el perfil del usuario,
+ * la verificación del conductor y el estado de carga inicial.
  */
 export const useAuthStore = create<AuthState>((set) => ({
   session: null,
   user: null,
   profile: null,
+  profileChecked: false,
+  verification: null,
+  verificationChecked: false,
   isLoading: true,
   isInitialized: false,
 
@@ -61,7 +84,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       user: session?.user ?? null,
     }),
 
-  setProfile: (profile) => set({ profile }),
+  setProfile: (profile) => set({ profile, profileChecked: true }),
+
+  setVerification: (verification) => set({ verification, verificationChecked: true }),
 
   setLoading: (isLoading) => set({ isLoading }),
 
@@ -72,6 +97,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       session: null,
       user: null,
       profile: null,
+      profileChecked: false,
+      verification: null,
+      verificationChecked: false,
       isLoading: false,
     }),
 }));

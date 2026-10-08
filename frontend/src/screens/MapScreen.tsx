@@ -7,7 +7,7 @@ import {
   Alert,
 } from 'react-native';
 import MapView, { Marker } from '../components/Map';
-import Animated, { Easing, FadeInUp, FadeOut, ReduceMotion } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
@@ -25,14 +25,12 @@ import { useLocationStore, type NearbyDriver } from '../store/useLocationStore';
 import { useRideStore } from '../store/useRideStore';
 import { SECTORS, MAX_PASSENGERS } from '../constants/sectors';
 import { LOCATION_CONFIG, API_CONFIG } from '../constants/config';
-import { COLORS, FONTS, SPACING, SHAPES, Z_INDEX, ANIMATION } from '../constants/theme';
+import { COLORS, FONTS, SPACING, SHAPES, Z_INDEX } from '../constants/theme';
+import { PANEL_IN, PANEL_OUT } from '../constants/motion';
+import { rutaInicial } from '../utils/routing';
+import { useRouter } from 'expo-router';
+import { useAuthStore } from '../store/useAuthStore';
 import { authFetch } from '../utils/authFetch';
-
-/** Entrada de paneles: corta y con ease-out; respeta "reducir movimiento" del sistema. */
-const PANEL_IN = FadeInUp.duration(ANIMATION.enterDuration)
-  .easing(Easing.bezier(...ANIMATION.easeOut))
-  .reduceMotion(ReduceMotion.System);
-const PANEL_OUT = FadeOut.duration(ANIMATION.exitDuration).reduceMotion(ReduceMotion.System);
 
 /**
  * Pantalla principal del mapa para el pasajero.
@@ -47,6 +45,10 @@ const PANEL_OUT = FadeOut.duration(ANIMATION.exitDuration).reduceMotion(ReduceMo
  */
 export const MapScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const session = useAuthStore((st) => st.session);
+  const authProfile = useAuthStore((st) => st.profile);
+  const authVerification = useAuthStore((st) => st.verification);
   const { userCoords, currentSectorId, hasPermission } = useLocation(false);
   const { joinSector, onEvent } = useSocket();
   const nearbyDrivers = useLocationStore((s) => s.nearbyDrivers);
@@ -101,6 +103,11 @@ export const MapScreen: React.FC = () => {
 
   // ─── Solicitar viaje ──────────────────────────────────────
   const handleRequestRide = useCallback(async () => {
+    // Pedir un viaje requiere cuenta: un visitante pasa primero por el inicio de sesión.
+    if (!session) {
+      router.push('/(auth)/login');
+      return;
+    }
     const originSector = SECTORS.find((s) => s.id === currentSectorId);
     const destinationSector = SECTORS.find((s) => s.id === selectedDestination);
     if (!originSector || !destinationSector) return;
@@ -152,6 +159,8 @@ export const MapScreen: React.FC = () => {
       setRequesting(false);
     }
   }, [
+    session,
+    router,
     currentSectorId,
     selectedDestination,
     userCoords,
@@ -232,8 +241,9 @@ export const MapScreen: React.FC = () => {
       <Animated.View
         entering={PANEL_IN}
         style={[styles.statusContainer, { top: insets.top + 12 }]}
-        pointerEvents="none"
+        pointerEvents="box-none"
       >
+        <View style={styles.statusRow}>
         <BlurContainer intensity={30} style={styles.statusPill}>
           <Ionicons
             name={currentSectorId ? 'location' : 'location-outline'}
@@ -244,6 +254,22 @@ export const MapScreen: React.FC = () => {
             {statusText}
           </Text>
         </BlurContainer>
+        <PressableScale
+          onPress={() =>
+            router.push(
+              (session && authProfile
+                ? rutaInicial(authProfile.rol, authVerification?.estado ?? null)
+                : '/(auth)/login') as never
+            )
+          }
+          accessibilityRole="button"
+          accessibilityLabel={session ? 'Mi cuenta' : 'Iniciar sesión'}
+          style={styles.accountButton}
+        >
+          <Ionicons name={session ? 'person-circle' : 'log-in'} size={20} color={COLORS.white} />
+          <Text style={styles.accountText}>{session ? 'Mi cuenta' : 'Entrar'}</Text>
+        </PressableScale>
+        </View>
       </Animated.View>
 
       {/* ─── SELECTOR DE DESTINO ───────────────────────────── */}
@@ -397,11 +423,16 @@ const styles = StyleSheet.create({
     right: SPACING.md,
     zIndex: Z_INDEX.searchBar,
   },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: SPACING.sm,
+  },
   statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    maxWidth: '100%',
+    flexShrink: 1,
     paddingHorizontal: SPACING.md,
     paddingVertical: 12,
     borderRadius: SHAPES.borderRadiusFull,
@@ -414,6 +445,21 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.body,
     marginLeft: SPACING.sm,
     flexShrink: 1,
+  },
+  accountButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 44,
+    paddingHorizontal: SPACING.md,
+    borderRadius: SHAPES.borderRadiusFull,
+    backgroundColor: COLORS.primary,
+    gap: SPACING.xs,
+  },
+  accountText: {
+    color: COLORS.white,
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONTS.heading,
+    fontWeight: FONTS.weights.semibold,
   },
   sheetBody: {
     paddingHorizontal: SPACING.md,
