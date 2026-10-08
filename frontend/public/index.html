@@ -11,13 +11,25 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="CruciDrive" />
     <style>
+      html, body {
+        height: 100%;
+      }
       body {
         margin: 0;
         background-color: #0B0F19;
+        overflow: hidden;
+      }
+      /* Sin esto #root mide 0 de alto y los paneles pegados abajo (bottom: 0) quedan fuera de pantalla. */
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
       }
     </style>
     <script>
-      if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+      // En localhost no se registra: el service worker serviría el paquete viejo y ocultaría los cambios al desarrollar.
+      var isLocal = ['localhost', '127.0.0.1', '[::1]'].indexOf(location.hostname) !== -1;
+      if ('serviceWorker' in navigator && !isLocal) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(()=>{}));
     </script>
   </head>
   <body>

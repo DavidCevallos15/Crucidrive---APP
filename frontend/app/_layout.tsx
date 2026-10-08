@@ -35,6 +35,10 @@ export default function RootLayout() {
   const router = useRouter();
 
   const [fontsLoaded, fontError] = useFonts({
+    // Alias con el nombre que usan los estilos (FONTS.heading / FONTS.body). Sin ellos,
+    // 'Outfit' e 'Inter' no existen y el texto cae a la tipografía serif del navegador.
+    Outfit: Outfit_600SemiBold,
+    Inter: Inter_400Regular,
     'Outfit-Regular': Outfit_400Regular,
     'Outfit-Medium': Outfit_500Medium,
     'Outfit-SemiBold': Outfit_600SemiBold,
