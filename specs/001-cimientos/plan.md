@@ -15,6 +15,9 @@ Spec: [spec.md](./spec.md) · Tareas: [tasks.md](./tasks.md)
 | P7 | Tarifas: una fila por par con `sector_a < sector_b` + `obtener_tarifa(a, b)` | Dos filas por par | La simetría queda garantizada por construcción (criterio 3) |
 | P8 | `updated_at` por trigger (`private.tocar_updated_at`) | Enviarlo desde el backend | El cliente no puede falsearlo y el código no repite la lógica |
 | P9 | Backend: `req.supabase = createUserClient(jwt)`; cliente anon solo para `auth.getUser`; `getAdminClient()` perezoso y explícito | Un único cliente anon global | Con un cliente global RLS nunca ve al usuario (hallazgo de la auditoría) |
+| P11 | Rate limit holgado y configurable (`RATE_LIMIT_API=600`, `RATE_LIMIT_AUTH=60` por IP cada 15 min) + `TRUST_PROXY` | 100/20 del PR #2 | Las operadoras móviles comparten IP pública (CGNAT): un límite bajo bloquearía a toda la parroquia a la vez |
+| P12 | `errorResponse` nunca envía detalles internos al cliente; solo los registra | Enviar `details` | Los mensajes de Postgres revelan nombres de tablas, columnas y restricciones |
+| P13 | Validación de entrada en `utils/validation.js`, alineada con los CHECK de la BD | Solo confiar en la BD | Falla antes, con mensajes claros, sin gastar una consulta; la BD sigue siendo la última barrera |
 | P10 | `rls_auto_enable()` se conserva y se le quita EXECUTE a anon/authenticated | Borrarla | La usa el event trigger `ensure_rls` de Supabase (activa RLS en tablas nuevas) |
 
 ## Esquema resultante

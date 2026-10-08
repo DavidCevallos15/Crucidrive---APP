@@ -18,4 +18,6 @@ Cada tarea indica su prueba. Se tilda al cumplirse.
 - [x] T13 · Keepalive de Supabase cada 3 días → requiere secrets `SUPABASE_URL` y `SUPABASE_ANON_KEY` en GitHub
 - [x] T14 · `backend/.env.example` completo (criterio 5)
 - [x] T15 · EAS: `projectId` en `app.json` y `eas.json` con perfil `preview` (APK)
+- [x] T17 · Integrar PR #1 (manejo de errores) y PR #2 (endurecimiento) sobre la arquitectura nueva, en vez de resolver conflictos línea a línea → prueba: `tests/hardening.test.js` (27 casos); backend 80/80, frontend 69/69
+- [ ] T18 · Deuda técnica detectada: `tsc --noEmit` en frontend da 210 errores ya existentes en `main` (tipos de Jest no declarados para los tests y `baseUrl` obsoleto en TS 6). Se resuelve en 007 junto con D-01
 - [ ] T16 · Prueba de humo con 2 usuarios reales (pasajero y conductor) contra la BD nueva → registro, solicitud, aceptación y mensaje de chat

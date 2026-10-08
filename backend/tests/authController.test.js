@@ -4,7 +4,7 @@ jest.mock('../src/config/supabase', () => {
   const mockSingle = jest.fn();
   const mockSelect = jest.fn(() => ({ single: mockSingle }));
   const mockInsert = jest.fn(() => ({ select: mockSelect }));
-  const mockDeleteEq = jest.fn();
+  const mockDeleteEq = jest.fn().mockResolvedValue({ error: null });
   const mockDelete = jest.fn(() => ({ eq: mockDeleteEq }));
   const mockFrom = jest.fn(() => ({
     insert: mockInsert,
@@ -198,7 +198,7 @@ describe('authController - registerProfile', () => {
               single: jest.fn().mockResolvedValue({ data: mockPerfil, error: null }),
             })),
           })),
-          delete: jest.fn(() => ({ eq: jest.fn() })),
+          delete: jest.fn(() => ({ eq: jest.fn().mockResolvedValue({ error: null }) })),
         };
       }
       if (table === 'tricimotos') {

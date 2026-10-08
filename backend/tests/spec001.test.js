@@ -108,11 +108,11 @@ describe('spec 001 · controladores alineados al esquema', () => {
   it('aceptarViaje registra aceptado_en y crea el hilo con created_by', async () => {
     const { aceptarViaje } = require('../src/controllers/viajeController');
     const { db, llamadas } = crearDb([
-      { data: { id: 'v1', estado: 'solicitado', pasajero_id: 'p1' }, error: null },
-      { data: { id: 'v1', estado: 'aceptado' }, error: null },
-      { data: { id: 'h1' }, error: null },
+      { data: { id: '0a1b2c3d-0000-4000-8000-000000000001', estado: 'solicitado', pasajero_id: 'p1' }, error: null },
+      { data: { id: '0a1b2c3d-0000-4000-8000-000000000001', estado: 'aceptado' }, error: null },
+      { data: { id: '0b1c2d3e-0000-4000-8000-000000000001' }, error: null },
     ]);
-    const req = { body: { viajeId: 'v1' }, user: { id: 'c1' }, supabase: db };
+    const req = { body: { viajeId: '0a1b2c3d-0000-4000-8000-000000000001' }, user: { id: 'c1' }, supabase: db };
 
     await aceptarViaje(req, res());
 
@@ -120,16 +120,16 @@ describe('spec 001 · controladores alineados al esquema', () => {
     expect(upd.valores).toEqual(expect.objectContaining({ estado: 'aceptado', conductor_id: 'c1', aceptado_en: expect.any(String) }));
     expect(upd.valores).not.toHaveProperty('updated_at');
     const hilo = llamadas.find((l) => l.tabla === 'threads');
-    expect(hilo.filas[0]).toEqual({ viaje_id: 'v1', created_by: 'c1' });
+    expect(hilo.filas[0]).toEqual({ viaje_id: '0a1b2c3d-0000-4000-8000-000000000001', created_by: 'c1' });
   });
 
   it('cambiarEstadoViaje a finalizado registra finalizado_en y no envía updated_at', async () => {
     const { cambiarEstadoViaje } = require('../src/controllers/viajeController');
     const { db, llamadas } = crearDb([
-      { data: { id: 'v1', estado: 'en_curso', pasajero_id: 'p1', conductor_id: 'c1' }, error: null },
-      { data: { id: 'v1', estado: 'finalizado' }, error: null },
+      { data: { id: '0a1b2c3d-0000-4000-8000-000000000001', estado: 'en_curso', pasajero_id: 'p1', conductor_id: 'c1' }, error: null },
+      { data: { id: '0a1b2c3d-0000-4000-8000-000000000001', estado: 'finalizado' }, error: null },
     ]);
-    const req = { params: { id: 'v1' }, body: { estado: 'finalizado' }, user: { id: 'c1' }, supabase: db };
+    const req = { params: { id: '0a1b2c3d-0000-4000-8000-000000000001' }, body: { estado: 'finalizado' }, user: { id: 'c1' }, supabase: db };
 
     await cambiarEstadoViaje(req, res());
 

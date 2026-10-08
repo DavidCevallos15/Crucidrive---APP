@@ -1,6 +1,7 @@
 const asyncHandler = require('../utils/asyncHandler');
 const { errorResponse, successResponse } = require('../utils/response');
 const { checkThreadMembership } = require('../utils/supabaseHelpers');
+const { isUuid } = require('../utils/validation');
 
 /**
  * Obtiene el historial de mensajes de un hilo de conversación de chat.
@@ -13,6 +14,10 @@ const getHistorialChat = asyncHandler(async (req, res) => {
 
   if (!threadId) {
     return errorResponse(res, 400, 'El identificador del hilo (threadId) es obligatorio.');
+  }
+
+  if (!isUuid(threadId)) {
+    return errorResponse(res, 400, 'El identificador del hilo no es válido.');
   }
 
   const { member, error: memberError } = await checkThreadMembership(db, threadId, userId);

@@ -2,6 +2,18 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.9.0] - 2026-10-08 (Hora Local)
+
+### Integrado (sustituye a los PR #1 y #2, que tenían conflictos con `main`)
+- **PR #1 · manejo de errores:** frontend envía `viajeId` (antes `viaje_id`) y lee `data.data` (antes `data.viaje`/`data.messages`); alertas al usuario en solicitar/aceptar viaje; `useSocket` no emite si no hay conexión; rollbacks registran su propio fallo; 404 y manejador global de errores; sockets sin perfil se rechazan en vez de asumir "pasajero".
+- **PR #2 · endurecimiento:** helmet, CORS con lista blanca (`ALLOWED_ORIGINS`), límite de cuerpo, rate limiting, `errorResponse` sin detalles internos, validación de coordenadas, UUID, nombre, teléfono, placa, sector y longitud de mensajes (REST y sockets).
+- **Ajustes propios:** límites de rate limit holgados por CGNAT y configurables; `TRUST_PROXY`; placa validada con el mismo patrón que la BD (el formato ecuatoriano `ABC-1234` del PR #2 no aplica a todas las tricimotos); app Express separada en `src/app.js` para probarla.
+
+### Pruebas
+- Nuevo `tests/hardening.test.js`. Backend 80/80, frontend 69/69.
+
+---
+
 ## [1.8.0] - 2026-10-08 (Hora Local)
 
 ### Añadido

@@ -106,7 +106,11 @@ export const useSocket = () => {
    * Suscribirse a un sector geográfico para recibir ubicaciones de conductores.
    */
   const joinSector = useCallback((sectorId: string) => {
-    socketRef.current?.emit('join_sector', { sectorId });
+    if (!socketRef.current?.connected) {
+      console.warn('[Socket.io] No conectado. No se pudo unir al sector:', sectorId);
+      return;
+    }
+    socketRef.current.emit('join_sector', { sectorId });
   }, []);
 
   /**
@@ -114,7 +118,10 @@ export const useSocket = () => {
    */
   const updateLocation = useCallback(
     (sectorId: string, coords: { lat: number; lng: number }, estado: string) => {
-      socketRef.current?.emit('update_location', { sectorId, coords, estado });
+      if (!socketRef.current?.connected) {
+        return;
+      }
+      socketRef.current.emit('update_location', { sectorId, coords, estado });
     },
     []
   );
@@ -123,14 +130,22 @@ export const useSocket = () => {
    * Unirse a la sala de chat de un viaje.
    */
   const joinChat = useCallback((threadId: string) => {
-    socketRef.current?.emit('join_chat', { threadId });
+    if (!socketRef.current?.connected) {
+      console.warn('[Socket.io] No conectado. No se pudo unir al chat:', threadId);
+      return;
+    }
+    socketRef.current.emit('join_chat', { threadId });
   }, []);
 
   /**
    * Enviar un mensaje de chat.
    */
   const sendMessage = useCallback((threadId: string, content: string) => {
-    socketRef.current?.emit('send_message', { threadId, content });
+    if (!socketRef.current?.connected) {
+      console.warn('[Socket.io] No conectado. No se pudo enviar el mensaje.');
+      return;
+    }
+    socketRef.current.emit('send_message', { threadId, content });
   }, []);
 
   /**

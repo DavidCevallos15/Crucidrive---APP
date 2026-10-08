@@ -58,7 +58,7 @@ describe('chatController - getHistorialChat', () => {
   });
 
   it('should return 500 if member lookup returns an error', async () => {
-    req.params = { threadId: 'thread-1' };
+    req.params = { threadId: '0b1c2d3e-0000-4000-8000-000000000001' };
     checkThreadMembership.mockResolvedValue({ member: null, error: { message: 'DB error' } });
 
     await getHistorialChat(req, res);
@@ -72,7 +72,7 @@ describe('chatController - getHistorialChat', () => {
   });
 
   it('should return 403 if user is not a member of the thread', async () => {
-    req.params = { threadId: 'thread-1' };
+    req.params = { threadId: '0b1c2d3e-0000-4000-8000-000000000001' };
     checkThreadMembership.mockResolvedValue({ member: null, error: null });
 
     await getHistorialChat(req, res);
@@ -86,7 +86,7 @@ describe('chatController - getHistorialChat', () => {
   });
 
   it('should return messages successfully when user is a member', async () => {
-    req.params = { threadId: 'thread-1' };
+    req.params = { threadId: '0b1c2d3e-0000-4000-8000-000000000001' };
     checkThreadMembership.mockResolvedValue({ member: { id: 'member-1' }, error: null });
 
     const mockMessages = [
@@ -107,7 +107,7 @@ describe('chatController - getHistorialChat', () => {
   });
 
   it('should return 400 if messages query fails', async () => {
-    req.params = { threadId: 'thread-1' };
+    req.params = { threadId: '0b1c2d3e-0000-4000-8000-000000000001' };
     checkThreadMembership.mockResolvedValue({ member: { id: 'member-1' }, error: null });
 
     __mockOrder.mockResolvedValue({ data: null, error: { message: 'Query failed' } });
