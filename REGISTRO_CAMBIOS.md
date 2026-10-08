@@ -2,6 +2,15 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.14.0] - 2026-10-08 (Hora Local)
+
+### Verificado (T16 — cierra el paso 001)
+- Prueba de humo `npm run smoke` con 2 usuarios reales contra Supabase: 11/11 pasos OK (registro de pasajero y conductor, solicitud de 3 pasajeros con tarifa 1,50 fijada por la BD, aceptación, chat por socket e historial REST, `en_curso`, `finalizado`).
+- Datos de prueba que quedan en la BD: 2 perfiles, 1 tricimoto, 1 viaje finalizado, 1 hilo de chat con 1 mensaje.
+- Pendiente del 001: solo T18 (deuda de tipos del frontend), que pasa a `007-hardening`.
+
+---
+
 ## [1.13.0] - 2026-10-08 (Hora Local)
 
 ### Cambiado
