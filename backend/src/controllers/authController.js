@@ -1,4 +1,5 @@
 const asyncHandler = require('../utils/asyncHandler');
+const { CONSENT_VERSION } = require('../config/consent');
 const { errorResponse, successResponse } = require('../utils/response');
 const {
   isNombreValido, isTelefonoValido, isPlacaValida,
@@ -8,6 +9,8 @@ const {
 /**
  * Registra o completa el perfil de un usuario en public.perfiles.
  * Si el rol es 'conductor', también registra su unidad en public.tricimotos.
+ * Exige consentimiento LOPDP explícito (consentimiento: true): se guarda con la
+ * versión del texto y la fecha (la fija la BD) antes de crear el perfil.
  */
 const registerProfile = asyncHandler(async (req, res) => {
   const { rol } = req.body;
@@ -39,6 +42,18 @@ const registerProfile = asyncHandler(async (req, res) => {
 
   if (rol === 'conductor' && !isPlacaValida(placa)) {
     return errorResponse(res, 400, 'La placa solo puede tener letras, números y guiones (3 a 10 caracteres).');
+  }
+
+  if (req.body.consentimiento !== true) {
+    return errorResponse(res, 400, 'Debes aceptar el tratamiento de tus datos personales para crear tu cuenta.');
+  }
+
+  const { error: consentError } = await db
+    .from('consentimientos')
+    .insert([{ user_id: userId, version: CONSENT_VERSION }]);
+
+  if (consentError) {
+    return errorResponse(res, 400, 'No se pudo registrar tu consentimiento.', consentError.message);
   }
 
   const { data: perfilData, error: perfilError } = await db

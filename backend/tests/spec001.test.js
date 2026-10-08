@@ -97,7 +97,7 @@ describe('spec 001 · controladores alineados al esquema', () => {
   it('registerProfile normaliza la placa a mayúsculas sin espacios', async () => {
     const { registerProfile } = require('../src/controllers/authController');
     const { db, llamadas } = crearDb([{ data: { id: 'u1' }, error: null }, { data: { id: 't1' }, error: null }]);
-    const req = { body: { rol: 'conductor', nombre: 'Ana', telefono: '0991234567', placa: ' ab-123c ' }, user: { id: 'u1' }, supabase: db };
+    const req = { body: { consentimiento: true, rol: 'conductor', nombre: 'Ana', telefono: '0991234567', placa: ' ab-123c ' }, user: { id: 'u1' }, supabase: db };
 
     await registerProfile(req, res());
 

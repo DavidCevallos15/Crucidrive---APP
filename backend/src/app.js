@@ -7,6 +7,8 @@ const { errorResponse } = require('./utils/response');
 const authRoutes = require('./routes/authRoutes');
 const viajeRoutes = require('./routes/viajeRoutes');
 const chatRoutes = require('./routes/chatRoutes');
+const conductorRoutes = require('./routes/conductorRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const DEFAULT_ORIGINS = ['http://localhost:8081', 'http://localhost:19006'];
 
@@ -66,6 +68,8 @@ const createApp = () => {
   app.use('/api/auth', authRoutes);
   app.use('/api/viajes', viajeRoutes);
   app.use('/api/chats', chatRoutes);
+  app.use('/api/conductores', conductorRoutes);
+  app.use('/api/admin', adminRoutes);
 
   // Health check: no consulta Supabase ni expone detalles internos.
   app.get('/', (req, res) => {

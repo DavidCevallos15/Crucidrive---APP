@@ -95,18 +95,24 @@ const initSocketHandler = (io) => {
           return socket.emit('error_message', 'Estado de tricimoto inválido.');
         }
 
-        const { error } = await socket.supabase
+        const { data: actualizadas, error } = await socket.supabase
           .from('tricimotos')
           .update({
             ubicacion_actual: toWKT(lng, lat),
             estado: estadoFinal,
             sector_id: sectorId
           })
-          .eq('conductor_id', socket.user.id);
+          .eq('conductor_id', socket.user.id)
+          .select('conductor_id');
 
         if (error) {
           console.error(`[Socket.io] Error al guardar GPS en DB: ${error.message}`);
           return socket.emit('error_message', 'Error al guardar la ubicación.');
+        }
+
+        // La RLS no da error si el conductor no está aprobado: simplemente no actualiza ninguna fila.
+        if (!actualizadas || actualizadas.length === 0) {
+          return socket.emit('error_message', 'Tu cuenta de conductor aún no está aprobada.');
         }
 
         socket.to(`sector:${sectorId}`).emit('location_updated', {
