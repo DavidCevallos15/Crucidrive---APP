@@ -23,6 +23,9 @@ select (select count(*) from sectores) = 5 and (select count(*) from sectores wh
 select (select precio_por_persona from zonas where id = 'crucita') = 0.50 as precio_por_persona_ok;
 select to_regclass('public.tarifas') is null and to_regproc('public.obtener_tarifa') is null as sin_tarifas_por_ruta;
 
+-- Paso 002: sin consentimiento no hay perfil, y solo los conductores aprobados operan.
+insert into consentimientos (user_id, version) select id, 'test' from auth.users;
+
 set role authenticated;
 \echo '--- perfiles ---'
 select pg_temp.como('11111111-1111-1111-1111-111111111111');
@@ -37,6 +40,11 @@ select pg_temp.como('22222222-2222-2222-2222-222222222222');
 insert into perfiles (id, rol, nombre, telefono) values ('22222222-2222-2222-2222-222222222222','conductor','Carla','0992222222');
 select pg_temp.como('44444444-4444-4444-4444-444444444444');
 insert into perfiles (id, rol, nombre, telefono) values ('44444444-4444-4444-4444-444444444444','conductor','Diego','0994444444');
+reset role;
+insert into conductores_verificacion (conductor_id, cedula, foto_conductor, foto_cedula, foto_vehiculo, estado, revisado_por) values
+  ('22222222-2222-2222-2222-222222222222','1700000002','22222222-2222-2222-2222-222222222222/conductor.jpg','22222222-2222-2222-2222-222222222222/cedula.jpg','22222222-2222-2222-2222-222222222222/vehiculo.jpg','aprobado',null),
+  ('44444444-4444-4444-4444-444444444444','1700000004','44444444-4444-4444-4444-444444444444/conductor.jpg','44444444-4444-4444-4444-444444444444/cedula.jpg','44444444-4444-4444-4444-444444444444/vehiculo.jpg','aprobado',null);
+set role authenticated;
 
 \echo '--- tricimotos ---'
 select pg_temp.como('11111111-1111-1111-1111-111111111111');

@@ -7,7 +7,7 @@
     "dev": "nodemon src/index.js",
     "test": "jest --coverage",
     "test:watch": "jest --watch",
-    "smoke": "node scripts/smoke-001.js"
+    "smoke": "node scripts/smoke.js"
   },
   "repository": {
     "type": "git",

@@ -2,6 +2,22 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.17.0] - 2026-10-08 (Hora Local)
+
+### Paso 002 · identidad y aprobación de conductores (BD y backend)
+- **BD (`0010_identidad.sql`, aplicada al proyecto real):** tabla `consentimientos` (de solo anexar; la fecha la fija la BD; sin consentimiento no hay perfil), `conductores_verificacion` (cédula única, rutas de fotos dentro de la carpeta del conductor, estado pendiente/aprobado/rechazado, quién y cuándo revisó), funciones `es_conductor_aprobado` y un trigger que devuelve a "pendiente" una solicitud rechazada que el conductor corrige.
+- **Un conductor sin aprobar no opera, y lo impide la BD**, no solo el backend: no puede ponerse disponible, actualizar ubicación, ver viajes solicitados ni aceptar.
+- **Storage:** bucket privado `verificacion` (1 MB, solo JPEG); el conductor sube a su carpeta y el administrador lee todo. Nadie más.
+- **Backend:** registro con consentimiento obligatorio; `POST/GET /api/conductores/verificacion`; `/api/admin/conductores` (listar, detalle con enlaces firmados de 5 min, aprobar, rechazar con motivo); validación de cédula ecuatoriana; el socket avisa si un conductor no está aprobado.
+- **Primer administrador:** `jimdav1506ceva@gmail.com` (`supabase/one-off/2026-10-08_primer_admin.sql`). Se borraron los datos de la prueba de humo anterior (1 viaje, 1 chat, 1 mensaje y la tricimoto de esa cuenta).
+- **Pruebas:** `supabase/tests/run-docker.sh` ejecuta las suites SQL en Docker (rls_001: 17 en verde; rls_002: 16 en verde, más los bloqueos esperados). La prueba detectó y corrigió un fallo real: un conductor rechazado no podía reenviar sus datos. Backend 124/124.
+- **Prueba de humo:** `npm run smoke` ahora cubre todo el 002 (reemplaza a `smoke-001.js`) y necesita 3 cuentas.
+
+### Pendiente
+- T8 a T10 (pantallas de registro, verificación y panel de administrador), T12 (contraseña mínima en Supabase, la hace David) y T14 (ejecutar la prueba de humo con 3 cuentas).
+
+---
+
 ## [1.16.0] - 2026-10-08 (Hora Local)
 
 ### Frontend: pulido de interfaz (impeccable + design-taste + emil-design-eng)

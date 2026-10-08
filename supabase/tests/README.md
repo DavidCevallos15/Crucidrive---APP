@@ -2,7 +2,15 @@
 
 Validan las migraciones de `supabase/migrations/` y sus políticas RLS sin tocar el proyecto real.
 
-Requisitos: PostgreSQL 16+ con PostGIS (en Fedora: `sudo dnf install postgresql-server postgis`).
+Forma rápida (Docker, sin instalar nada más; desde la raíz del repo):
+
+```bash
+bash supabase/tests/run-docker.sh
+```
+
+Ejecuta todos los `rls_*.sql` en bases limpias con todas las migraciones y dice cuántas comprobaciones salen en verde (`t`) y en rojo (`f`).
+
+Forma manual. Requisitos: PostgreSQL 16+ con PostGIS (en Fedora: `sudo dnf install postgresql-server postgis`).
 
 ```bash
 createdb crucidrive_test
