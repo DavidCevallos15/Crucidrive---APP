@@ -2,6 +2,19 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.19.0] - 2026-10-08 (Hora Local)
+
+### Cierre del paso 002
+- **Prueba de humo con 3 cuentas (pasajero, conductor y administrador): 28 de 28 pasos OK.** Cubre consentimiento obligatorio, fotos privadas (y que nadie sube a la carpeta de otro), cédula con dígito verificador, conductor sin aprobar que no puede aceptar viajes ni usar el panel, aprobación del administrador con enlace firmado, viaje de 3 pasajeros con tarifa 1,50, chat en vivo y finalizado.
+- La primera ejecución falló en cascada por un error del guion: el conductor de prueba usaba el teléfono `0990000002`, que el administrador conserva de una prueba anterior (`perfiles.telefono` es único). Ahora usa `0990000003`.
+- La cuenta del conductor se había creado con "Invite user" y por eso no tenía contraseña; se recreó con "Create new user" y "Auto Confirm User".
+- El perfil del administrador se renombró de "Conductor Prueba" a "Administrador".
+
+### Pendiente (no es del 002)
+- La consola del conductor aún no recibe solicitudes de viaje (`setIncomingRequest` nunca se alimenta) y no hay despacho: eso es el paso 003.
+
+---
+
 ## [1.18.0] - 2026-10-08 (Hora Local)
 
 ### Paso 002 · pantallas de identidad (frontend)
