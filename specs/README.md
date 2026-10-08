@@ -7,7 +7,7 @@ Flujo por paso: spec → aprobación → plan → tareas → implementación (co
 | --- | --- | --- |
 | 0 | (validación de campo, sin código) | Pendiente (D-07: aliado institucional) |
 | 1 | `001-cimientos` | **Completo** (T18, deuda de tipos del frontend, pasa a 007) |
-| 2 | `002-identidad` | Spec, BD, backend y pantallas listos; falta la prueba de humo con 3 cuentas (T14) y revisar en pantalla las vistas del conductor y del administrador |
+| 2 | `002-identidad` | **Completo** (prueba de humo 28/28). Pendiente: texto de consentimiento revisado por un abogado y ver con sesiones reales las vistas del conductor y del administrador |
 | 3 | `003-despacho` | Sin iniciar |
 | 4 | `004-tracking-push` | Sin iniciar |
 | 5 | `005-viaje` | Sin iniciar |
