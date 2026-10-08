@@ -16,7 +16,7 @@ Este proyecto se desarrollará de forma iterativa priorizando la funcionalidad n
   - Renderizado de tricimotos activas en el mapa del pasajero (OpenStreetMap/Mapbox).
 
 - **Fase 4: Flujo de Viaje y Emergencia**
-  - Algoritmo de cálculo de tarifa fija por sector geocercado.
+  - Cobro de 0,50 USD por persona (sin precio por ruta), calculado por la BD (D-08).
   - Implementación del "Botón de Pánico" y compartición de ruta.
 
 - **Fase 5: Pulido y Despliegue**

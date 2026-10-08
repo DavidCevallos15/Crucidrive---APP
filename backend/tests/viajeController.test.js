@@ -109,16 +109,18 @@ describe('viajeController', () => {
       expect(res.status).toHaveBeenCalledWith(400);
     });
 
-    it('should create a trip successfully', async () => {
+    it('should create a trip successfully without sending a fare', async () => {
       req.body = {
-        origen: { lat: -1.04, lng: -80.54 },
-        destino: { lat: -1.05, lng: -80.55 },
+        origen: { lat: -0.8706, lng: -80.5375 },
+        destino: { lat: -0.8728, lng: -80.5428 },
+        tarifa: 9.99,
       };
       const mockViaje = {
         id: '0a1b2c3d-0000-4000-8000-000000000001',
         pasajero_id: 'user-123',
         estado: 'solicitado',
-        tarifa: 1.50,
+        pasajeros: 1,
+        tarifa: 0.5,
       };
 
       __mockSingle.mockResolvedValue({ data: mockViaje, error: null });
@@ -132,6 +134,75 @@ describe('viajeController', () => {
           data: mockViaje,
         })
       );
+      const [[fila]] = __mockInsert.mock.calls[0];
+      expect(fila).not.toHaveProperty('tarifa');
+      expect(fila.pasajeros).toBe(1);
+    });
+
+    it('should send passengers, sectors and descriptions to the database', async () => {
+      req.body = {
+        origen: { lat: -0.8706, lng: -80.5375 },
+        destino: { lat: -0.835, lng: -80.54 },
+        pasajeros: 3,
+        sectorOrigenId: 'centro',
+        sectorDestinoId: 'la_boca',
+        destinoDescripcion: '  Frente   al muelle  ',
+      };
+      __mockSingle.mockResolvedValue({ data: { id: 'x' }, error: null });
+
+      await solicitarViaje(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(201);
+      const [[fila]] = __mockInsert.mock.calls[0];
+      expect(fila).toMatchObject({
+        pasajeros: 3,
+        sector_origen_id: 'centro',
+        sector_destino_id: 'la_boca',
+        origen_descripcion: null,
+        destino_descripcion: 'Frente al muelle',
+      });
+    });
+
+    it.each([0, -1, 2.5, '2', 21, null])('should return 400 for passengers = %p', async (pasajeros) => {
+      req.body = {
+        origen: { lat: -0.8706, lng: -80.5375 },
+        destino: { lat: -0.8728, lng: -80.5428 },
+        pasajeros,
+      };
+
+      await solicitarViaje(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringContaining('pasajeros') })
+      );
+      expect(__mockInsert).not.toHaveBeenCalled();
+    });
+
+    it('should return 400 for an invalid sector id', async () => {
+      req.body = {
+        origen: { lat: -0.8706, lng: -80.5375 },
+        destino: { lat: -0.8728, lng: -80.5428 },
+        sectorDestinoId: 'Centro; drop table',
+      };
+
+      await solicitarViaje(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(__mockInsert).not.toHaveBeenCalled();
+    });
+
+    it('should return 400 for a description longer than 200 characters', async () => {
+      req.body = {
+        origen: { lat: -0.8706, lng: -80.5375 },
+        destino: { lat: -0.8728, lng: -80.5428 },
+        destinoDescripcion: 'a'.repeat(201),
+      };
+
+      await solicitarViaje(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(__mockInsert).not.toHaveBeenCalled();
     });
 
     it('should return 400 if supabase insert fails', async () => {

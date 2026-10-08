@@ -48,7 +48,7 @@ Debes organizar los archivos en el directorio `/frontend/src/` respetando estric
 ├── screens/          # Pantallas de la aplicación (LoginScreen, MapScreen, RideDetailScreen, DriverConsoleScreen, ChatScreen)
 ├── store/            # Almacenes Zustand (useAuthStore, useRideStore, useLocationStore)
 ├── styles/           # Configuración base de NativeWind y estilos globales de Tailwind
-└── utils/            # Utilidades de negocio (cálculo de tarifas fijas por geocerca, formateadores de distancia)
+└── utils/            # Utilidades de negocio (cálculo de tarifa por persona, formateadores)
 ```
 
 ---
@@ -68,7 +68,7 @@ Debes organizar los archivos en el directorio `/frontend/src/` respetando estric
 
 ### C. Ficha de Viaje y Ciclo de Solicitud (Bottom Sheet)
 1. **Diseño:** Un modal deslizante (Bottom Sheet) translúcido con desenfoque de fondo.
-2. **Cálculo de Tarifa:** Utilizar el módulo de utilidad local para mostrar la tarifa fija precalculada basada en la geocerca de origen y destino.
+2. **Cálculo de Tarifa:** Utilizar el módulo de utilidad local para mostrar el total: 0,50 USD por persona (D-08), sin depender de la ruta.
 3. **Flujo del Viaje:**
    - Botón grande de cristal naranja (`#F59E0B`) para "Solicitar Tricimoto". El viaje se inserta en estado `solicitado`.
    - Mostrar estado de búsqueda ("Buscando Conductor...") con un spinner animado en rotación y pulso continuo.

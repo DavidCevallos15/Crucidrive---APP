@@ -1,14 +1,23 @@
 const asyncHandler = require('../utils/asyncHandler');
 const { errorResponse, successResponse } = require('../utils/response');
 const { toWKT, isValidCoordinate } = require('../utils/geo');
-const { isUuid } = require('../utils/validation');
+const {
+  isUuid, isSectorId, isPasajerosValido, normalizarDescripcion, MAX_DESCRIPCION, MAX_PASAJEROS,
+} = require('../utils/validation');
 const { findViajeById } = require('../utils/supabaseHelpers');
 
 /**
  * Crea una nueva solicitud de viaje para el pasajero autenticado.
+ * El cobro es por persona (D-08): la tarifa NO se envía ni se calcula aquí;
+ * la fija un trigger de la BD como precio_por_persona × pasajeros.
+ * Cuerpo: { origen, destino, pasajeros?, sectorOrigenId?, sectorDestinoId?,
+ *           origenDescripcion?, destinoDescripcion? }
  */
 const solicitarViaje = asyncHandler(async (req, res) => {
-  const { origen, destino } = req.body;
+  const { origen, destino, sectorOrigenId, sectorDestinoId } = req.body;
+  const pasajeros = req.body.pasajeros === undefined ? 1 : req.body.pasajeros;
+  const origenDescripcion = normalizarDescripcion(req.body.origenDescripcion);
+  const destinoDescripcion = normalizarDescripcion(req.body.destinoDescripcion);
   const pasajeroId = req.user.id;
   const db = req.supabase;
 
@@ -20,7 +29,19 @@ const solicitarViaje = asyncHandler(async (req, res) => {
     return errorResponse(res, 400, 'Las coordenadas proporcionadas no son válidas.');
   }
 
-  const tarifa = 1.50;
+  if (!isPasajerosValido(pasajeros)) {
+    return errorResponse(res, 400, `El número de pasajeros debe ser un entero entre 1 y ${MAX_PASAJEROS}.`);
+  }
+
+  for (const sector of [sectorOrigenId, sectorDestinoId]) {
+    if (sector != null && !isSectorId(sector)) {
+      return errorResponse(res, 400, 'El identificador de sector no es válido.');
+    }
+  }
+
+  if (origenDescripcion.length > MAX_DESCRIPCION || destinoDescripcion.length > MAX_DESCRIPCION) {
+    return errorResponse(res, 400, `La descripción no puede superar ${MAX_DESCRIPCION} caracteres.`);
+  }
 
   const { data: viaje, error } = await db
     .from('viajes')
@@ -29,8 +50,12 @@ const solicitarViaje = asyncHandler(async (req, res) => {
         pasajero_id: pasajeroId,
         origen: toWKT(origen.lng, origen.lat),
         destino: toWKT(destino.lng, destino.lat),
-        estado: 'solicitado',
-        tarifa
+        sector_origen_id: sectorOrigenId ?? null,
+        sector_destino_id: sectorDestinoId ?? null,
+        pasajeros,
+        origen_descripcion: origenDescripcion || null,
+        destino_descripcion: destinoDescripcion || null,
+        estado: 'solicitado'
       }
     ])
     .select()

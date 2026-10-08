@@ -39,12 +39,12 @@ export interface ActiveRide {
   destinationSectorId: string;
   /** Nombre del sector de destino */
   destinationName: string;
-  /** Tarifa fija en USD */
+  /** Número de pasajeros */
+  passengers: number;
+  /** Total en USD (0,50 por persona; lo fija el servidor) */
   price: number;
-  /** Distancia estimada en km */
-  estimatedDistanceKm: number;
-  /** Tiempo estimado en minutos */
-  estimatedTimeMin: number;
+  /** Referencia de texto libre del destino (opcional) */
+  destinationNote: string;
   /** Datos del conductor asignado (null si aún no se ha aceptado) */
   driver: DriverInfo | null;
   /** ID del thread de chat asociado */

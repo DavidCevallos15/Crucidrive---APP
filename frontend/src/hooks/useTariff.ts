@@ -1,75 +1,37 @@
 import { useMemo } from 'react';
-import { findTariff, SECTORS } from '../constants/sectors';
-import type { TariffEntry } from '../constants/sectors';
+import { calculateFare, PRICE_PER_PERSON_USD } from '../constants/sectors';
 
 /**
  * Resultado del cálculo de tarifa.
  */
 interface TariffResult {
-  /** Entrada completa de tarifa (null si no se encontró) */
-  tariff: TariffEntry | null;
-  /** Nombre del sector de origen */
-  originName: string;
-  /** Nombre del sector de destino */
-  destinationName: string;
-  /** Tarifa formateada como string con símbolo de moneda */
+  /** Total estimado en USD (precio por persona × pasajeros) */
+  total: number;
+  /** Total con símbolo de moneda, p. ej. "$1.50" */
   formattedPrice: string;
-  /** Tiempo estimado formateado */
-  formattedTime: string;
-  /** Distancia estimada formateada */
-  formattedDistance: string;
+  /** Precio unitario con símbolo de moneda, p. ej. "$0.50" */
+  formattedPricePerPerson: string;
 }
 
 /**
- * Hook para calcular la tarifa fija entre dos sectores geográficos.
+ * Hook para calcular la tarifa de un viaje en Crucita.
  *
- * Utiliza la matriz de tarifas preconfigurada en constants/sectors.ts.
- * La tarifa es simétrica (A→B = B→A).
+ * El cobro es de 0,50 USD por persona, sin importar sectores ni distancia (D-08).
+ * Es una estimación para mostrar al pasajero: el servidor calcula el valor real.
  *
- * @param originSectorId - ID del sector de origen
- * @param destinationSectorId - ID del sector de destino
- * @returns Resultado del cálculo con datos formateados
+ * @param passengers - Número de pasajeros
  *
  * @example
- * const { tariff, formattedPrice } = useTariff('centro', 'playa');
- * // formattedPrice → "$1.50 USD"
+ * const { formattedPrice } = useTariff(3);
+ * // formattedPrice → "$1.50"
  */
-export const useTariff = (
-  originSectorId: string | null,
-  destinationSectorId: string | null
-): TariffResult => {
+export const useTariff = (passengers: number): TariffResult => {
   return useMemo(() => {
-    if (!originSectorId || !destinationSectorId) {
-      return {
-        tariff: null,
-        originName: '',
-        destinationName: '',
-        formattedPrice: '$0.00',
-        formattedTime: '--',
-        formattedDistance: '--',
-      };
-    }
-
-    // Buscar nombres de los sectores
-    const originSector = SECTORS.find((s) => s.id === originSectorId);
-    const destinationSector = SECTORS.find((s) => s.id === destinationSectorId);
-
-    // Buscar tarifa (simétrica)
-    const tariff = findTariff(originSectorId, destinationSectorId) ?? null;
-
+    const total = calculateFare(passengers);
     return {
-      tariff,
-      originName: originSector?.name ?? originSectorId,
-      destinationName: destinationSector?.name ?? destinationSectorId,
-      formattedPrice: tariff
-        ? `$${tariff.price.toFixed(2)}`
-        : '$0.00',
-      formattedTime: tariff
-        ? `~${tariff.estimatedTimeMin} min`
-        : '--',
-      formattedDistance: tariff
-        ? `${tariff.estimatedDistanceKm.toFixed(1)} km`
-        : '--',
+      total,
+      formattedPrice: `$${total.toFixed(2)}`,
+      formattedPricePerPerson: `$${PRICE_PER_PERSON_USD.toFixed(2)}`,
     };
-  }, [originSectorId, destinationSectorId]);
+  }, [passengers]);
 };

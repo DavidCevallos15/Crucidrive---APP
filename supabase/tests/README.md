@@ -13,4 +13,4 @@ dropdb crucidrive_test
 ```
 
 Resultado esperado: cada intento indebido aparece como `NOTICE: OK ... (bloqueado ...)`, todas las comprobaciones devuelven `t` y el script termina con `RLS: TODAS LAS PRUEBAS TERMINARON`.
-Última ejecución: 8 oct 2026, PostgreSQL 16 + PostGIS 3, 6 migraciones aplicadas, 21 comprobaciones en verde.
+Última ejecución: 8 oct 2026, PostgreSQL 16 + PostGIS 3, 7 migraciones aplicadas, 17 comprobaciones en verde (tras la enmienda 1; incluye tarifa por persona). En Windows: contenedor `postgis/postgis:16-3.4` y base creada con `template0`, porque la imagen preinstala PostGIS en `public`.

@@ -1,9 +1,10 @@
 /**
  * Sectores geográficos de Crucita, Manabí — Ecuador.
  *
- * Cada sector define un polígono de geocerca y su tarifa fija
- * hacia otros sectores. Este modelo elimina la necesidad de
- * calcular distancias dinámicas y simplifica la tarifación.
+ * Los sectores sirven para ubicar al usuario y despachar tricimotos cercanas.
+ * NO fijan el precio: en Crucita se cobra por persona (D-08), sin importar la ruta.
+ * Crucita, La Boca y Las Gilces son pines reales; Playa, Los Arenales y San Jacinto
+ * son provisionales hasta recibir su pin (ver migración 0008).
  */
 
 export interface SectorCoordinate {
@@ -22,19 +23,6 @@ export interface Sector {
   markerColor: string;
 }
 
-export interface TariffEntry {
-  /** Sector de origen */
-  originId: string;
-  /** Sector de destino */
-  destinationId: string;
-  /** Tarifa fija en USD */
-  price: number;
-  /** Distancia estimada en km */
-  estimatedDistanceKm: number;
-  /** Tiempo estimado en minutos */
-  estimatedTimeMin: number;
-}
-
 /**
  * Sectores operativos de Crucita.
  * Los nombres están en español ya que son topónimos locales.
@@ -43,77 +31,55 @@ export const SECTORS: Sector[] = [
   {
     id: 'centro',
     name: 'Centro de Crucita',
-    center: { lat: -1.0448, lng: -80.5432 },
+    center: { lat: -0.86297781, lng: -80.53690632 },
     markerColor: '#0D9488',
   },
   {
     id: 'playa',
     name: 'Malecón / Playa',
-    center: { lat: -1.0470, lng: -80.5485 },
+    center: { lat: -0.8652, lng: -80.5422 },
     markerColor: '#14B8A6',
   },
   {
     id: 'las_gilces',
     name: 'Las Gilces',
-    center: { lat: -1.0395, lng: -80.5350 },
+    center: { lat: -0.82141437, lng: -80.52405601 },
     markerColor: '#F59E0B',
   },
   {
     id: 'los_arenales',
     name: 'Los Arenales',
-    center: { lat: -1.0520, lng: -80.5410 },
+    center: { lat: -0.8702, lng: -80.5347 },
     markerColor: '#FBBF24',
   },
   {
     id: 'san_jacinto',
     name: 'San Jacinto',
-    center: { lat: -1.0600, lng: -80.5370 },
+    center: { lat: -0.8782, lng: -80.5307 },
     markerColor: '#10B981',
+  },
+  {
+    id: 'la_boca',
+    name: 'La Boca',
+    center: { lat: -0.80147852, lng: -80.52098189 },
+    markerColor: '#38BDF8',
   },
 ];
 
-/**
- * Matriz de tarifas fijas entre sectores.
- * Nota: La tarifa es simétrica (A→B cuesta igual que B→A).
- */
-export const TARIFFS: TariffEntry[] = [
-  // Centro ↔ Playa
-  { originId: 'centro', destinationId: 'playa', price: 1.50, estimatedDistanceKm: 1.2, estimatedTimeMin: 5 },
-  // Centro ↔ Las Gilces
-  { originId: 'centro', destinationId: 'las_gilces', price: 2.00, estimatedDistanceKm: 2.0, estimatedTimeMin: 8 },
-  // Centro ↔ Los Arenales
-  { originId: 'centro', destinationId: 'los_arenales', price: 1.75, estimatedDistanceKm: 1.5, estimatedTimeMin: 6 },
-  // Centro ↔ San Jacinto
-  { originId: 'centro', destinationId: 'san_jacinto', price: 2.40, estimatedDistanceKm: 3.2, estimatedTimeMin: 10 },
-  // Playa ↔ Las Gilces
-  { originId: 'playa', destinationId: 'las_gilces', price: 2.50, estimatedDistanceKm: 3.0, estimatedTimeMin: 12 },
-  // Playa ↔ Los Arenales
-  { originId: 'playa', destinationId: 'los_arenales', price: 1.50, estimatedDistanceKm: 1.0, estimatedTimeMin: 4 },
-  // Playa ↔ San Jacinto
-  { originId: 'playa', destinationId: 'san_jacinto', price: 2.20, estimatedDistanceKm: 2.8, estimatedTimeMin: 9 },
-  // Las Gilces ↔ Los Arenales
-  { originId: 'las_gilces', destinationId: 'los_arenales', price: 2.00, estimatedDistanceKm: 2.2, estimatedTimeMin: 8 },
-  // Las Gilces ↔ San Jacinto
-  { originId: 'las_gilces', destinationId: 'san_jacinto', price: 3.00, estimatedDistanceKm: 4.0, estimatedTimeMin: 15 },
-  // Los Arenales ↔ San Jacinto
-  { originId: 'los_arenales', destinationId: 'san_jacinto', price: 1.50, estimatedDistanceKm: 1.3, estimatedTimeMin: 5 },
-];
+/** Precio por persona en USD. Solo para mostrar; el servidor fija el cobro real. */
+export const PRICE_PER_PERSON_USD = 0.5;
+
+/** Tope de pasajeros por solicitud (barrera técnica; igual al CHECK de la BD). */
+export const MAX_PASSENGERS = 20;
 
 /**
- * Busca la tarifa fija entre dos sectores.
- * @param originId - ID del sector de origen
- * @param destinationId - ID del sector de destino
- * @returns Entrada de tarifa o undefined si no existe la ruta
+ * Total estimado del viaje: precio por persona × número de pasajeros.
+ * No depende del origen, el destino ni la distancia.
+ * @param passengers - Número de personas (entero ≥ 1)
  */
-export const findTariff = (
-  originId: string,
-  destinationId: string
-): TariffEntry | undefined => {
-  return TARIFFS.find(
-    (t) =>
-      (t.originId === originId && t.destinationId === destinationId) ||
-      (t.originId === destinationId && t.destinationId === originId)
-  );
+export const calculateFare = (passengers: number): number => {
+  const people = Number.isInteger(passengers) && passengers >= 1 ? passengers : 1;
+  return Math.round(people * PRICE_PER_PERSON_USD * 100) / 100;
 };
 
 /**

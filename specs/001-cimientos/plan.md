@@ -12,7 +12,7 @@ Spec: [spec.md](./spec.md) · Tareas: [tasks.md](./tasks.md)
 | P4 | Funciones auxiliares de RLS en schema `private` (`security definer`, `search_path=''`) | Subconsultas directas en cada política | Evita recursión entre políticas de `threads`/`thread_members` y no se exponen vía `/rpc` |
 | P5 | `auth.uid()` siempre como `(select auth.uid())` | Llamada directa | Se evalúa una vez por consulta (aviso de rendimiento del linter) |
 | P6 | Permisos de UPDATE por columna (`grant update (col, ...)`) | Solo RLS por fila | RLS no limita columnas: sin esto un pasajero podría cambiar `tarifa` o su `rol` |
-| P7 | Tarifas: una fila por par con `sector_a < sector_b` + `obtener_tarifa(a, b)` | Dos filas por par | La simetría queda garantizada por construcción (criterio 3) |
+| P7 | ~~Tarifas por par de sectores~~ → **reemplazado (D-08, migración 0007):** `zonas.precio_por_persona` + trigger `private.fijar_tarifa_viaje` (tarifa = precio × pasajeros) | Calcular en el backend | El cliente no puede fijar el precio ni en el INSERT, y el cambio de precio no requiere publicar la app |
 | P8 | `updated_at` por trigger (`private.tocar_updated_at`) | Enviarlo desde el backend | El cliente no puede falsearlo y el código no repite la lógica |
 | P9 | Backend: `req.supabase = createUserClient(jwt)`; cliente anon solo para `auth.getUser`; `getAdminClient()` perezoso y explícito | Un único cliente anon global | Con un cliente global RLS nunca ve al usuario (hallazgo de la auditoría) |
 | P11 | Rate limit holgado y configurable (`RATE_LIMIT_API=600`, `RATE_LIMIT_AUTH=60` por IP cada 15 min) + `TRUST_PROXY` | 100/20 del PR #2 | Las operadoras móviles comparten IP pública (CGNAT): un límite bajo bloquearía a toda la parroquia a la vez |
@@ -26,7 +26,7 @@ Spec: [spec.md](./spec.md) · Tareas: [tasks.md](./tasks.md)
 | --- | --- | --- |
 | `zonas` | `id` text | Catálogo; lectura pública |
 | `sectores` | `id` text | `centro geography(point)`, FK a zona; lectura pública |
-| `tarifas` | `id` identity | Par ordenado único; lectura pública |
+| ~~`tarifas`~~ | — | Eliminada en 0007 (D-08) |
 | `perfiles` | `id` = `auth.users.id` | `rol` no editable por el usuario; nadie se auto-asigna admin |
 | `tricimotos` | `id` uuid | 1:1 con conductor; `placa` única en mayúsculas; índice GiST en `ubicacion_actual` |
 | `viajes` | `id` uuid | `aceptado_en`, `finalizado_en`, `updated_at`; sectores de origen/destino |
@@ -47,7 +47,7 @@ Spec: [spec.md](./spec.md) · Tareas: [tasks.md](./tasks.md)
 
 ## Riesgos conocidos (se cierran en pasos posteriores)
 - Las transiciones de estado de `viajes` las valida el backend, no la BD. La aceptación atómica (solo un conductor gana) es una RPC del paso 003.
-- Al crear un viaje, el cliente puede enviar `tarifa` (los permisos por columna solo protegen UPDATE). Hoy el backend la fija; en 005 la calculará el servidor con `obtener_tarifa` y se quitará del INSERT del cliente.
+- ~~Al crear un viaje, el cliente puede enviar `tarifa`~~ → resuelto en 0007: un trigger `BEFORE INSERT` recalcula siempre la tarifa (0,50 × pasajeros).
 - `tricimotos` visibles para cualquier autenticado cuando no están inactivas: se revisará la exposición de ubicación en 007.
 - El historial de Supabase registra las migraciones con la fecha en que se aplican por MCP. Si luego se usa `supabase db push`, hay que alinear versiones con `supabase migration repair`.
 
