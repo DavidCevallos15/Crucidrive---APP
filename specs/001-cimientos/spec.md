@@ -19,7 +19,7 @@ Hoy el esquema vive en un solo `database.sql`, y sectores y tarifas están fijos
 4. **Dado** un push a `main` o un PR, **cuando** corre la integración continua, **entonces** se ejecutan los tests del backend y del frontend y el resultado es visible.
 5. **Dado** `.env.example` de backend y frontend, **cuando** un desarrollador nuevo lo copia y completa, **entonces** el proyecto arranca sin variables faltantes.
 6. **(Enmienda 1)** **Dado** un viaje con N pasajeros, **cuando** se inserta, **entonces** `tarifa` = 0,50 × N aunque el cliente envíe otro valor, y no existen `tarifas` ni `obtener_tarifa`.
-7. **(Enmienda 1)** **Dado** la semilla de Crucita, **cuando** se consulta `sectores`, **entonces** devuelve 6 sectores (incluido `la_boca`) y `zonas.precio_por_persona` = 0,50. Centro, La Boca y Las Gilces usan pines reales (migración 0008); Playa, Los Arenales y San Jacinto son provisionales hasta recibir su pin.
+7. **(Enmienda 1)** **Dado** la semilla de Crucita, **cuando** se consulta `sectores`, **entonces** devuelve los 5 sectores definitivos (`la_boca`, `las_gilces`, `los_arenales`, `malecon`, `la_loma`) y `zonas.precio_por_persona` = 0,50. Los 5 centros son pines reales de Google Maps (migración 0009).
 
 ## Estado real de la BD (auditoría del 8 oct 2026)
 Proyecto Supabase `Crucidrive - APP` (estaba pausado; reactivado el 8 oct). Todas las tablas tienen **0 filas**, así que el esquema puede reconstruirse sin perder datos.

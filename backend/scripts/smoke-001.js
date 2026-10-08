@@ -47,11 +47,16 @@ const login = async (email, password) => {
 };
 
 const http = async (token, method, ruta, cuerpo) => {
-  const res = await fetch(`${API}${ruta}`, {
-    method,
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: cuerpo ? JSON.stringify(cuerpo) : undefined,
-  });
+  let res;
+  try {
+    res = await fetch(`${API}${ruta}`, {
+      method,
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+    });
+  } catch (e) {
+    throw new Error(`No se pudo conectar con ${API} (${e.cause?.code || e.message}). ¿Está corriendo "npm run dev" en otra terminal?`);
+  }
   const json = await res.json().catch(() => ({}));
   return { status: res.status, json };
 };
@@ -80,10 +85,10 @@ const conectarSocket = (token) =>
 
   // 2. Solicitud: 3 pasajeros => 1,50 USD calculado por la BD (se intenta colar otra tarifa)
   const sol = await http(pas.token, 'POST', '/api/viajes/solicitar', {
-    origen: { lat: -0.86297781, lng: -80.53690632 },
+    origen: { lat: -0.8699838, lng: -80.53995042 },
     destino: { lat: -0.80147852, lng: -80.52098189 },
     pasajeros: 3,
-    sectorOrigenId: 'centro',
+    sectorOrigenId: 'malecon',
     sectorDestinoId: 'la_boca',
     destinoDescripcion: 'Prueba de humo',
     tarifa: 99,

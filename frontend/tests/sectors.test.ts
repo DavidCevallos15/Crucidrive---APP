@@ -9,8 +9,8 @@ import {
 
 describe('sectors constants', () => {
   describe('SECTORS', () => {
-    it('should have 6 defined sectors', () => {
-      expect(SECTORS).toHaveLength(6);
+    it('should have 5 defined sectors', () => {
+      expect(SECTORS).toHaveLength(5);
     });
 
     it('should have unique sector IDs', () => {
@@ -28,13 +28,8 @@ describe('sectors constants', () => {
     });
 
     it('should contain the expected sector IDs', () => {
-      const ids = SECTORS.map((s) => s.id);
-      expect(ids).toContain('centro');
-      expect(ids).toContain('playa');
-      expect(ids).toContain('las_gilces');
-      expect(ids).toContain('los_arenales');
-      expect(ids).toContain('san_jacinto');
-      expect(ids).toContain('la_boca');
+      const ids = SECTORS.map((s) => s.id).sort();
+      expect(ids).toEqual(['la_boca', 'la_loma', 'las_gilces', 'los_arenales', 'malecon']);
     });
 
     it('each sector should have a name and markerColor', () => {
@@ -76,46 +71,25 @@ describe('sectors constants', () => {
   });
 
   describe('findNearestSector', () => {
-    it('should return centro sector for coordinates near centro', () => {
+    it.each([
+      ['la_boca', -0.80147852, -80.52098189],
+      ['las_gilces', -0.82141437, -80.52405601],
+      ['los_arenales', -0.8567572, -80.53186699],
+      ['malecon', -0.8699838, -80.53995042],
+      ['la_loma', -0.88463806, -80.54802452],
+    ])('should return %s for its own pin', (id, lat, lng) => {
+      expect(findNearestSector(lat, lng).id).toBe(id);
+    });
+
+    it('should pick the closest sector for a point between two sectors', () => {
+      // Un punto en el centro de Crucita (-0.863, -80.537) queda entre Los Arenales y el Malecon.
       const result = findNearestSector(-0.86297781, -80.53690632);
-      expect(result.id).toBe('centro');
-    });
-
-    it('should return playa sector for coordinates near playa', () => {
-      const result = findNearestSector(-0.8652, -80.5422);
-      expect(result.id).toBe('playa');
-    });
-
-    it('should return las_gilces for coordinates near las_gilces', () => {
-      const result = findNearestSector(-0.82141437, -80.52405601);
-      expect(result.id).toBe('las_gilces');
-    });
-
-    it('should return los_arenales for coordinates near los_arenales', () => {
-      const result = findNearestSector(-0.8702, -80.5347);
-      expect(result.id).toBe('los_arenales');
-    });
-
-    it('should return la_boca for coordinates near la_boca', () => {
-      const result = findNearestSector(-0.80147852, -80.52098189);
-      expect(result.id).toBe('la_boca');
-    });
-
-    it('should return san_jacinto for coordinates near san_jacinto', () => {
-      const result = findNearestSector(-0.8782, -80.5307);
-      expect(result.id).toBe('san_jacinto');
+      expect(['los_arenales', 'malecon']).toContain(result.id);
     });
 
     it('should return the closest sector even for distant coordinates', () => {
-      // Far north - closest to la_boca (most northern sector)
-      const result = findNearestSector(-0.7500, -80.5200);
-      expect(result.id).toBe('la_boca');
-    });
-
-    it('should handle edge case of equidistant points by returning first match', () => {
-      // Use exact midpoint between two sectors - should return one of them
-      const result = findNearestSector(-0.8641, -80.5396);
-      expect(SECTORS.map(s => s.id)).toContain(result.id);
+      // Lejos al norte: el sector mas norte es La Boca
+      expect(findNearestSector(-0.7, -80.52).id).toBe('la_boca');
     });
 
     it('should always return a valid Sector object', () => {
