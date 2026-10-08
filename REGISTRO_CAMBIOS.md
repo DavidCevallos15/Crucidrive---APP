@@ -2,6 +2,15 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.20.0] - 2026-10-08 (Hora Local)
+
+### Paso 003 · spec de despacho y catálogo de lugares (en revisión)
+- `specs/003-despacho/spec.md`: disponibilidad real del conductor, asignación por distancia, aceptación atómica, cierre "sin conductor" a los 2 minutos, cancelación mientras busca, registro de ofertas sin coordenadas y catálogo de lugares desde OpenStreetMap con búsqueda tolerante a tildes y errores (D-09).
+- **D-11** (David): asignación mixta, de uno en uno a los 3 más cercanos (15 s cada uno) y luego aviso abierto a los demás disponibles. Añadida a la constitución.
+- Consulta a OpenStreetMap: unos 180 lugares con nombre en Crucita y alrededores, con duplicados y lugares fuera de la parroquia que hay que filtrar.
+
+---
+
 ## [1.19.0] - 2026-10-08 (Hora Local)
 
 ### Cierre del paso 002

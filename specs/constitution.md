@@ -23,6 +23,8 @@ Reglas no negociables. Cambiarlas requiere editar este archivo y registrarlo en 
 
 - D-09 (8 oct 2026): **Selector de negocios sin costo.** Nada de Google Places (se cobra por búsqueda). Se carga una vez un catálogo de lugares de Crucita desde OpenStreetMap (Overpass API, licencia ODbL: atribuir "© OpenStreetMap") a una tabla `lugares` en Supabase; la búsqueda es local (`pg_trgm`), no consume datos del mapa y no tiene costo por uso. El admin puede añadir lugares que falten y, si no hay coincidencia, el usuario escribe una referencia en texto libre. El mapa sigue siendo Google Maps (D-02; el SDK móvil es gratuito). Se especifica en `003-despacho`.
 
+- D-11 (8 oct 2026): **Asignación mixta del conductor.** El servidor ofrece el viaje de uno en uno a los 3 candidatos más cercanos al origen (15 s cada uno); si ninguno acepta, avisa a la vez a los demás disponibles y gana el primero. A los 2 minutos sin conductor la solicitud se cierra. El número de candidatos y los tiempos son parámetros del servidor. Se especifica en `003-despacho`.
+
 ## Decisiones abiertas
 - D-10: **Protección contra contraseñas filtradas** de Supabase Auth (aviso del linter). Hoy requiere un plan de pago; se pospone para no gastar. Mitigación mientras tanto: revisar la longitud mínima de contraseña en Supabase Auth. Reevaluar antes del piloto.
 - D-01: el backend es JavaScript (CommonJS). ¿Migrar a TypeScript o mantener JS con JSDoc? Se decide en `007-hardening`.
