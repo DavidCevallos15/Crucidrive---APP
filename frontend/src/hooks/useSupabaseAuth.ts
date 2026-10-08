@@ -174,8 +174,8 @@ export const useSupabaseAuth = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        setAuthError(errorData.message || 'Error al registrar el perfil.');
+        const errorData = await response.json().catch(() => null);
+        setAuthError(errorData?.message ?? 'Error al registrar el perfil.');
         return false;
       }
 

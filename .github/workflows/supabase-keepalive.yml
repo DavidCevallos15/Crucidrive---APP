@@ -1,0 +1,25 @@
+name: Supabase keepalive
+
+# El plan gratuito de Supabase pausa proyectos con poca actividad durante 7 días.
+# Una lectura liviana cada 3 días lo mantiene activo mientras se desarrolla.
+# Requiere los secrets SUPABASE_URL y SUPABASE_ANON_KEY en el repositorio.
+on:
+  schedule:
+    - cron: '17 13 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Leer el catálogo de zonas
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          status=$(curl -s -o /dev/null -w '%{http_code}' \
+            "$SUPABASE_URL/rest/v1/zonas?select=id&limit=1" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY")
+          echo "HTTP $status"
+          test "$status" = "200"

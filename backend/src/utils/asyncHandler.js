@@ -10,11 +10,11 @@ const { errorResponse } = require('./response');
  * @param {Function} fn - Controlador async (req, res, next) => Promise<void>
  * @returns {Function} Middleware de Express con manejo de errores.
  */
-const asyncHandler = (fn) => (req, res, next) => {
+const asyncHandler = (fn) => (req, res, next) =>
+  // Se devuelve la promesa para que quien llame (tests incluidos) pueda esperarla.
   Promise.resolve(fn(req, res, next)).catch((err) => {
     console.error(`[AsyncHandler] Error no capturado: ${err.message}`);
     errorResponse(res, 500, 'Error interno del servidor.', err.message);
   });
-};
 
 module.exports = asyncHandler;

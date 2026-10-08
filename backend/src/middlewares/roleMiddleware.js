@@ -1,4 +1,3 @@
-const { supabase } = require('../config/supabase');
 const { errorResponse } = require('../utils/response');
 
 /**
@@ -15,7 +14,7 @@ const roleMiddleware = (allowedRoles) => {
         return errorResponse(res, 401, 'Usuario no autenticado en el contexto de la petición.');
       }
 
-      const { data: perfil, error } = await supabase
+      const { data: perfil, error } = await req.supabase
         .from('perfiles')
         .select('rol')
         .eq('id', req.user.id)

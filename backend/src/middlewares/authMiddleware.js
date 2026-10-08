@@ -1,9 +1,10 @@
-const { supabase } = require('../config/supabase');
+const { supabase, createUserClient } = require('../config/supabase');
 const { errorResponse } = require('../utils/response');
 
 /**
- * Middleware para autenticar las peticiones entrantes usando el JWT de Supabase.
- * Valida el token contra la API de Supabase Auth.
+ * Autentica la petición con el JWT de Supabase y adjunta:
+ * - req.user: usuario de Supabase Auth.
+ * - req.supabase: cliente que actúa en nombre del usuario (RLS aplica).
  */
 const authMiddleware = async (req, res, next) => {
   try {
@@ -21,6 +22,7 @@ const authMiddleware = async (req, res, next) => {
     }
 
     req.user = user;
+    req.supabase = createUserClient(token);
     next();
   } catch (err) {
     errorResponse(res, 500, 'Error interno en el middleware de autenticación.', err.message);

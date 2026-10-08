@@ -6,6 +6,7 @@ import {
   Switch,
   Dimensions,
   Modal,
+  Alert,
 } from 'react-native';
 import MapView from '../components/Map';
 import Animated, {
@@ -115,11 +116,13 @@ export const DriverConsoleScreen: React.FC = () => {
 
       const response = await authFetch(API_CONFIG.endpoints.rides.accept, {
         method: 'POST',
-        body: JSON.stringify({ viaje_id: incomingRequest.id }),
+        body: JSON.stringify({ viajeId: incomingRequest.id }),
       });
 
       if (!response.ok) {
-        throw new Error('Error al aceptar el viaje');
+        const errorData = await response.json().catch(() => null);
+        Alert.alert('Error', errorData?.message ?? 'No se pudo aceptar el viaje.');
+        return;
       }
 
       setIncomingRequest(null);
@@ -127,6 +130,7 @@ export const DriverConsoleScreen: React.FC = () => {
       // TODO: Navegar a pantalla de viaje en curso
     } catch (error) {
       console.error('[DriverConsole] Error al aceptar:', error);
+      Alert.alert('Error de conexión', 'No se pudo conectar con el servidor para aceptar el viaje.');
     } finally {
       setIsAccepting(false);
     }

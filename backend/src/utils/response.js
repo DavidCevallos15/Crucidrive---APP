@@ -1,21 +1,22 @@
 /**
  * Helpers para estandarizar las respuestas JSON de la API REST.
- *
- * Evita duplicar manualmente la estructura { status, message, details }
- * en cada controlador y middleware.
  */
 
 /**
  * Envía una respuesta de error estandarizada.
+ * Los detalles internos (mensajes de Supabase, stack, etc.) se registran en el
+ * servidor pero NUNCA se envían al cliente: revelan esquema y lógica interna.
+ *
  * @param {import('express').Response} res
  * @param {number} statusCode - Código HTTP (400, 401, 403, 404, 500, etc.)
- * @param {string} message - Mensaje descriptivo del error.
- * @param {string|null} [details] - Detalles adicionales (p.ej. mensaje de Supabase).
+ * @param {string} message - Mensaje seguro para el cliente.
+ * @param {string|null} [internalDetails] - Detalle interno, solo para el log.
  */
-const errorResponse = (res, statusCode, message, details = null) => {
-  const body = { status: 'error', message };
-  if (details) body.details = details;
-  return res.status(statusCode).json(body);
+const errorResponse = (res, statusCode, message, internalDetails = null) => {
+  if (internalDetails) {
+    console.error(`[API ${statusCode}] ${message}: ${internalDetails}`);
+  }
+  return res.status(statusCode).json({ status: 'error', message });
 };
 
 /**

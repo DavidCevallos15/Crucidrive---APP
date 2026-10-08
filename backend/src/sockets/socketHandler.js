@@ -1,17 +1,20 @@
-const { supabase } = require('../config/supabase');
-const { toWKT } = require('../utils/geo');
+const { supabase, createUserClient } = require('../config/supabase');
+const { toWKT, isValidCoordinate } = require('../utils/geo');
 const { checkThreadMembership } = require('../utils/supabaseHelpers');
+const { isUuid, isSectorId, MAX_MENSAJE } = require('../utils/validation');
+
+const ESTADOS_TRICIMOTO = ['disponible', 'ocupado', 'inactivo'];
 
 /**
  * Registra y maneja los eventos de Socket.io para geolocalización y chat en tiempo real.
- * 
+ * Todo acceso a datos usa socket.supabase (JWT del usuario), así RLS aplica.
+ *
  * @param {import('socket.io').Server} io - Instancia del servidor de Socket.io.
  */
 const initSocketHandler = (io) => {
-  // Middleware de autenticación para WebSockets usando Supabase JWT
   io.use(async (socket, next) => {
     try {
-      const token = socket.handshake.auth?.token || 
+      const token = socket.handshake.auth?.token ||
                     socket.handshake.headers?.authorization?.split(' ')[1];
 
       if (!token) {
@@ -24,110 +27,142 @@ const initSocketHandler = (io) => {
         return next(new Error('Error de autenticación: Token inválido o expirado.'));
       }
 
-      const { data: perfil } = await supabase
+      const db = createUserClient(token);
+
+      const { data: perfil, error: perfilError } = await db
         .from('perfiles')
         .select('rol, nombre')
         .eq('id', user.id)
         .single();
 
+      if (perfilError) {
+        console.error(`[Socket.io] Error al obtener perfil para socket auth: ${perfilError.message}`);
+        return next(new Error('Error de autenticación: No se pudo verificar el perfil del usuario.'));
+      }
+
+      // Sin perfil no hay rol: no se asume "pasajero" por defecto.
+      if (!perfil) {
+        return next(new Error('Error de autenticación: Perfil de usuario no encontrado.'));
+      }
+
+      socket.supabase = db;
       socket.user = {
         id: user.id,
         email: user.email,
-        rol: perfil?.rol || 'pasajero',
-        nombre: perfil?.nombre || ''
+        rol: perfil.rol,
+        nombre: perfil.nombre || ''
       };
 
       next();
     } catch (err) {
+      console.error(`[Socket.io] Error en middleware de autenticación: ${err.message}`);
       next(new Error('Error interno del middleware de WebSockets.'));
     }
   });
 
   io.on('connection', (socket) => {
-    console.log(`[Socket.io] Nuevo cliente conectado: ${socket.user.nombre} (${socket.user.rol}) - ID: ${socket.id}`);
+    console.log(`[Socket.io] Cliente conectado: ${socket.user.nombre} (${socket.user.rol}) - ID: ${socket.id}`);
 
     // --- MÓDULO 1: GEOLOCALIZACIÓN Y GEOCERCAS ---
 
-    socket.on('join_sector', ({ sectorId }) => {
-      if (!sectorId) return;
+    socket.on('join_sector', ({ sectorId } = {}) => {
+      if (!isSectorId(sectorId)) {
+        return socket.emit('error_message', 'El identificador del sector (sectorId) no es válido.');
+      }
       const room = `sector:${sectorId}`;
       socket.join(room);
-      console.log(`[Socket.io] Usuario ${socket.user.nombre} se unió a la sala del sector: ${room}`);
+      console.log(`[Socket.io] ${socket.user.nombre} se unió a ${room}`);
     });
 
-    socket.on('update_location', async ({ sectorId, coords, estado }) => {
+    socket.on('update_location', async ({ sectorId, coords, estado } = {}) => {
       try {
         if (socket.user.rol !== 'conductor') {
           return socket.emit('error_message', 'Acción denegada. Solo los conductores pueden actualizar geolocalización.');
         }
 
-        if (!coords || !coords.lat || !coords.lng || !sectorId) {
+        if (!coords || !isSectorId(sectorId)) {
           return socket.emit('error_message', 'Parámetros de ubicación incompletos.');
         }
 
-        const { error } = await supabase
+        const lat = Number(coords.lat);
+        const lng = Number(coords.lng);
+        if (!isValidCoordinate(lat, lng)) {
+          return socket.emit('error_message', 'Coordenadas inválidas.');
+        }
+
+        const estadoFinal = estado || 'disponible';
+        if (!ESTADOS_TRICIMOTO.includes(estadoFinal)) {
+          return socket.emit('error_message', 'Estado de tricimoto inválido.');
+        }
+
+        const { error } = await socket.supabase
           .from('tricimotos')
           .update({
-            ubicacion_actual: toWKT(coords.lng, coords.lat),
-            estado: estado || 'disponible',
-            updated_at: new Date().toISOString()
+            ubicacion_actual: toWKT(lng, lat),
+            estado: estadoFinal,
+            sector_id: sectorId
           })
           .eq('conductor_id', socket.user.id);
 
         if (error) {
           console.error(`[Socket.io] Error al guardar GPS en DB: ${error.message}`);
-          return;
+          return socket.emit('error_message', 'Error al guardar la ubicación.');
         }
 
-        const room = `sector:${sectorId}`;
-        socket.to(room).emit('location_updated', {
+        socket.to(`sector:${sectorId}`).emit('location_updated', {
           conductorId: socket.user.id,
           nombre: socket.user.nombre,
-          coords,
-          estado: estado || 'disponible'
+          coords: { lat, lng },
+          estado: estadoFinal
         });
-
       } catch (err) {
         console.error(`[Socket.io] Error en update_location: ${err.message}`);
+        socket.emit('error_message', 'Error interno al actualizar la ubicación.');
       }
     });
 
     // --- MÓDULO 2: CHAT EN TIEMPO REAL ---
 
-    socket.on('join_chat', async ({ threadId }) => {
+    socket.on('join_chat', async ({ threadId } = {}) => {
       try {
-        if (!threadId) return;
+        if (!isUuid(threadId)) {
+          return socket.emit('error_message', 'El identificador del chat no es válido.');
+        }
 
-        const { member, error } = await checkThreadMembership(threadId, socket.user.id);
+        const { member, error } = await checkThreadMembership(socket.supabase, threadId, socket.user.id);
 
-        if (error || !member) {
-          console.warn(`[Socket.io] Acceso denegado a chat. Usuario ${socket.user.nombre} intentó ingresar a thread ${threadId}`);
+        if (error) {
+          console.error(`[Socket.io] Error al verificar membresía de chat: ${error.message}`);
+          return socket.emit('error_message', 'Error al verificar el acceso al chat.');
+        }
+
+        if (!member) {
+          console.warn(`[Socket.io] Acceso denegado: ${socket.user.id} intentó entrar a ${threadId}`);
           return socket.emit('error_message', 'No tienes permiso para ingresar a este chat.');
         }
 
-        const room = `chat:${threadId}`;
-        socket.join(room);
-        console.log(`[Socket.io] Usuario ${socket.user.nombre} ingresó a la sala de chat: ${room}`);
+        socket.join(`chat:${threadId}`);
       } catch (err) {
         console.error(`[Socket.io] Error en join_chat: ${err.message}`);
+        socket.emit('error_message', 'Error interno al unirse al chat.');
       }
     });
 
-    socket.on('send_message', async ({ threadId, content }) => {
+    socket.on('send_message', async ({ threadId, content } = {}) => {
       try {
-        if (!threadId || !content || content.trim() === '') {
-          return socket.emit('error_message', 'Contenido del mensaje vacío o threadId faltante.');
+        const texto = typeof content === 'string' ? content.trim() : '';
+
+        if (!isUuid(threadId) || texto === '') {
+          return socket.emit('error_message', 'Contenido del mensaje vacío o chat inválido.');
         }
 
-        const { data: message, error } = await supabase
+        if (texto.length > MAX_MENSAJE) {
+          return socket.emit('error_message', `El mensaje supera los ${MAX_MENSAJE} caracteres.`);
+        }
+
+        const { data: message, error } = await socket.supabase
           .from('messages')
-          .insert([
-            {
-              thread_id: threadId,
-              sender_id: socket.user.id,
-              content: content.trim()
-            }
-          ])
+          .insert([{ thread_id: threadId, sender_id: socket.user.id, content: texto }])
           .select(`
             id,
             thread_id,
@@ -146,15 +181,13 @@ const initSocketHandler = (io) => {
           return socket.emit('error_message', 'No se pudo guardar el mensaje.');
         }
 
-        const room = `chat:${threadId}`;
-        io.to(room).emit('message_received', message);
-
+        io.to(`chat:${threadId}`).emit('message_received', message);
       } catch (err) {
         console.error(`[Socket.io] Error en send_message: ${err.message}`);
+        socket.emit('error_message', 'Error interno al enviar el mensaje.');
       }
     });
 
-    // --- MÓDULO 3: DESCONEXIÓN ---
     socket.on('disconnect', () => {
       console.log(`[Socket.io] Cliente desconectado: ${socket.user.nombre} - ID: ${socket.id}`);
     });
