@@ -1,4 +1,4 @@
-const { solicitarViaje, aceptarViaje, cambiarEstadoViaje } = require('../src/controllers/viajeController');
+jest.mock('../src/utils/asyncHandler', () => (fn) => fn);
 
 jest.mock('../src/config/supabase', () => {
   const mockSingle = jest.fn();
@@ -8,14 +8,11 @@ jest.mock('../src/config/supabase', () => {
   const mockUpdate = jest.fn(() => ({ eq: mockUpdateEq }));
   const mockDeleteEq = jest.fn();
   const mockDelete = jest.fn(() => ({ eq: mockDeleteEq }));
-  const mockSelectChainEq = jest.fn(() => ({ single: mockSingle }));
-  const mockSelectChain = jest.fn(() => ({ eq: mockSelectChainEq }));
 
   const mockFrom = jest.fn(() => ({
     insert: mockInsert,
     update: mockUpdate,
     delete: mockDelete,
-    select: mockSelectChain,
   }));
 
   return {
@@ -28,11 +25,15 @@ jest.mock('../src/config/supabase', () => {
     __mockUpdateEq: mockUpdateEq,
     __mockDelete: mockDelete,
     __mockDeleteEq: mockDeleteEq,
-    __mockSelectChain: mockSelectChain,
-    __mockSelectChainEq: mockSelectChainEq,
   };
 });
 
+jest.mock('../src/utils/supabaseHelpers', () => ({
+  findViajeById: jest.fn(),
+}));
+
+const { solicitarViaje, aceptarViaje, cambiarEstadoViaje } = require('../src/controllers/viajeController');
+const { findViajeById } = require('../src/utils/supabaseHelpers');
 const {
   __mockFrom,
   __mockInsert,
@@ -40,10 +41,6 @@ const {
   __mockSingle,
   __mockUpdate,
   __mockUpdateEq,
-  __mockDelete,
-  __mockDeleteEq,
-  __mockSelectChain,
-  __mockSelectChainEq,
 } = require('../src/config/supabase');
 
 describe('viajeController', () => {
@@ -56,6 +53,15 @@ describe('viajeController', () => {
       json: jest.fn().mockReturnThis(),
     };
     jest.clearAllMocks();
+
+    __mockFrom.mockReturnValue({
+      insert: __mockInsert,
+      update: __mockUpdate,
+    });
+    __mockInsert.mockReturnValue({ select: __mockSelect });
+    __mockSelect.mockReturnValue({ single: __mockSingle });
+    __mockUpdate.mockReturnValue({ eq: __mockUpdateEq });
+    __mockUpdateEq.mockReturnValue({ select: __mockSelect });
   });
 
   describe('solicitarViaje', () => {
@@ -92,6 +98,17 @@ describe('viajeController', () => {
       expect(res.status).toHaveBeenCalledWith(400);
     });
 
+    it('should return 400 if destino.lng is missing', async () => {
+      req.body = {
+        origen: { lat: -1.04, lng: -80.54 },
+        destino: { lat: -1.05 },
+      };
+
+      await solicitarViaje(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
     it('should create a trip successfully', async () => {
       req.body = {
         origen: { lat: -1.04, lng: -80.54 },
@@ -104,9 +121,6 @@ describe('viajeController', () => {
         tarifa: 1.50,
       };
 
-      __mockFrom.mockReturnValue({ insert: __mockInsert });
-      __mockInsert.mockReturnValue({ select: __mockSelect });
-      __mockSelect.mockReturnValue({ single: __mockSingle });
       __mockSingle.mockResolvedValue({ data: mockViaje, error: null });
 
       await solicitarViaje(req, res);
@@ -126,30 +140,11 @@ describe('viajeController', () => {
         destino: { lat: -1.05, lng: -80.55 },
       };
 
-      __mockFrom.mockReturnValue({ insert: __mockInsert });
-      __mockInsert.mockReturnValue({ select: __mockSelect });
-      __mockSelect.mockReturnValue({ single: __mockSingle });
       __mockSingle.mockResolvedValue({ data: null, error: { message: 'Insert failed' } });
 
       await solicitarViaje(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
-    });
-
-    it('should return 500 on unexpected exception', async () => {
-      req.body = {
-        origen: { lat: -1.04, lng: -80.54 },
-        destino: { lat: -1.05, lng: -80.55 },
-      };
-
-      __mockFrom.mockImplementation(() => { throw new Error('Crash'); });
-
-      await solicitarViaje(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ details: 'Crash' })
-      );
     });
   });
 
@@ -169,11 +164,7 @@ describe('viajeController', () => {
 
     it('should return 404 if viaje is not found', async () => {
       req.body = { viajeId: 'viaje-999' };
-
-      __mockFrom.mockReturnValue({ select: __mockSelectChain });
-      __mockSelectChain.mockReturnValue({ eq: __mockSelectChainEq });
-      __mockSelectChainEq.mockReturnValue({ single: __mockSingle });
-      __mockSingle.mockResolvedValue({ data: null, error: { message: 'Not found' } });
+      findViajeById.mockResolvedValue({ viaje: null, error: { message: 'Not found' } });
 
       await aceptarViaje(req, res);
 
@@ -182,12 +173,8 @@ describe('viajeController', () => {
 
     it('should return 400 if viaje is not in solicitado state', async () => {
       req.body = { viajeId: 'viaje-1' };
-
-      __mockFrom.mockReturnValue({ select: __mockSelectChain });
-      __mockSelectChain.mockReturnValue({ eq: __mockSelectChainEq });
-      __mockSelectChainEq.mockReturnValue({ single: __mockSingle });
-      __mockSingle.mockResolvedValue({
-        data: { id: 'viaje-1', estado: 'en_curso', pasajero_id: 'p-1' },
+      findViajeById.mockResolvedValue({
+        viaje: { id: 'viaje-1', estado: 'en_curso', pasajero_id: 'p-1' },
         error: null,
       });
 
@@ -201,13 +188,58 @@ describe('viajeController', () => {
       );
     });
 
-    it('should return 500 on unexpected exception', async () => {
+    it('should accept a viaje successfully and create chat thread', async () => {
       req.body = { viajeId: 'viaje-1' };
-      __mockFrom.mockImplementation(() => { throw new Error('DB crash'); });
+      findViajeById.mockResolvedValue({
+        viaje: { id: 'viaje-1', estado: 'solicitado', pasajero_id: 'p-1' },
+        error: null,
+      });
+
+      const mockUpdated = { id: 'viaje-1', estado: 'aceptado', conductor_id: 'user-123' };
+      const mockThread = { id: 'thread-1' };
+
+      let callIdx = 0;
+      __mockFrom.mockImplementation((table) => {
+        callIdx++;
+        if (table === 'viajes') {
+          return {
+            update: jest.fn(() => ({
+              eq: jest.fn(() => ({
+                select: jest.fn(() => ({
+                  single: jest.fn().mockResolvedValue({ data: mockUpdated, error: null }),
+                })),
+              })),
+            })),
+          };
+        }
+        if (table === 'threads') {
+          return {
+            insert: jest.fn(() => ({
+              select: jest.fn(() => ({
+                single: jest.fn().mockResolvedValue({ data: mockThread, error: null }),
+              })),
+            })),
+          };
+        }
+        if (table === 'thread_members') {
+          return {
+            insert: jest.fn().mockResolvedValue({ error: null }),
+          };
+        }
+      });
 
       await aceptarViaje(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'success',
+          data: expect.objectContaining({
+            viaje: mockUpdated,
+            chat: { threadId: 'thread-1' },
+          }),
+        })
+      );
     });
   });
 
@@ -238,11 +270,7 @@ describe('viajeController', () => {
     it('should return 404 if viaje is not found', async () => {
       req.params = { id: 'viaje-999' };
       req.body = { estado: 'en_curso' };
-
-      __mockFrom.mockReturnValue({ select: __mockSelectChain });
-      __mockSelectChain.mockReturnValue({ eq: __mockSelectChainEq });
-      __mockSelectChainEq.mockReturnValue({ single: __mockSingle });
-      __mockSingle.mockResolvedValue({ data: null, error: null });
+      findViajeById.mockResolvedValue({ viaje: null, error: null });
 
       await cambiarEstadoViaje(req, res);
 
@@ -253,12 +281,8 @@ describe('viajeController', () => {
       req.params = { id: 'viaje-1' };
       req.body = { estado: 'en_curso' };
       req.user = { id: 'outsider' };
-
-      __mockFrom.mockReturnValue({ select: __mockSelectChain });
-      __mockSelectChain.mockReturnValue({ eq: __mockSelectChainEq });
-      __mockSelectChainEq.mockReturnValue({ single: __mockSingle });
-      __mockSingle.mockResolvedValue({
-        data: { id: 'viaje-1', pasajero_id: 'user-a', conductor_id: 'user-b', estado: 'aceptado' },
+      findViajeById.mockResolvedValue({
+        viaje: { id: 'viaje-1', pasajero_id: 'user-a', conductor_id: 'user-b', estado: 'aceptado' },
         error: null,
       });
 
@@ -270,12 +294,8 @@ describe('viajeController', () => {
     it('should return 400 if transitioning to en_curso from non-aceptado state', async () => {
       req.params = { id: 'viaje-1' };
       req.body = { estado: 'en_curso' };
-
-      __mockFrom.mockReturnValue({ select: __mockSelectChain });
-      __mockSelectChain.mockReturnValue({ eq: __mockSelectChainEq });
-      __mockSelectChainEq.mockReturnValue({ single: __mockSingle });
-      __mockSingle.mockResolvedValue({
-        data: { id: 'viaje-1', pasajero_id: 'user-123', conductor_id: 'c-1', estado: 'solicitado' },
+      findViajeById.mockResolvedValue({
+        viaje: { id: 'viaje-1', pasajero_id: 'user-123', conductor_id: 'c-1', estado: 'solicitado' },
         error: null,
       });
 
@@ -292,12 +312,8 @@ describe('viajeController', () => {
     it('should return 400 if transitioning to finalizado from non-en_curso state', async () => {
       req.params = { id: 'viaje-1' };
       req.body = { estado: 'finalizado' };
-
-      __mockFrom.mockReturnValue({ select: __mockSelectChain });
-      __mockSelectChain.mockReturnValue({ eq: __mockSelectChainEq });
-      __mockSelectChainEq.mockReturnValue({ single: __mockSingle });
-      __mockSingle.mockResolvedValue({
-        data: { id: 'viaje-1', pasajero_id: 'user-123', conductor_id: 'c-1', estado: 'aceptado' },
+      findViajeById.mockResolvedValue({
+        viaje: { id: 'viaje-1', pasajero_id: 'user-123', conductor_id: 'c-1', estado: 'aceptado' },
         error: null,
       });
 
@@ -309,12 +325,8 @@ describe('viajeController', () => {
     it('should return 400 if trying to cancel a finalizado trip', async () => {
       req.params = { id: 'viaje-1' };
       req.body = { estado: 'cancelado' };
-
-      __mockFrom.mockReturnValue({ select: __mockSelectChain });
-      __mockSelectChain.mockReturnValue({ eq: __mockSelectChainEq });
-      __mockSelectChainEq.mockReturnValue({ single: __mockSingle });
-      __mockSingle.mockResolvedValue({
-        data: { id: 'viaje-1', pasajero_id: 'user-123', conductor_id: 'c-1', estado: 'finalizado' },
+      findViajeById.mockResolvedValue({
+        viaje: { id: 'viaje-1', pasajero_id: 'user-123', conductor_id: 'c-1', estado: 'finalizado' },
         error: null,
       });
 
@@ -331,34 +343,13 @@ describe('viajeController', () => {
     it('should successfully transition to en_curso from aceptado', async () => {
       req.params = { id: 'viaje-1' };
       req.body = { estado: 'en_curso' };
-
-      const mockViaje = { id: 'viaje-1', pasajero_id: 'user-123', conductor_id: 'c-1', estado: 'aceptado' };
-      const mockUpdated = { ...mockViaje, estado: 'en_curso' };
-
-      // First call: select to get viaje
-      // Second call: update
-      let callIdx = 0;
-      __mockFrom.mockImplementation(() => {
-        callIdx++;
-        if (callIdx === 1) {
-          return {
-            select: jest.fn(() => ({
-              eq: jest.fn(() => ({
-                single: jest.fn().mockResolvedValue({ data: mockViaje, error: null }),
-              })),
-            })),
-          };
-        }
-        return {
-          update: jest.fn(() => ({
-            eq: jest.fn(() => ({
-              select: jest.fn(() => ({
-                single: jest.fn().mockResolvedValue({ data: mockUpdated, error: null }),
-              })),
-            })),
-          })),
-        };
+      findViajeById.mockResolvedValue({
+        viaje: { id: 'viaje-1', pasajero_id: 'user-123', conductor_id: 'c-1', estado: 'aceptado' },
+        error: null,
       });
+
+      const mockUpdated = { id: 'viaje-1', estado: 'en_curso' };
+      __mockSingle.mockResolvedValue({ data: mockUpdated, error: null });
 
       await cambiarEstadoViaje(req, res);
 
@@ -369,16 +360,6 @@ describe('viajeController', () => {
           data: mockUpdated,
         })
       );
-    });
-
-    it('should return 500 on unexpected exception', async () => {
-      req.params = { id: 'viaje-1' };
-      req.body = { estado: 'cancelado' };
-      __mockFrom.mockImplementation(() => { throw new Error('Crash'); });
-
-      await cambiarEstadoViaje(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
     });
   });
 });

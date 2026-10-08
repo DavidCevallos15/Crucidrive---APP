@@ -1,11 +1,9 @@
-const { getHistorialChat } = require('../src/controllers/chatController');
+jest.mock('../src/utils/asyncHandler', () => (fn) => fn);
 
 jest.mock('../src/config/supabase', () => {
-  const mockMaybeSingle = jest.fn();
   const mockOrder = jest.fn();
-  const mockEqInner = jest.fn(() => ({ maybeSingle: mockMaybeSingle }));
-  const mockEq = jest.fn(() => ({ eq: mockEqInner, single: jest.fn() }));
-  const mockSelect = jest.fn(() => ({ eq: mockEq, order: mockOrder }));
+  const mockEq = jest.fn(() => ({ order: mockOrder }));
+  const mockSelect = jest.fn(() => ({ eq: mockEq }));
   const mockFrom = jest.fn(() => ({ select: mockSelect }));
 
   return {
@@ -13,18 +11,20 @@ jest.mock('../src/config/supabase', () => {
     __mockFrom: mockFrom,
     __mockSelect: mockSelect,
     __mockEq: mockEq,
-    __mockEqInner: mockEqInner,
-    __mockMaybeSingle: mockMaybeSingle,
     __mockOrder: mockOrder,
   };
 });
 
+jest.mock('../src/utils/supabaseHelpers', () => ({
+  checkThreadMembership: jest.fn(),
+}));
+
+const { getHistorialChat } = require('../src/controllers/chatController');
+const { checkThreadMembership } = require('../src/utils/supabaseHelpers');
 const {
   __mockFrom,
   __mockSelect,
   __mockEq,
-  __mockEqInner,
-  __mockMaybeSingle,
   __mockOrder,
 } = require('../src/config/supabase');
 
@@ -43,7 +43,7 @@ describe('chatController - getHistorialChat', () => {
     jest.clearAllMocks();
   });
 
-  it('should return 400 if threadId param is missing', async () => {
+  it('should return 400 if threadId is missing', async () => {
     req.params = {};
 
     await getHistorialChat(req, res);
@@ -59,12 +59,7 @@ describe('chatController - getHistorialChat', () => {
 
   it('should return 500 if member lookup returns an error', async () => {
     req.params = { threadId: 'thread-1' };
-
-    __mockFrom.mockReturnValue({ select: __mockSelect });
-    __mockSelect.mockReturnValue({ eq: __mockEq });
-    __mockEq.mockReturnValue({ eq: __mockEqInner });
-    __mockEqInner.mockReturnValue({ maybeSingle: __mockMaybeSingle });
-    __mockMaybeSingle.mockResolvedValue({ data: null, error: { message: 'DB error' } });
+    checkThreadMembership.mockResolvedValue({ member: null, error: { message: 'DB error' } });
 
     await getHistorialChat(req, res);
 
@@ -78,12 +73,7 @@ describe('chatController - getHistorialChat', () => {
 
   it('should return 403 if user is not a member of the thread', async () => {
     req.params = { threadId: 'thread-1' };
-
-    __mockFrom.mockReturnValue({ select: __mockSelect });
-    __mockSelect.mockReturnValue({ eq: __mockEq });
-    __mockEq.mockReturnValue({ eq: __mockEqInner });
-    __mockEqInner.mockReturnValue({ maybeSingle: __mockMaybeSingle });
-    __mockMaybeSingle.mockResolvedValue({ data: null, error: null });
+    checkThreadMembership.mockResolvedValue({ member: null, error: null });
 
     await getHistorialChat(req, res);
 
@@ -97,35 +87,13 @@ describe('chatController - getHistorialChat', () => {
 
   it('should return messages successfully when user is a member', async () => {
     req.params = { threadId: 'thread-1' };
-    const mockMessages = [
-      { id: 'msg-1', content: 'Hola', sender_id: 'user-123', created_at: '2024-01-01' },
-      { id: 'msg-2', content: 'Hola!', sender_id: 'user-456', created_at: '2024-01-01' },
-    ];
+    checkThreadMembership.mockResolvedValue({ member: { id: 'member-1' }, error: null });
 
-    let callIdx = 0;
-    __mockFrom.mockImplementation((table) => {
-      callIdx++;
-      if (callIdx === 1) {
-        // thread_members lookup
-        return {
-          select: jest.fn(() => ({
-            eq: jest.fn(() => ({
-              eq: jest.fn(() => ({
-                maybeSingle: jest.fn().mockResolvedValue({ data: { id: 'member-1' }, error: null }),
-              })),
-            })),
-          })),
-        };
-      }
-      // messages lookup
-      return {
-        select: jest.fn(() => ({
-          eq: jest.fn(() => ({
-            order: jest.fn().mockResolvedValue({ data: mockMessages, error: null }),
-          })),
-        })),
-      };
-    });
+    const mockMessages = [
+      { id: 'msg-1', content: 'Hola', sender_id: 'user-123', created_at: '2024-01-01T00:00:00Z' },
+      { id: 'msg-2', content: 'Buenos días', sender_id: 'user-456', created_at: '2024-01-01T00:01:00Z' },
+    ];
+    __mockOrder.mockResolvedValue({ data: mockMessages, error: null });
 
     await getHistorialChat(req, res);
 
@@ -140,46 +108,12 @@ describe('chatController - getHistorialChat', () => {
 
   it('should return 400 if messages query fails', async () => {
     req.params = { threadId: 'thread-1' };
+    checkThreadMembership.mockResolvedValue({ member: { id: 'member-1' }, error: null });
 
-    let callIdx = 0;
-    __mockFrom.mockImplementation(() => {
-      callIdx++;
-      if (callIdx === 1) {
-        return {
-          select: jest.fn(() => ({
-            eq: jest.fn(() => ({
-              eq: jest.fn(() => ({
-                maybeSingle: jest.fn().mockResolvedValue({ data: { id: 'member-1' }, error: null }),
-              })),
-            })),
-          })),
-        };
-      }
-      return {
-        select: jest.fn(() => ({
-          eq: jest.fn(() => ({
-            order: jest.fn().mockResolvedValue({ data: null, error: { message: 'Query failed' } }),
-          })),
-        })),
-      };
-    });
+    __mockOrder.mockResolvedValue({ data: null, error: { message: 'Query failed' } });
 
     await getHistorialChat(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
-  });
-
-  it('should return 500 on unexpected exception', async () => {
-    req.params = { threadId: 'thread-1' };
-    __mockFrom.mockImplementation(() => { throw new Error('Unexpected'); });
-
-    await getHistorialChat(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({
-        details: 'Unexpected',
-      })
-    );
   });
 });

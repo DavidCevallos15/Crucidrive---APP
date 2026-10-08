@@ -11,7 +11,7 @@ const solicitarViaje = asyncHandler(async (req, res) => {
   const { origen, destino } = req.body;
   const pasajeroId = req.user.id;
 
-  if (!origen || !destino || !origen.lat || !origen.lng || !destino.lat || !origen.lng) {
+  if (!origen || !destino || !origen.lat || !origen.lng || !destino.lat || !destino.lng) {
     return errorResponse(res, 400, 'Las coordenadas de origen (lat, lng) y destino (lat, lng) son obligatorias.');
   }
 
