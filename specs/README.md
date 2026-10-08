@@ -7,7 +7,7 @@ Flujo por paso: spec → aprobación → plan → tareas → implementación (co
 | --- | --- | --- |
 | 0 | (validación de campo, sin código) | Pendiente (D-07: aliado institucional) |
 | 1 | `001-cimientos` | **Completo** (T18, deuda de tipos del frontend, pasa a 007) |
-| 2 | `002-identidad` | Spec y plan aprobados; BD y backend listos; faltan pantallas (T8 a T10), contraseña mínima (T12) y la prueba de humo (T14) |
+| 2 | `002-identidad` | Spec, BD, backend y pantallas listos; falta la prueba de humo con 3 cuentas (T14) y revisar en pantalla las vistas del conductor y del administrador |
 | 3 | `003-despacho` | Sin iniciar |
 | 4 | `004-tracking-push` | Sin iniciar |
 | 5 | `005-viaje` | Sin iniciar |

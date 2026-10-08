@@ -1,37 +1,107 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert } from 'react-native';
 import { supabase } from '../utils/supabaseClient';
 import { useAuthStore } from '../store/useAuthStore';
+import type { UserProfile, VerificationInfo } from '../store/useAuthStore';
 import { API_CONFIG } from '../constants/config';
 import { authFetch } from '../utils/authFetch';
-import type { UserProfile } from '../store/useAuthStore';
+import { normalizarEmail } from '../utils/validators';
+
+/** Resultado de una acción de cuenta: ok, o un mensaje listo para mostrar. */
+export interface ResultadoAccion {
+  ok: boolean;
+  error?: string;
+  /** Solo al crear cuenta: Supabase pide confirmar el correo antes de iniciar sesión. */
+  requiereConfirmarCorreo?: boolean;
+}
+
+/** Traduce los errores más comunes de Supabase Auth a mensajes claros. */
+const mensajeDeAuth = (mensaje: string): string => {
+  const m = mensaje.toLowerCase();
+  if (m.includes('invalid login credentials')) return 'Correo o contraseña incorrectos.';
+  if (m.includes('email not confirmed')) return 'Falta confirmar tu correo. Revisa tu bandeja de entrada (y el spam).';
+  if (m.includes('already registered') || m.includes('already been registered')) return 'Ese correo ya tiene una cuenta. Inicia sesión.';
+  if (m.includes('password') && m.includes('characters')) return 'La contraseña debe tener al menos 8 caracteres.';
+  if (m.includes('rate limit') || m.includes('too many')) return 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.';
+  return 'No se pudo completar la acción. Inténtalo de nuevo.';
+};
 
 /**
- * Hook para la autenticación con Supabase Auth (Phone OTP).
+ * Hook de autenticación con Supabase Auth (correo y contraseña, spec 002).
  *
- * Gestiona el flujo completo: envío de OTP por SMS, verificación del código,
- * obtención del perfil del usuario y cierre de sesión.
+ * Gestiona sesión, perfil, verificación del conductor y cierre de sesión. El perfil
+ * se crea aparte (completeProfile) porque el correo puede requerir confirmación
+ * antes de que exista una sesión.
+ *
+ * @param opciones.bootstrap - true SOLO en el layout raíz: restaura la sesión guardada y
+ *   escucha sus cambios. El resto de pantallas usan el hook sin esto (evita suscripciones duplicadas).
  */
-export const useSupabaseAuth = () => {
+export const useSupabaseAuth = ({ bootstrap = false }: { bootstrap?: boolean } = {}) => {
   const {
     session,
     user,
     profile,
+    verification,
+    profileChecked,
+    verificationChecked,
     isLoading,
     isInitialized,
     setSession,
     setProfile,
+    setVerification,
     setLoading,
     setInitialized,
     clearSession,
   } = useAuthStore();
 
-  const [otpSent, setOtpSent] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // ─── Inicialización: escuchar cambios de sesión ────────────
+  // ─── Perfil: tabla 'perfiles' (columnas reales) ───────────
+  const fetchProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('perfiles')
+        .select('id, nombre, telefono, rol, activo')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (error) {
+        console.warn('[Auth] No se pudo leer el perfil:', error.message);
+        setProfile(null);
+        return null;
+      }
+
+      setProfile((data as UserProfile | null) ?? null);
+      return (data as UserProfile | null) ?? null;
+    } catch (err) {
+      console.error('[Auth] Error al obtener perfil:', err);
+      setProfile(null);
+      return null;
+    }
+  }, [setProfile]);
+
+  // ─── Verificación del conductor (backend) ─────────────────
+  const fetchVerification = useCallback(async (): Promise<VerificationInfo | null> => {
+    try {
+      const response = await authFetch(API_CONFIG.endpoints.driver.verification);
+      if (!response.ok) {
+        setVerification(null);
+        return null;
+      }
+      const body = await response.json();
+      const info = body.data as VerificationInfo;
+      setVerification(info);
+      return info;
+    } catch (err) {
+      console.error('[Auth] Error al consultar la verificación:', err);
+      setVerification(null);
+      return null;
+    }
+  }, [setVerification]);
+
+  // ─── Inicialización: sesión guardada y cambios de sesión ───
   useEffect(() => {
-    // Obtener sesión actual al montar
+    if (!bootstrap) return undefined;
+
     const initSession = async () => {
       try {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
@@ -50,7 +120,6 @@ export const useSupabaseAuth = () => {
 
     initSession();
 
-    // Escuchar cambios de estado de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         setSession(newSession);
@@ -68,136 +137,98 @@ export const useSupabaseAuth = () => {
     };
   }, []);
 
-  // ─── Obtener perfil del usuario desde la tabla 'perfiles' ──
-  const fetchProfile = useCallback(async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('perfiles')
-        .select('id, nombre, telefono, rol, estado_operativo, calificacion, avatar_url')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.warn('[Auth] Perfil no encontrado, puede requerir registro:', error.message);
-        return null;
-      }
-
-      setProfile(data as UserProfile);
-      return data as UserProfile;
-    } catch (err) {
-      console.error('[Auth] Error al obtener perfil:', err);
-      return null;
+  // Un conductor con perfil consulta su verificación (decide a qué pantalla va)
+  useEffect(() => {
+    if (!bootstrap) return;
+    if (session && profile?.rol === 'conductor' && !verificationChecked) {
+      fetchVerification();
     }
-  }, [setProfile]);
+  }, [session, profile, verificationChecked, fetchVerification]);
 
-  // ─── Enviar OTP por SMS ────────────────────────────────────
-  /**
-   * Envía un código OTP al número de teléfono indicado.
-   * @param phone - Número de teléfono con prefijo internacional (ej: +593991234567)
-   */
-  const sendOtp = useCallback(async (phone: string): Promise<boolean> => {
+  // ─── Crear cuenta ─────────────────────────────────────────
+  const signUp = useCallback(async (email: string, password: string): Promise<ResultadoAccion> => {
+    setAuthError(null);
+    setLoading(true);
     try {
-      setAuthError(null);
-      setLoading(true);
-
-      const { error } = await supabase.auth.signInWithOtp({
-        phone,
-      });
-
+      const { data, error } = await supabase.auth.signUp({ email: normalizarEmail(email), password });
       if (error) {
-        setAuthError(error.message);
-        return false;
+        const mensaje = mensajeDeAuth(error.message);
+        setAuthError(mensaje);
+        return { ok: false, error: mensaje };
       }
-
-      setOtpSent(true);
-      return true;
+      // Con confirmación de correo activada no hay sesión hasta que el usuario confirma.
+      return { ok: true, requiereConfirmarCorreo: !data.session };
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error al enviar el código SMS.';
-      setAuthError(message);
-      return false;
+      const mensaje = err instanceof Error ? err.message : 'Error de conexión.';
+      setAuthError(mensaje);
+      return { ok: false, error: mensaje };
     } finally {
       setLoading(false);
     }
   }, [setLoading]);
 
-  // ─── Verificar código OTP ─────────────────────────────────
-  /**
-   * Verifica el código OTP ingresado por el usuario.
-   * @param phone - Número de teléfono usado para enviar el OTP
-   * @param code - Código de 6 dígitos recibido por SMS
-   */
-  const verifyOtp = useCallback(async (phone: string, code: string): Promise<boolean> => {
+  // ─── Iniciar sesión ───────────────────────────────────────
+  const signIn = useCallback(async (email: string, password: string): Promise<ResultadoAccion> => {
+    setAuthError(null);
+    setLoading(true);
     try {
-      setAuthError(null);
-      setLoading(true);
-
-      const { data, error } = await supabase.auth.verifyOtp({
-        phone,
-        token: code,
-        type: 'sms',
-      });
-
+      const { error } = await supabase.auth.signInWithPassword({ email: normalizarEmail(email), password });
       if (error) {
-        setAuthError(error.message);
-        return false;
+        const mensaje = mensajeDeAuth(error.message);
+        setAuthError(mensaje);
+        return { ok: false, error: mensaje };
       }
-
-      if (data.session) {
-        setSession(data.session);
-        return true;
-      }
-
-      return false;
+      return { ok: true };
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error al verificar el código.';
-      setAuthError(message);
-      return false;
+      const mensaje = err instanceof Error ? err.message : 'Error de conexión.';
+      setAuthError(mensaje);
+      return { ok: false, error: mensaje };
     } finally {
       setLoading(false);
     }
-  }, [setSession, setLoading]);
+  }, [setLoading]);
 
-  // ─── Registrar perfil en el backend ───────────────────────
-  /**
-   * Registra/actualiza el perfil del usuario en el backend.
-   * @param profileData - Datos del perfil (nombre, rol)
-   */
-  const registerProfile = useCallback(async (
-    profileData: { nombre: string; rol: 'pasajero' | 'conductor' }
-  ): Promise<boolean> => {
+  // ─── Completar el perfil (consentimiento + datos) ─────────
+  const completeProfile = useCallback(async (datos: {
+    rol: 'pasajero' | 'conductor';
+    nombre: string;
+    telefono: string;
+    placa?: string;
+    consentimiento: boolean;
+  }): Promise<ResultadoAccion> => {
+    setAuthError(null);
     try {
-      setAuthError(null);
-
       const response = await authFetch(API_CONFIG.endpoints.auth.register, {
         method: 'POST',
-        body: JSON.stringify(profileData),
+        body: JSON.stringify(datos),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        setAuthError(errorData?.message ?? 'Error al registrar el perfil.');
-        return false;
+        const cuerpo = await response.json().catch(() => null);
+        const mensaje = cuerpo?.message ?? 'No se pudo crear tu perfil.';
+        setAuthError(mensaje);
+        return { ok: false, error: mensaje };
       }
 
       if (user) {
         await fetchProfile(user.id);
       }
-
-      return true;
+      return { ok: true };
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error de red al registrar perfil.';
-      setAuthError(message);
-      return false;
+      const mensaje = err instanceof Error ? err.message : 'Error de red al crear el perfil.';
+      setAuthError(mensaje);
+      return { ok: false, error: mensaje };
     }
   }, [user, fetchProfile]);
 
-  // ─── Cerrar sesión ─────────────────────────────────────────
+  // ─── Cerrar sesión ────────────────────────────────────────
   const signOut = useCallback(async () => {
     try {
       await supabase.auth.signOut();
-      clearSession();
     } catch (err) {
       console.error('[Auth] Error al cerrar sesión:', err);
+    } finally {
+      clearSession();
     }
   }, [clearSession]);
 
@@ -206,18 +237,20 @@ export const useSupabaseAuth = () => {
     session,
     user,
     profile,
+    verification,
+    profileChecked,
+    verificationChecked,
     isLoading,
     isInitialized,
-    otpSent,
     authError,
 
     // Acciones
-    sendOtp,
-    verifyOtp,
-    registerProfile,
+    signUp,
+    signIn,
+    completeProfile,
     signOut,
     fetchProfile,
+    fetchVerification,
     setAuthError,
-    setOtpSent,
   };
 };

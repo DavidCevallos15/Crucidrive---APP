@@ -1,273 +1,184 @@
-import React, { useState, useCallback, useRef } from 'react';
-import {
-  StyleSheet,
-  View,
-  Text,
-  KeyboardAvoidingView,
-  Platform,
-  Dimensions,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { StatusBar } from 'expo-status-bar';
-import Animated, {
-  FadeInDown,
-  FadeInUp,
-} from 'react-native-reanimated';
+import React, { useCallback, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { AuthScaffold } from '../components/AuthScaffold';
 import { GlassCard } from '../components/GlassCard';
 import { GlassButton } from '../components/GlassButton';
 import { GlassInput } from '../components/GlassInput';
-import { LoadingSpinner } from '../components/LoadingSpinner';
 import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
 import { COLORS, FONTS, SPACING } from '../constants/theme';
+import { validarEmail, validarPassword, PASSWORD_MIN } from '../utils/validators';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+type Modo = 'entrar' | 'crear';
 
 /**
- * Pantalla de Autenticación con SMS/OTP.
+ * Inicio de sesión y creación de cuenta con correo y contraseña (spec 002, D-04: sin SMS).
  *
- * Flujo:
- * 1. El usuario ingresa su número de teléfono
- * 2. Se envía un código OTP por SMS vía Supabase Auth
- * 3. El usuario ingresa el código de 6 dígitos
- * 4. Se verifica y se redirige según su rol
- *
- * Diseño: Tarjeta Glassmorphic central sobre gradiente
- * radial azul océano → cian marino (DESIGN.md §3.A).
+ * Crear la cuenta solo registra el correo y la contraseña. El perfil (nombre, teléfono, rol)
+ * y el consentimiento se completan después, en la pantalla "Completa tu perfil", porque
+ * Supabase puede pedir confirmar el correo antes de dar una sesión.
  */
 export const LoginScreen: React.FC = () => {
-  const {
-    isLoading,
-    otpSent,
-    authError,
-    sendOtp,
-    verifyOtp,
-    setAuthError,
-    setOtpSent,
-  } = useSupabaseAuth();
+  const router = useRouter();
+  const { isLoading, signIn, signUp } = useSupabaseAuth();
 
-  const [phone, setPhone] = useState('');
-  const [otpCode, setOtpCode] = useState('');
+  const [modo, setModo] = useState<Modo>('entrar');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [errores, setErrores] = useState<{ email?: string; password?: string; general?: string }>({});
+  const [aviso, setAviso] = useState<string | null>(null);
 
-  /**
-   * Formatea el teléfono para Ecuador (+593).
-   * Agrega el prefijo si el usuario no lo incluye.
-   */
-  const formatPhone = useCallback((raw: string): string => {
-    const cleaned = raw.replace(/\D/g, '');
-    if (cleaned.startsWith('593')) return `+${cleaned}`;
-    if (cleaned.startsWith('0')) return `+593${cleaned.slice(1)}`;
-    return `+593${cleaned}`;
+  const cambiarModo = useCallback((nuevo: Modo) => {
+    setModo(nuevo);
+    setErrores({});
+    setAviso(null);
   }, []);
 
-  /**
-   * Maneja el envío del código OTP.
-   */
-  const handleSendOtp = useCallback(async () => {
-    if (!phone.trim()) {
-      setAuthError('Ingresa tu número de teléfono.');
-      return;
+  const enviar = useCallback(async () => {
+    const nuevos = {
+      email: validarEmail(email) ?? undefined,
+      password: validarPassword(password) ?? undefined,
+    };
+    // En "entrar" basta con que haya contraseña; el mínimo solo se exige al crearla.
+    if (modo === 'entrar' && password) nuevos.password = undefined;
+    setErrores(nuevos);
+    setAviso(null);
+    if (nuevos.email || nuevos.password) return;
+
+    if (modo === 'entrar') {
+      const r = await signIn(email, password);
+      if (!r.ok) setErrores({ general: r.error });
+      return; // el layout raíz lleva al usuario a su pantalla
     }
 
-    const formattedPhone = formatPhone(phone);
-    await sendOtp(formattedPhone);
-  }, [phone, formatPhone, sendOtp, setAuthError]);
-
-  /**
-   * Maneja la verificación del código OTP.
-   */
-  const handleVerifyOtp = useCallback(async () => {
-    if (otpCode.length !== 6) {
-      setAuthError('El código debe ser de 6 dígitos.');
-      return;
+    const r = await signUp(email, password);
+    if (!r.ok) {
+      setErrores({ general: r.error });
+    } else if (r.requiereConfirmarCorreo) {
+      setAviso(`Te enviamos un correo a ${email.trim()}. Confírmalo y luego inicia sesión.`);
+      setModo('entrar');
+      setPassword('');
     }
-
-    const formattedPhone = formatPhone(phone);
-    await verifyOtp(formattedPhone, otpCode);
-  }, [otpCode, phone, formatPhone, verifyOtp, setAuthError]);
-
-  /**
-   * Vuelve al paso de ingreso de teléfono.
-   */
-  const handleGoBack = useCallback(() => {
-    setOtpSent(false);
-    setOtpCode('');
-    setAuthError(null);
-  }, [setOtpSent, setAuthError]);
+  }, [modo, email, password, signIn, signUp]);
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
+    <AuthScaffold>
+      <GlassCard>
+        <Text style={styles.titulo} accessibilityRole="header">
+          {modo === 'entrar' ? 'Iniciar sesión' : 'Crear cuenta'}
+        </Text>
+        <Text style={styles.subtitulo}>
+          {modo === 'entrar'
+            ? 'Entra con tu correo y tu contraseña.'
+            : `Usa un correo que puedas abrir. La contraseña debe tener al menos ${PASSWORD_MIN} caracteres.`}
+        </Text>
 
-      {/* Fondo gradiente radial marino */}
-      <LinearGradient
-        colors={[COLORS.primary, '#0A2F42', COLORS.darkBg]}
-        locations={[0, 0.5, 1]}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={StyleSheet.absoluteFill}
+        {aviso ? (
+          <View style={styles.aviso} accessibilityRole="alert">
+            <Text style={styles.avisoTexto}>{aviso}</Text>
+          </View>
+        ) : null}
+
+        <GlassInput
+          label="Correo"
+          placeholder="nombre@correo.com"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="email"
+          textContentType="emailAddress"
+          value={email}
+          onChangeText={setEmail}
+          error={errores.email}
+          required
+        />
+        <GlassInput
+          label="Contraseña"
+          placeholder={modo === 'crear' ? `Mínimo ${PASSWORD_MIN} caracteres` : 'Tu contraseña'}
+          secureTextEntry
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete={modo === 'crear' ? 'new-password' : 'current-password'}
+          textContentType={modo === 'crear' ? 'newPassword' : 'password'}
+          value={password}
+          onChangeText={setPassword}
+          onSubmitEditing={enviar}
+          error={errores.password}
+          required
+        />
+
+        {errores.general ? (
+          <Text style={styles.errorGeneral} accessibilityRole="alert">
+            {errores.general}
+          </Text>
+        ) : null}
+
+        <GlassButton
+          label={modo === 'entrar' ? 'Entrar' : 'Crear cuenta'}
+          onPress={enviar}
+          variant="secondary"
+          size="lg"
+          loading={isLoading}
+          style={styles.principal}
+        />
+        <GlassButton
+          label={modo === 'entrar' ? 'No tengo cuenta' : 'Ya tengo cuenta'}
+          onPress={() => cambiarModo(modo === 'entrar' ? 'crear' : 'entrar')}
+          variant="ghost"
+          size="md"
+          style={styles.secundario}
+        />
+      </GlassCard>
+
+      <GlassButton
+        label="Volver al mapa"
+        onPress={() => router.replace('/')}
+        variant="ghost"
+        size="sm"
+        style={styles.volver}
       />
-
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        {/* Branding */}
-        <Animated.View
-          entering={FadeInUp.delay(100).duration(600)}
-          style={styles.brandingContainer}
-        >
-          <Text style={styles.appName}>CruciDrive</Text>
-          <Text style={styles.tagline}>
-            Transporte hiperlocal, claro como el océano.
-          </Text>
-        </Animated.View>
-
-        {/* Tarjeta Glassmorphic de Login */}
-        <Animated.View entering={FadeInDown.delay(300).duration(600)}>
-          <GlassCard style={styles.loginCard}>
-            <Text style={styles.cardTitle}>
-              {otpSent ? 'Verificar código' : 'Iniciar sesión'}
-            </Text>
-            <Text style={styles.cardSubtitle}>
-              {otpSent
-                ? `Ingresa el código de 6 dígitos enviado a ${phone}`
-                : 'Ingresa tu número de teléfono para recibir un código por SMS'}
-            </Text>
-
-            {!otpSent ? (
-              // ─── Paso 1: Ingreso de teléfono ────────────────
-              <>
-                <GlassInput
-                  label="Número de teléfono"
-                  placeholder="+593 99 123 4567"
-                  keyboardType="phone-pad"
-                  autoComplete="tel"
-                  value={phone}
-                  onChangeText={setPhone}
-                  error={authError ?? undefined}
-                  required
-                />
-                <GlassButton
-                  label="Enviar código"
-                  onPress={handleSendOtp}
-                  variant="secondary"
-                  size="lg"
-                  loading={isLoading}
-                  style={styles.mainButton}
-                />
-              </>
-            ) : (
-              // ─── Paso 2: Verificación OTP ────────────────────
-              <>
-                <GlassInput
-                  label="Código de verificación"
-                  placeholder="000000"
-                  keyboardType="number-pad"
-                  maxLength={6}
-                  value={otpCode}
-                  onChangeText={setOtpCode}
-                  error={authError ?? undefined}
-                  required
-                />
-                <GlassButton
-                  label="Verificar"
-                  onPress={handleVerifyOtp}
-                  variant="secondary"
-                  size="lg"
-                  loading={isLoading}
-                  style={styles.mainButton}
-                />
-                <GlassButton
-                  label="Cambiar número"
-                  onPress={handleGoBack}
-                  variant="ghost"
-                  size="sm"
-                  style={styles.backButton}
-                />
-              </>
-            )}
-          </GlassCard>
-        </Animated.View>
-
-        {/* Footer */}
-        <Animated.View
-          entering={FadeInUp.delay(500).duration(600)}
-          style={styles.footer}
-        >
-          <Text style={styles.footerText}>
-            Crucita, Manabí, Ecuador
-          </Text>
-        </Animated.View>
-      </KeyboardAvoidingView>
-    </View>
+    </AuthScaffold>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.darkBg,
-  },
-  keyboardView: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: SPACING.lg,
-  },
-  brandingContainer: {
-    alignItems: 'center',
-    marginBottom: SPACING.xl,
-  },
-  appName: {
-    fontSize: FONTS.sizes.display,
-    fontFamily: FONTS.heading,
-    fontWeight: FONTS.weights.bold,
-    color: COLORS.white,
-    letterSpacing: 1,
-  },
-  tagline: {
-    fontSize: FONTS.sizes.base,
-    fontFamily: FONTS.body,
-    color: COLORS.glassTextMutedDark,
-    textAlign: 'center',
-    marginTop: SPACING.sm,
-    maxWidth: SCREEN_WIDTH * 0.8,
-  },
-  loginCard: {
-    maxWidth: 400,
-    alignSelf: 'center',
-    width: '100%',
-  },
-  cardTitle: {
+  titulo: {
     fontSize: FONTS.sizes.xxl,
     fontFamily: FONTS.heading,
     fontWeight: FONTS.weights.bold,
     color: COLORS.glassTextDark,
     marginBottom: SPACING.xs,
   },
-  cardSubtitle: {
+  subtitulo: {
     fontSize: FONTS.sizes.sm,
     fontFamily: FONTS.body,
     color: COLORS.glassTextMutedDark,
     marginBottom: SPACING.lg,
     lineHeight: FONTS.sizes.sm * FONTS.lineHeights.normal,
   },
-  mainButton: {
-    marginTop: SPACING.sm,
-    alignSelf: 'stretch',
+  aviso: {
+    borderRadius: 8,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    backgroundColor: 'rgba(16, 185, 129, 0.16)',
+    borderWidth: 1,
+    borderColor: COLORS.success,
   },
-  backButton: {
-    marginTop: SPACING.sm,
-    alignSelf: 'center',
-  },
-  footer: {
-    alignItems: 'center',
-    marginTop: SPACING.xxl,
-  },
-  footerText: {
-    fontSize: FONTS.sizes.xs,
+  avisoTexto: {
+    color: COLORS.glassTextDark,
+    fontSize: FONTS.sizes.sm,
     fontFamily: FONTS.body,
-    color: COLORS.glassTextMutedDark,
+    lineHeight: FONTS.sizes.sm * FONTS.lineHeights.normal,
   },
+  errorGeneral: {
+    color: COLORS.dangerLight,
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONTS.body,
+    marginBottom: SPACING.sm,
+  },
+  principal: { marginTop: SPACING.sm, alignSelf: 'stretch' },
+  secundario: { marginTop: SPACING.sm, alignSelf: 'stretch' },
+  volver: { marginTop: SPACING.md, alignSelf: 'center' },
 });
 
 export default LoginScreen;

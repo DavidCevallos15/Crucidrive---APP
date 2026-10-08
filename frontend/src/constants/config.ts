@@ -38,6 +38,15 @@ export const API_CONFIG = {
     auth: {
       register: '/api/auth/registro',
     },
+    driver: {
+      verification: '/api/conductores/verificacion',
+    },
+    admin: {
+      drivers: '/api/admin/conductores',
+      driver: (id: string) => `/api/admin/conductores/${id}`,
+      approve: (id: string) => `/api/admin/conductores/${id}/aprobar`,
+      reject: (id: string) => `/api/admin/conductores/${id}/rechazar`,
+    },
     rides: {
       request: '/api/viajes/solicitar',
       accept: '/api/viajes/aceptar',

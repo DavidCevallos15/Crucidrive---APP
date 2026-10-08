@@ -2,6 +2,25 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.18.0] - 2026-10-08 (Hora Local)
+
+### Paso 002 · pantallas de identidad (frontend)
+- **Cuenta:** inicio de sesión y creación de cuenta con correo y contraseña (mínimo 8, validado en la app y exigido por Supabase Auth); reemplaza el SMS. Tras crear la cuenta, "Completa tu perfil": rol, nombre, teléfono, placa (conductor) y consentimiento LOPDP con el aviso de privacidad v0.1 a la vista.
+- **Verificación del conductor:** cédula validada con dígito verificador y 3 fotos (tomadas con la cámara o de la galería) que se reducen a ≤ 1280 px y JPEG 0,6 antes de subirse al bucket privado; estados sin enviar, pendiente, rechazado con motivo (y reenvío) y aprobado.
+- **Panel del administrador:** lista de solicitudes pendientes, detalle con las 3 fotos (enlaces de 5 min), aprobar con confirmación y rechazar con motivo.
+- **Navegación por rol** (`app/_layout.tsx` + `utils/routing.ts`): sin sesión solo mapa y login; sin perfil, "Completa tu perfil"; un conductor sin aprobar solo ve su verificación; un pasajero no ve los paneles de conductor ni de administrador. El mapa público muestra "Entrar" o "Mi cuenta" y pedir un viaje sin cuenta lleva al login.
+- **Corrección:** `fetchProfile` pedía columnas que no existen (`estado_operativo`, `calificacion`, `avatar_url`), así que el perfil nunca cargaba y nadie podía pasar del login.
+- **Hook de sesión:** el arranque (restaurar sesión y escuchar cambios) corre una sola vez, en el layout raíz; antes cada pantalla creaba su propia suscripción.
+- **Dependencias:** `expo-image-picker` y `expo-image-manipulator` (SDK 57) con permisos de cámara y galería en `app.json`.
+
+### Pruebas
+- Frontend 114/114, sin errores de tipos en `src/` ni `app/`. Revisado en el navegador: login, crear cuenta y perfil (conductor, aviso de privacidad, errores de validación), sin errores en consola.
+
+### Pendiente
+- T14: ejecutar `npm run smoke` con 3 cuentas (el conductor `jcevallos6547@utm.edu.ec` debe confirmar su correo) y revisar las pantallas del conductor y del administrador con sesiones reales.
+
+---
+
 ## [1.17.0] - 2026-10-08 (Hora Local)
 
 ### Paso 002 · identidad y aprobación de conductores (BD y backend)

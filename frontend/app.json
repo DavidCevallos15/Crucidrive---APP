@@ -31,6 +31,13 @@
     "plugins": [
       "expo-router",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "CruciDrive necesita tu galer\u00eda para que elijas las fotos de verificaci\u00f3n.",
+          "cameraPermission": "CruciDrive necesita la c\u00e1mara para tomar tu foto, la de tu c\u00e9dula y la de tu tricimoto."
+        }
+      ],
+      [
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "CruciDrive necesita acceder a tu ubicaci\u00f3n para mostrarte tricimotos cercanas y compartir tu posici\u00f3n durante el viaje.",
