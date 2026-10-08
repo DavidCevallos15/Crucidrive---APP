@@ -2,6 +2,38 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.8.0] - 2026-10-08 (Hora Local)
+
+### Añadido
+- **Paso 001 (spec aprobada):** `plan.md` y `tasks.md`; migraciones `supabase/migrations/0001` a `0006` (PostGIS en `extensions`, catálogo `zonas`/`sectores`/`tarifas` con semilla de Crucita, `tricimotos`, RLS con permisos por columna); limpieza única en `supabase/one-off/`.
+- **CI:** `.github/workflows/ci.yml` (tests de backend y frontend) y `supabase-keepalive.yml` (lectura cada 3 días).
+- **Backend:** `createUserClient(jwt)` y `getAdminClient()` en `config/supabase.js`; `authMiddleware` adjunta `req.supabase`; sockets usan `socket.supabase`. Nuevo `tests/spec001.test.js`.
+- `backend/.env.example`.
+
+### Corregido
+- `asyncHandler` no devolvía la promesa: 18 tests fallaban en `main`. Ahora backend 56/56 y frontend 69/69.
+- Código alineado al esquema: `thread_members` sin columna `id`, `threads.created_by`, sin `updated_at` manual (trigger), `aceptado_en`/`finalizado_en`, placa normalizada, validación de `destino.lng`.
+
+### Decidido
+- D-02 Google Maps · D-03 solo tricimotos · D-04 conductores aprobados por admin · D-05 SOS llama al 911 · D-06 cliente por usuario (ver `specs/constitution.md`).
+
+### Pendiente
+- Ejecutar la limpieza única y aplicar las migraciones en Supabase (requiere confirmación). `backend/database.sql` marcado como obsoleto.
+
+---
+
+## [1.7.0] - 2026-10-08 (Hora Local)
+
+### Añadido
+- **Spec-Driven Development:** creada carpeta `specs/` con `README.md` (índice de los 8 pasos), `constitution.md` y `001-cimientos/spec.md` (borrador).
+- **EAS:** `frontend/app.json` enlazado al proyecto de Expo (`extra.eas.projectId`); creado `frontend/eas.json` con perfiles `development`, `preview` (APK) y `production`.
+
+### Analizado
+- **Auditoría de Supabase** (proyecto reactivado tras pausa por inactividad): falta la tabla `tricimotos`, `perfiles` y `viajes` con RLS sin políticas, backend con clave anon sin JWT de usuario, columna `messages.body` vs `content` en código, 0 migraciones. Detalle en `specs/001-cimientos/spec.md`.
+- **Estado:** pendiente de aprobación de la spec 001. Sin cambios aplicados a la BD.
+
+---
+
 ## [1.6.0] - 2026-07-01 20:30 (Hora Local)
 
 ### Añadido

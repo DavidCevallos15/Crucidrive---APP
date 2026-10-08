@@ -1,4 +1,3 @@
-const { supabase } = require('../config/supabase');
 const asyncHandler = require('../utils/asyncHandler');
 const { errorResponse, successResponse } = require('../utils/response');
 const { toWKT } = require('../utils/geo');
@@ -10,6 +9,7 @@ const { findViajeById } = require('../utils/supabaseHelpers');
 const solicitarViaje = asyncHandler(async (req, res) => {
   const { origen, destino } = req.body;
   const pasajeroId = req.user.id;
+  const db = req.supabase;
 
   if (!origen || !destino || !origen.lat || !origen.lng || !destino.lat || !destino.lng) {
     return errorResponse(res, 400, 'Las coordenadas de origen (lat, lng) y destino (lat, lng) son obligatorias.');
@@ -17,7 +17,7 @@ const solicitarViaje = asyncHandler(async (req, res) => {
 
   const tarifa = 1.50;
 
-  const { data: viaje, error } = await supabase
+  const { data: viaje, error } = await db
     .from('viajes')
     .insert([
       {
@@ -45,12 +45,13 @@ const solicitarViaje = asyncHandler(async (req, res) => {
 const aceptarViaje = asyncHandler(async (req, res) => {
   const { viajeId } = req.body;
   const conductorId = req.user.id;
+  const db = req.supabase;
 
   if (!viajeId) {
     return errorResponse(res, 400, 'El identificador del viaje (viajeId) es requerido.');
   }
 
-  const { viaje, error: getError } = await findViajeById(viajeId);
+  const { viaje, error: getError } = await findViajeById(db, viajeId);
 
   if (getError || !viaje) {
     return errorResponse(res, 404, 'No se encontró el viaje solicitado.', getError ? getError.message : null);
@@ -60,12 +61,12 @@ const aceptarViaje = asyncHandler(async (req, res) => {
     return errorResponse(res, 400, `El viaje no puede ser aceptado porque está en estado: ${viaje.estado}`);
   }
 
-  const { data: viajeActualizado, error: updateError } = await supabase
+  const { data: viajeActualizado, error: updateError } = await db
     .from('viajes')
     .update({
       conductor_id: conductorId,
       estado: 'aceptado',
-      updated_at: new Date().toISOString()
+      aceptado_en: new Date().toISOString()
     })
     .eq('id', viajeId)
     .select()
@@ -75,14 +76,14 @@ const aceptarViaje = asyncHandler(async (req, res) => {
     return errorResponse(res, 400, 'Error al aceptar el viaje.', updateError.message);
   }
 
-  const { data: thread, error: threadError } = await supabase
+  const { data: thread, error: threadError } = await db
     .from('threads')
-    .insert([{ viaje_id: viajeId }])
+    .insert([{ viaje_id: viajeId, created_by: conductorId }])
     .select()
     .single();
 
   if (threadError) {
-    await supabase.from('viajes').update({ conductor_id: null, estado: 'solicitado' }).eq('id', viajeId);
+    await db.from('viajes').update({ conductor_id: null, estado: 'solicitado', aceptado_en: null }).eq('id', viajeId);
     return errorResponse(res, 500, 'Error al inicializar el hilo de comunicación del viaje.', threadError.message);
   }
 
@@ -91,13 +92,13 @@ const aceptarViaje = asyncHandler(async (req, res) => {
     { thread_id: thread.id, user_id: conductorId }
   ];
 
-  const { error: membersError } = await supabase
+  const { error: membersError } = await db
     .from('thread_members')
     .insert(miembros);
 
   if (membersError) {
-    await supabase.from('threads').delete().eq('id', thread.id);
-    await supabase.from('viajes').update({ conductor_id: null, estado: 'solicitado' }).eq('id', viajeId);
+    await db.from('threads').delete().eq('id', thread.id);
+    await db.from('viajes').update({ conductor_id: null, estado: 'solicitado', aceptado_en: null }).eq('id', viajeId);
     return errorResponse(res, 500, 'Error al registrar los participantes en el chat del viaje.', membersError.message);
   }
 
@@ -115,12 +116,13 @@ const cambiarEstadoViaje = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { estado } = req.body;
   const userId = req.user.id;
+  const db = req.supabase;
 
   if (!estado || !['en_curso', 'finalizado', 'cancelado'].includes(estado)) {
     return errorResponse(res, 400, 'Estado inválido. Debe ser: "en_curso", "finalizado" o "cancelado".');
   }
 
-  const { viaje, error: getError } = await findViajeById(id);
+  const { viaje, error: getError } = await findViajeById(db, id);
 
   if (getError || !viaje) {
     return errorResponse(res, 404, 'No se encontró el viaje solicitado.', getError ? getError.message : null);
@@ -142,11 +144,11 @@ const cambiarEstadoViaje = asyncHandler(async (req, res) => {
     return errorResponse(res, 400, `No se puede cancelar un viaje que ya está ${viaje.estado}.`);
   }
 
-  const { data: viajeActualizado, error: updateError } = await supabase
+  const { data: viajeActualizado, error: updateError } = await db
     .from('viajes')
     .update({
       estado,
-      updated_at: new Date().toISOString()
+      ...(estado === 'finalizado' || estado === 'cancelado' ? { finalizado_en: new Date().toISOString() } : {})
     })
     .eq('id', id)
     .select()

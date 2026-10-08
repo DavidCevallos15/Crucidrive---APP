@@ -1,4 +1,3 @@
-const { supabase } = require('../config/supabase');
 const asyncHandler = require('../utils/asyncHandler');
 const { errorResponse, successResponse } = require('../utils/response');
 const { checkThreadMembership } = require('../utils/supabaseHelpers');
@@ -10,12 +9,13 @@ const { checkThreadMembership } = require('../utils/supabaseHelpers');
 const getHistorialChat = asyncHandler(async (req, res) => {
   const { threadId } = req.params;
   const userId = req.user.id;
+  const db = req.supabase;
 
   if (!threadId) {
     return errorResponse(res, 400, 'El identificador del hilo (threadId) es obligatorio.');
   }
 
-  const { member, error: memberError } = await checkThreadMembership(threadId, userId);
+  const { member, error: memberError } = await checkThreadMembership(db, threadId, userId);
 
   if (memberError) {
     return errorResponse(res, 500, 'Error al verificar la afiliación al hilo de chat.', memberError.message);
@@ -25,7 +25,7 @@ const getHistorialChat = asyncHandler(async (req, res) => {
     return errorResponse(res, 403, 'Acceso denegado. No eres miembro autorizado de este hilo de conversación.');
   }
 
-  const { data: messages, error: messagesError } = await supabase
+  const { data: messages, error: messagesError } = await db
     .from('messages')
     .select(`
       id,

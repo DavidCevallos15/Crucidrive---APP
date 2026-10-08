@@ -1,4 +1,4 @@
-const { supabase } = require('../config/supabase');
+const { supabase, createUserClient } = require('../config/supabase');
 const { toWKT } = require('../utils/geo');
 const { checkThreadMembership } = require('../utils/supabaseHelpers');
 
@@ -24,12 +24,16 @@ const initSocketHandler = (io) => {
         return next(new Error('Error de autenticación: Token inválido o expirado.'));
       }
 
-      const { data: perfil } = await supabase
+      // Cliente con la identidad del usuario: RLS aplica a todo lo que haga este socket.
+      const db = createUserClient(token);
+
+      const { data: perfil } = await db
         .from('perfiles')
         .select('rol, nombre')
         .eq('id', user.id)
         .single();
 
+      socket.supabase = db;
       socket.user = {
         id: user.id,
         email: user.email,
@@ -65,12 +69,12 @@ const initSocketHandler = (io) => {
           return socket.emit('error_message', 'Parámetros de ubicación incompletos.');
         }
 
-        const { error } = await supabase
+        const { error } = await socket.supabase
           .from('tricimotos')
           .update({
             ubicacion_actual: toWKT(coords.lng, coords.lat),
             estado: estado || 'disponible',
-            updated_at: new Date().toISOString()
+            sector_id: sectorId
           })
           .eq('conductor_id', socket.user.id);
 
@@ -98,7 +102,7 @@ const initSocketHandler = (io) => {
       try {
         if (!threadId) return;
 
-        const { member, error } = await checkThreadMembership(threadId, socket.user.id);
+        const { member, error } = await checkThreadMembership(socket.supabase, threadId, socket.user.id);
 
         if (error || !member) {
           console.warn(`[Socket.io] Acceso denegado a chat. Usuario ${socket.user.nombre} intentó ingresar a thread ${threadId}`);
@@ -119,7 +123,7 @@ const initSocketHandler = (io) => {
           return socket.emit('error_message', 'Contenido del mensaje vacío o threadId faltante.');
         }
 
-        const { data: message, error } = await supabase
+        const { data: message, error } = await socket.supabase
           .from('messages')
           .insert([
             {

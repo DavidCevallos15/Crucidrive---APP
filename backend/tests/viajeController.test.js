@@ -47,7 +47,7 @@ describe('viajeController', () => {
   let req, res;
 
   beforeEach(() => {
-    req = { body: {}, params: {}, user: { id: 'user-123' } };
+    req = { body: {}, params: {}, user: { id: 'user-123' }, supabase: require('../src/config/supabase').supabase };
     res = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn().mockReturnThis(),

@@ -1,15 +1,18 @@
 jest.mock('../src/config/supabase', () => {
   const mockGetUser = jest.fn();
+  const mockCreateUserClient = jest.fn(() => ({ __userClient: true }));
   return {
     supabase: {
       auth: { getUser: mockGetUser },
     },
+    createUserClient: mockCreateUserClient,
     __mockGetUser: mockGetUser,
+    __mockCreateUserClient: mockCreateUserClient,
   };
 });
 
 const authMiddleware = require('../src/middlewares/authMiddleware');
-const { __mockGetUser } = require('../src/config/supabase');
+const { __mockGetUser, __mockCreateUserClient } = require('../src/config/supabase');
 
 describe('authMiddleware', () => {
   let req, res, next;

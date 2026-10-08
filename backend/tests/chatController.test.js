@@ -34,7 +34,7 @@ describe('chatController - getHistorialChat', () => {
   beforeEach(() => {
     req = {
       params: {},
-      user: { id: 'user-123' },
+      user: { id: 'user-123' }, supabase: require('../src/config/supabase').supabase,
     };
     res = {
       status: jest.fn().mockReturnThis(),

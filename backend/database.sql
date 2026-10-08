@@ -1,3 +1,6 @@
+-- OBSOLETO desde 2026-10-08: el esquema vive en supabase/migrations/.
+-- Se conserva solo como referencia histórica; no ejecutar.
+
 -- Script de Inicialización de Base de Datos para CruciDrive (Supabase PostgreSQL + PostGIS)
 -- Este script crea las tablas, habilitación de PostGIS, índices y políticas RLS necesarias.
 
