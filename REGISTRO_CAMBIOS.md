@@ -2,6 +2,44 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.12.0] - 2026-10-08 (Hora Local)
+
+### Corregido
+- **Centros de sector con pines reales de Google Maps** (`0008_centros_sectores_reales.sql`, aplicada al proyecto real): Crucita (−0,86298; −80,53691), La Boca (−0,80148; −80,52098) y Las Gilces (−0,82141; −80,52406). Las Gilces y La Boca están ~4 y ~7 km al norte del centro; mi ubicación provisional de la 1.11.0 era incorrecta. Playa, Los Arenales y San Jacinto siguen provisionales.
+
+### Decidido
+- **D-09** Selector de negocios con catálogo propio desde OpenStreetMap, sin API de pago (se especifica en 003). **D-10** Protección de contraseñas filtradas de Supabase: pospuesta para no pagar plan; queda abierta.
+
+---
+
+## [1.11.0] - 2026-10-08 (Hora Local)
+
+### Cambiado (decisión D-08: 0,50 USD por persona, sin precio por ruta)
+- **BD (`0007_tarifa_por_persona.sql`, aplicada al proyecto real):** se eliminan `tarifas` y `obtener_tarifa`; `zonas.precio_por_persona` (0,50); `viajes.pasajeros`, `origen_descripcion` y `destino_descripcion`; trigger `private.fijar_tarifa_viaje` que fija `tarifa = precio × pasajeros` e ignora lo que envíe el cliente; sector nuevo `la_boca`.
+- **Coordenadas de sectores corregidas:** estaban ~19 km al sur de Crucita (lat −1,04). Ahora giran en torno al punto de la parroquia (−0,8706; −80,5375). **Son provisionales**; La Boca es aproximada. Pendiente T20.
+- **Backend:** `POST /api/viajes/solicitar` acepta `pasajeros` (1–20), `sectorOrigenId`, `sectorDestinoId`, `origenDescripcion`, `destinoDescripcion`; ya no inserta `tarifa` (antes fijaba 1,50 para todos).
+- **Frontend:** `MapScreen` con selector de pasajeros, total en vivo y referencia de destino en texto; `sectors.ts` sin matriz de tarifas (`calculateFare`, `PRICE_PER_PERSON_USD`); consola del conductor muestra personas y referencia.
+
+### Corregido
+- `MapScreen` enviaba `sector_origen`/`sector_destino`, pero el backend exige `origen`/`destino` con coordenadas: toda solicitud de viaje devolvía 400. Ahora envía el payload correcto.
+
+### Pruebas
+- Backend 89/89, frontend 71/71, SQL/RLS 17/17 (Postgres 16 + PostGIS en Docker). `get_advisors(security)`: solo avisa "Leaked Password Protection" (ajuste del panel de Supabase).
+
+---
+
+## [1.10.0] - 2026-10-08 (Hora Local)
+
+### Verificado (paso 001, T4–T8)
+- BD real "Crucidrive - APP": migraciones 0001–0006 aplicadas, 9 tablas con RLS, semilla de Crucita (5 sectores, 10 tarifas idénticas a `sectors.ts`), tarifa simétrica y `get_advisors(security)` sin hallazgos.
+- Pendiente del paso 001: T16 (prueba de humo con 2 usuarios reales) y T18 (deuda de tipos del frontend, se resuelve en 007).
+
+### Seguridad de dependencias (backend)
+- `npm audit fix` (sin `--force`): se actualizaron en el lockfile `express`/`proxy-addr` (crítica: suplantación de IP), `qs`, `engine.io` y `socket.io-parser`. Dependencias de producción: **0 vulnerabilidades** (`npm audit --omit=dev`). Backend 80/80.
+- Quedan avisos solo en herramientas de desarrollo (`jest`, `nodemon`); el "fix" que propone npm es bajar a jest 25 / nodemon 1.x, por lo que se descarta. No llegan a producción.
+
+---
+
 ## [1.9.0] - 2026-10-08 (Hora Local)
 
 ### Integrado (sustituye a los PR #1 y #2, que tenían conflictos con `main`)

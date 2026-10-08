@@ -3,7 +3,7 @@
 ## 1. Actor: Pasajero
 - **CU-P01:** Registrarse e iniciar sesión de forma segura.
 - **CU-P02:** Visualizar en un mapa interactivo las tricimotos disponibles en un radio cercano.
-- **CU-P03:** Solicitar un viaje indicando sector de origen y destino (con visualización de tarifa pre-calculada).
+- **CU-P03:** Solicitar un viaje indicando sector de destino, número de pasajeros y, opcionalmente, una referencia en texto (el total se muestra antes de pedir: 0,50 USD por persona, sin importar la distancia).
 - **CU-P04:** Activar botón de pánico que notifique al panel administrador y comparta ruta de emergencia.
 
 ## 2. Actor: Conductor

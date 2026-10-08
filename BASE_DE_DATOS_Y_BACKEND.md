@@ -40,7 +40,9 @@ Entidad principal para el registro de transacciones de carreras.
 * `pasajero_id` / `conductor_id` (`UUID`, FK): Vinculados a `public.perfiles(id) ON DELETE SET NULL` para preservar el historial estadístico/contable del viaje aun si una de las cuentas involucradas es dada de baja en el futuro.
 * `origen` y `destino` (`GEOGRAPHY(POINT, 4326)`): Puntos geográficos exactos de inicio y fin de la ruta.
 * `estado` (`VARCHAR`): Ciclo de vida completo del viaje controlado por un `CHECK (estado IN ('solicitado', 'aceptado', 'en_curso', 'finalizado', 'cancelado'))`.
-* `tarifa` (`DECIMAL(5,2)`): Costo económico calculado para la carrera.
+* `pasajeros` (`SMALLINT`, 1–20): Número de personas del viaje.
+* `tarifa` (`DECIMAL(5,2)`): Total = `zonas.precio_por_persona` (0,50 USD) × `pasajeros`, fijado por un trigger de la BD.
+* `origen_descripcion` / `destino_descripcion` (`TEXT`, ≤ 200): Referencia opcional en texto libre.
 
 #### D. Tablas de Mensajería (`public.threads`, `public.thread_members`, `public.messages`)
 * `threads.viaje_id` (`UUID`, FK): Vincula un hilo de chat de forma única con un viaje mediante `REFERENCES public.viajes(id) ON DELETE SET NULL`. Esto resuelve el problema de persistencia permitiendo que el chat sobreviva en modo histórico si el viaje es purgado del flujo activo.

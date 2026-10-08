@@ -19,9 +19,9 @@ end $$;
 grant execute on all functions in schema pg_temp to authenticated;
 
 \echo '--- criterio 2 y 3: catálogo ---'
-select (select count(*) from sectores) = 5 and (select count(*) from tarifas) = 10 as semilla_ok;
-select (select precio from obtener_tarifa('playa','centro')) = (select precio from obtener_tarifa('centro','playa'))
-   and (select precio from obtener_tarifa('playa','centro')) = 1.50 as simetria_ok;
+select (select count(*) from sectores) = 6 and (select count(*) from sectores where id = 'la_boca') = 1 as semilla_ok;
+select (select precio_por_persona from zonas where id = 'crucita') = 0.50 as precio_por_persona_ok;
+select to_regclass('public.tarifas') is null and to_regproc('public.obtener_tarifa') is null as sin_tarifas_por_ruta;
 
 set role authenticated;
 \echo '--- perfiles ---'
@@ -52,7 +52,14 @@ select pg_temp.como('11111111-1111-1111-1111-111111111111');
 select count(*) = 1 as pasajero_ve_solo_disponibles from tricimotos;
 
 \echo '--- viajes ---'
-insert into viajes (id, pasajero_id, origen, destino, tarifa) values ('aaaaaaaa-0000-0000-0000-000000000001','11111111-1111-1111-1111-111111111111', extensions.st_geogfromtext('SRID=4326;POINT(-80.5432 -1.0448)'), extensions.st_geogfromtext('SRID=4326;POINT(-80.5485 -1.0470)'), 1.50);
+-- El cliente intenta fijar su propia tarifa (9.99): la BD la recalcula a 0,50 x 1 pasajero.
+insert into viajes (id, pasajero_id, origen, destino, tarifa) values ('aaaaaaaa-0000-0000-0000-000000000001','11111111-1111-1111-1111-111111111111', extensions.st_geogfromtext('SRID=4326;POINT(-80.5375 -0.8706)'), extensions.st_geogfromtext('SRID=4326;POINT(-80.5428 -0.8728)'), 9.99);
+select tarifa = 0.50 and pasajeros = 1 as tarifa_un_pasajero_ok from viajes where id = 'aaaaaaaa-0000-0000-0000-000000000001';
+insert into viajes (id, pasajero_id, origen, destino, pasajeros, destino_descripcion) values ('aaaaaaaa-0000-0000-0000-000000000002','11111111-1111-1111-1111-111111111111', extensions.st_geogfromtext('SRID=4326;POINT(-80.5375 -0.8706)'), extensions.st_geogfromtext('SRID=4326;POINT(-80.5400 -0.8350)'), 3, 'Frente al muelle');
+select tarifa = 1.50 as tarifa_tres_pasajeros_ok from viajes where id = 'aaaaaaaa-0000-0000-0000-000000000002';
+select pg_temp.debe_fallar($q$insert into viajes (pasajero_id, origen, destino, pasajeros) values ('11111111-1111-1111-1111-111111111111', extensions.st_geogfromtext('SRID=4326;POINT(0 0)'), extensions.st_geogfromtext('SRID=4326;POINT(0 0)'), 0)$q$, 'viaje con 0 pasajeros');
+select pg_temp.debe_fallar($q$update viajes set pasajeros=1 where id='aaaaaaaa-0000-0000-0000-000000000002'$q$, 'pasajero cambia el numero de pasajeros');
+update viajes set estado='cancelado', finalizado_en=now() where id='aaaaaaaa-0000-0000-0000-000000000002';
 select pg_temp.debe_fallar($q$update viajes set tarifa=0.01 where id='aaaaaaaa-0000-0000-0000-000000000001'$q$, 'pasajero cambia la tarifa');
 select pg_temp.como('22222222-2222-2222-2222-222222222222');
 select pg_temp.debe_fallar($q$insert into viajes (pasajero_id, origen, destino) values ('22222222-2222-2222-2222-222222222222', extensions.st_geogfromtext('SRID=4326;POINT(0 0)'), extensions.st_geogfromtext('SRID=4326;POINT(0 0)'))$q$, 'conductor crea viaje');
@@ -84,7 +91,7 @@ select updated_at > creado_en as trigger_updated_at_ok from viajes where id='aaa
 
 \echo '--- anon ---'
 reset role; set role anon;
-select count(*) = 5 as anon_lee_sectores from sectores;
+select count(*) = 6 as anon_lee_sectores from sectores;
 select count(*) = 0 as anon_no_lee_perfiles from perfiles;
 select count(*) = 0 as anon_no_lee_viajes from viajes;
 reset role;

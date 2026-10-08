@@ -15,11 +15,15 @@ Reglas no negociables. Cambiarlas requiere editar este archivo y registrarlo en 
 
 ## Decisiones tomadas (8 oct 2026)
 - D-02: **Mapa en Android con Google Maps** vía `react-native-maps` (ya integrado). Google indica que el uso móvil del Maps SDK for Android no tiene límite, pero exige API key restringida al paquete `com.crucidrive.app` y cuenta de facturación activa.
-- D-03: **Solo tricimotos en el MVP.** Cobro por persona y en efectivo. Las motos y el cobro por viaje quedan fuera hasta después del piloto.
+- D-03: **Solo tricimotos en el MVP.** Cobro por persona y en efectivo (precisado en D-08). Las motos y el cobro por viaje quedan fuera hasta después del piloto.
 - D-04: **Conductores aprobados por un administrador** (cédula, placa, foto). Sin auto-registro por SMS.
 - D-05: **El SOS abre una llamada al 911 (ECU 911)** y además registra la alerta con ubicación para el panel admin. La app no sustituye al 911.
+- D-08 (8 oct 2026): **Tarifa = 0,50 USD × número de personas.** No hay precio fijo por ruta, sector ni distancia. El precio unitario vive en `zonas.precio_por_persona` y lo aplica un trigger de la BD al crear el viaje (el cliente no lo decide). Sin tope de capacidad por regla de negocio; 20 pasajeros es solo una barrera técnica anti-abuso. Los sectores (Centro, Playa, Las Gilces, Los Arenales, San Jacinto, La Boca) sirven para ubicar y despachar, no para fijar el precio; el usuario puede añadir una referencia de texto libre del destino. Para elegir negocios o lugares concretos se usará un **catálogo propio** (D-09), sin API de pago.
 - D-06: **Backend con cliente Supabase por usuario** (JWT del usuario, RLS aplica). La clave de servicio solo en el servidor y solo para tareas del sistema.
 
+- D-09 (8 oct 2026): **Selector de negocios sin costo.** Nada de Google Places (se cobra por búsqueda). Se carga una vez un catálogo de lugares de Crucita desde OpenStreetMap (Overpass API, licencia ODbL: atribuir "© OpenStreetMap") a una tabla `lugares` en Supabase; la búsqueda es local (`pg_trgm`), no consume datos del mapa y no tiene costo por uso. El admin puede añadir lugares que falten y, si no hay coincidencia, el usuario escribe una referencia en texto libre. El mapa sigue siendo Google Maps (D-02; el SDK móvil es gratuito). Se especifica en `003-despacho`.
+
 ## Decisiones abiertas
+- D-10: **Protección contra contraseñas filtradas** de Supabase Auth (aviso del linter). Hoy requiere un plan de pago; se pospone para no gastar. Mitigación mientras tanto: revisar la longitud mínima de contraseña en Supabase Auth. Reevaluar antes del piloto.
 - D-01: el backend es JavaScript (CommonJS). ¿Migrar a TypeScript o mantener JS con JSDoc? Se decide en `007-hardening`.
 - D-07: aliado institucional (cooperativa de tricimotos o GAD de Crucita). Pendiente del paso 0.

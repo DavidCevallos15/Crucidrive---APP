@@ -11,18 +11,28 @@ const TELEFONO_RE = /^\+?[0-9]{7,15}$/;
 const PLACA_RE = /^[A-Z0-9-]{3,10}$/;
 const SECTOR_RE = /^[a-z0-9_]{1,40}$/;
 const MAX_MENSAJE = 1000;
+const MAX_DESCRIPCION = 200;
+// Barrera técnica anti-abuso; la regla de negocio no fija capacidad (D-08).
+const MAX_PASAJEROS = 20;
 
 const isUuid = (v) => typeof v === 'string' && UUID_RE.test(v);
 const isSectorId = (v) => typeof v === 'string' && SECTOR_RE.test(v);
+const isPasajerosValido = (v) => Number.isInteger(v) && v >= 1 && v <= MAX_PASAJEROS;
 
 const normalizarNombre = (v) => (typeof v === 'string' ? v.trim().replace(/\s+/g, ' ') : '');
 const normalizarTelefono = (v) => (typeof v === 'string' ? v.replace(/[\s-]/g, '') : '');
+// Texto libre opcional (referencia de origen/destino): sin saltos de línea; '' si no hay.
+const normalizarDescripcion = (v) => (typeof v === 'string' ? v.trim().replace(/\s+/g, ' ') : '');
 const normalizarPlaca = (v) => (typeof v === 'string' ? v.trim().toUpperCase() : '');
 
 module.exports = {
   MAX_MENSAJE,
+  MAX_DESCRIPCION,
+  MAX_PASAJEROS,
   isUuid,
   isSectorId,
+  isPasajerosValido,
+  normalizarDescripcion,
   isNombreValido: (v) => NOMBRE_RE.test(v),
   isTelefonoValido: (v) => TELEFONO_RE.test(v),
   isPlacaValida: (v) => PLACA_RE.test(v),

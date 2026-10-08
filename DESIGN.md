@@ -98,7 +98,7 @@ Para implementar estos tokens de forma nativa en la aplicación móvil con React
 ### B. Panel del Mapa y Ficha de Destino (Pasajero)
 - **Mapa Base:** Ocupa el 100% de la pantalla (OpenStreetMap / Mapbox).
 - **Barra de Búsqueda de Destino:** Flota en la parte superior. Estructura de cápsula horizontal ultra-translúcida (`borderRadiusFull`), con desenfoque de fondo y borde de cristal fino.
-- **Ficha de Información del Viaje (Bottom Sheet):** Se despliega desde la parte inferior. Fondo translúcido con desenfoque intenso. Muestra la tarifa precalculada de forma destacada utilizando tipografía en peso `bold` y tamaño `xxl`.
+- **Ficha de Información del Viaje (Bottom Sheet):** Se despliega desde la parte inferior. Fondo translúcido con desenfoque intenso. Muestra el total (0,50 USD por persona, con selector de pasajeros) de forma destacada utilizando tipografía en peso `bold` y tamaño `xxl`.
 - **Botón de Pánico (SOS):** Flotante, circular, color rojo brillante (`#EF4444`). Posee un efecto de pulso animado en el fondo (`react-native-reanimated`) que simula ondas de sonar.
 
 ### C. Consola del Conductor (Modo Conductor)

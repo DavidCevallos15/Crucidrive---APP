@@ -3,6 +3,8 @@ import {
   StyleSheet,
   View,
   Text,
+  TextInput,
+  Pressable,
   Dimensions,
   Alert,
 } from 'react-native';
@@ -21,7 +23,7 @@ import { useTariff } from '../hooks/useTariff';
 import { useMapRegion } from '../hooks/useMapRegion';
 import { useLocationStore, type NearbyDriver } from '../store/useLocationStore';
 import { useRideStore } from '../store/useRideStore';
-import { SECTORS } from '../constants/sectors';
+import { SECTORS, MAX_PASSENGERS } from '../constants/sectors';
 import { LOCATION_CONFIG, API_CONFIG } from '../constants/config';
 import { COLORS, FONTS, SPACING, SHAPES, Z_INDEX } from '../constants/theme';
 import { authFetch } from '../utils/authFetch';
@@ -34,7 +36,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
  * Muestra:
  * - Mapa interactivo a pantalla completa con marcadores de tricimotos
  * - Barra de búsqueda flotante estilo píldora (sector de destino)
- * - Bottom sheet con tarifa precalculada
+ * - Bottom sheet con el total (0,50 USD por persona)
  * - Botón de Pánico (SOS) flotante
  *
  * Diseño: DESIGN.md §3.B — Panel del Mapa y Ficha de Destino
@@ -48,15 +50,13 @@ export const MapScreen: React.FC = () => {
 
   const [selectedDestination, setSelectedDestination] = useState<string | null>(null);
   const [showRideSheet, setShowRideSheet] = useState(false);
+  const [passengers, setPassengers] = useState(1);
+  const [destinationNote, setDestinationNote] = useState('');
 
-  const {
-    tariff,
-    originName,
-    destinationName,
-    formattedPrice,
-    formattedTime,
-    formattedDistance,
-  } = useTariff(currentSectorId, selectedDestination);
+  const { total, formattedPrice, formattedPricePerPerson } = useTariff(passengers);
+
+  const originName = SECTORS.find((s) => s.id === currentSectorId)?.name ?? '';
+  const destinationName = SECTORS.find((s) => s.id === selectedDestination)?.name ?? '';
 
   // ─── Región inicial del mapa ───────────────────────────────
   const initialRegion = useMapRegion(userCoords);
@@ -91,16 +91,25 @@ export const MapScreen: React.FC = () => {
 
   // ─── Solicitar viaje ──────────────────────────────────────
   const handleRequestRide = useCallback(async () => {
-    if (!currentSectorId || !selectedDestination || !tariff) return;
+    const originSector = SECTORS.find((s) => s.id === currentSectorId);
+    const destinationSector = SECTORS.find((s) => s.id === selectedDestination);
+    if (!originSector || !destinationSector) return;
+
+    const note = destinationNote.trim();
 
     try {
       setRequesting(true);
 
+      // El precio no se envía: el servidor lo calcula (0,50 × pasajeros).
       const response = await authFetch(API_CONFIG.endpoints.rides.request, {
         method: 'POST',
         body: JSON.stringify({
-          sector_origen: currentSectorId,
-          sector_destino: selectedDestination,
+          origen: userCoords ?? originSector.center,
+          destino: destinationSector.center,
+          pasajeros: passengers,
+          sectorOrigenId: originSector.id,
+          sectorDestinoId: destinationSector.id,
+          ...(note ? { destinoDescripcion: note } : {}),
         }),
       });
 
@@ -115,13 +124,13 @@ export const MapScreen: React.FC = () => {
       setActiveRide({
         id: data.data?.id ?? '',
         status: 'solicitado',
-        originSectorId: currentSectorId,
-        originName,
-        destinationSectorId: selectedDestination,
-        destinationName,
-        price: tariff.price,
-        estimatedDistanceKm: tariff.estimatedDistanceKm,
-        estimatedTimeMin: tariff.estimatedTimeMin,
+        originSectorId: originSector.id,
+        originName: originSector.name,
+        destinationSectorId: destinationSector.id,
+        destinationName: destinationSector.name,
+        passengers,
+        price: Number(data.data?.tarifa ?? total),
+        destinationNote: note,
         driver: null,
         chatThreadId: null,
         createdAt: new Date().toISOString(),
@@ -135,9 +144,10 @@ export const MapScreen: React.FC = () => {
   }, [
     currentSectorId,
     selectedDestination,
-    tariff,
-    originName,
-    destinationName,
+    userCoords,
+    passengers,
+    destinationNote,
+    total,
     setActiveRide,
     setRequesting,
   ]);
@@ -258,30 +268,45 @@ export const MapScreen: React.FC = () => {
       )}
 
       {/* ─── BOTTOM SHEET: FICHA DE VIAJE ─────────────────── */}
-      {showRideSheet && tariff && (
+      {showRideSheet && (
         <Animated.View
           entering={FadeInUp.delay(100).duration(400)}
           style={styles.rideSheetContainer}
         >
           <GlassCard style={styles.rideSheet}>
-            {/* Encabezado con tarifa */}
+            {/* Encabezado con el total */}
             <View style={styles.rideHeader}>
-              <Text style={styles.rideLabel}>Tarifa precalculada</Text>
+              <Text style={styles.rideLabel}>Total</Text>
               <Text style={styles.ridePrice}>{formattedPrice}</Text>
               <Text style={styles.rideCurrency}>USD</Text>
             </View>
 
-            {/* Detalles de la ruta */}
+            {/* Detalles del viaje */}
             <View style={styles.routeDetails}>
               <View style={styles.routeRow}>
-                <Ionicons name="navigate" size={16} color={COLORS.primary} />
-                <Text style={styles.routeText}>Distancia</Text>
-                <Text style={styles.routeValue}>{formattedDistance}</Text>
-              </View>
-              <View style={styles.routeRow}>
-                <Ionicons name="time" size={16} color={COLORS.secondary} />
-                <Text style={styles.routeText}>Duración</Text>
-                <Text style={styles.routeValue}>{formattedTime}</Text>
+                <Ionicons name="people" size={16} color={COLORS.primary} />
+                <Text style={styles.routeText}>
+                  Pasajeros ({formattedPricePerPerson} c/u)
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Quitar un pasajero"
+                  disabled={passengers <= 1}
+                  onPress={() => setPassengers((n) => Math.max(1, n - 1))}
+                  style={[styles.stepperButton, passengers <= 1 && styles.stepperDisabled]}
+                >
+                  <Ionicons name="remove" size={22} color={COLORS.white} />
+                </Pressable>
+                <Text style={styles.stepperValue}>{passengers}</Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Agregar un pasajero"
+                  disabled={passengers >= MAX_PASSENGERS}
+                  onPress={() => setPassengers((n) => Math.min(MAX_PASSENGERS, n + 1))}
+                  style={[styles.stepperButton, passengers >= MAX_PASSENGERS && styles.stepperDisabled]}
+                >
+                  <Ionicons name="add" size={22} color={COLORS.white} />
+                </Pressable>
               </View>
               <View style={styles.routeRow}>
                 <Ionicons name="location" size={16} color={COLORS.success} />
@@ -289,6 +314,15 @@ export const MapScreen: React.FC = () => {
                   {originName} → {destinationName}
                 </Text>
               </View>
+              <TextInput
+                value={destinationNote}
+                onChangeText={setDestinationNote}
+                placeholder="¿Dónde exactamente? (opcional)"
+                placeholderTextColor={COLORS.glassTextMutedDark}
+                maxLength={200}
+                accessibilityLabel="Referencia del destino"
+                style={styles.noteInput}
+              />
             </View>
 
             {/* Botón de solicitud */}
@@ -314,6 +348,8 @@ export const MapScreen: React.FC = () => {
               onPress={() => {
                 setShowRideSheet(false);
                 setSelectedDestination(null);
+                setPassengers(1);
+                setDestinationNote('');
               }}
               variant="ghost"
               size="sm"
@@ -442,6 +478,36 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.body,
     fontWeight: FONTS.weights.semibold,
     color: COLORS.glassTextDark,
+  },
+  stepperButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+  },
+  stepperDisabled: {
+    opacity: 0.4,
+  },
+  stepperValue: {
+    minWidth: 36,
+    textAlign: 'center',
+    fontSize: FONTS.sizes.lg,
+    fontFamily: FONTS.heading,
+    fontWeight: FONTS.weights.bold,
+    color: COLORS.glassTextDark,
+  },
+  noteInput: {
+    marginTop: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 12,
+    borderRadius: SHAPES.borderRadiusFull,
+    borderWidth: 1,
+    borderColor: COLORS.glassBorderDark,
+    color: COLORS.glassTextDark,
+    fontSize: FONTS.sizes.base,
+    fontFamily: FONTS.body,
   },
   requestButton: {
     alignSelf: 'stretch',

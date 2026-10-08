@@ -1,10 +1,16 @@
-import { SECTORS, TARIFFS, findTariff, findNearestSector } from '../src/constants/sectors';
-import type { Sector, TariffEntry } from '../src/constants/sectors';
+import * as sectorsModule from '../src/constants/sectors';
+import {
+  SECTORS,
+  PRICE_PER_PERSON_USD,
+  MAX_PASSENGERS,
+  calculateFare,
+  findNearestSector,
+} from '../src/constants/sectors';
 
 describe('sectors constants', () => {
   describe('SECTORS', () => {
-    it('should have 5 defined sectors', () => {
-      expect(SECTORS).toHaveLength(5);
+    it('should have 6 defined sectors', () => {
+      expect(SECTORS).toHaveLength(6);
     });
 
     it('should have unique sector IDs', () => {
@@ -28,6 +34,7 @@ describe('sectors constants', () => {
       expect(ids).toContain('las_gilces');
       expect(ids).toContain('los_arenales');
       expect(ids).toContain('san_jacinto');
+      expect(ids).toContain('la_boca');
     });
 
     it('each sector should have a name and markerColor', () => {
@@ -38,112 +45,76 @@ describe('sectors constants', () => {
     });
   });
 
-  describe('TARIFFS', () => {
-    it('should have 10 tariff entries (all unique sector pairs)', () => {
-      expect(TARIFFS).toHaveLength(10);
+  describe('pricing (D-08: 0.50 USD per person)', () => {
+    it('charges 0.50 USD per person', () => {
+      expect(PRICE_PER_PERSON_USD).toBe(0.5);
     });
 
-    it('all tariffs should have positive prices', () => {
-      for (const tariff of TARIFFS) {
-        expect(tariff.price).toBeGreaterThan(0);
-      }
+    it.each([
+      [1, 0.5],
+      [2, 1.0],
+      [3, 1.5],
+      [4, 2.0],
+      [7, 3.5],
+    ])('%i passenger(s) cost %f USD', (passengers, expected) => {
+      expect(calculateFare(passengers)).toBe(expected);
     });
 
-    it('all tariffs should have valid distance and time estimates', () => {
-      for (const tariff of TARIFFS) {
-        expect(tariff.estimatedDistanceKm).toBeGreaterThan(0);
-        expect(tariff.estimatedTimeMin).toBeGreaterThan(0);
-      }
+    it.each([0, -3, 1.5, NaN])('falls back to one passenger for invalid count %p', (passengers) => {
+      expect(calculateFare(passengers)).toBe(0.5);
     });
 
-    it('all tariff sectors should exist in SECTORS', () => {
-      const validIds = SECTORS.map((s) => s.id);
-      for (const tariff of TARIFFS) {
-        expect(validIds).toContain(tariff.originId);
-        expect(validIds).toContain(tariff.destinationId);
-      }
-    });
-  });
-
-  describe('findTariff', () => {
-    it('should find tariff for centro -> playa', () => {
-      const result = findTariff('centro', 'playa');
-      expect(result).toBeDefined();
-      expect(result!.price).toBe(1.50);
-      expect(result!.estimatedDistanceKm).toBe(1.2);
-      expect(result!.estimatedTimeMin).toBe(5);
+    it('does not depend on sectors or distance (no route fare matrix)', () => {
+      expect('TARIFFS' in sectorsModule).toBe(false);
+      expect('findTariff' in sectorsModule).toBe(false);
     });
 
-    it('should find tariff in reverse direction (playa -> centro)', () => {
-      const result = findTariff('playa', 'centro');
-      expect(result).toBeDefined();
-      expect(result!.price).toBe(1.50);
-    });
-
-    it('should return symmetric tariffs (A->B equals B->A)', () => {
-      const forward = findTariff('centro', 'las_gilces');
-      const reverse = findTariff('las_gilces', 'centro');
-      expect(forward).toEqual(reverse);
-    });
-
-    it('should return undefined for non-existent route', () => {
-      const result = findTariff('centro', 'nonexistent');
-      expect(result).toBeUndefined();
-    });
-
-    it('should return undefined for same sector (no self-trip)', () => {
-      const result = findTariff('centro', 'centro');
-      expect(result).toBeUndefined();
-    });
-
-    it('should find tariff for las_gilces -> san_jacinto', () => {
-      const result = findTariff('las_gilces', 'san_jacinto');
-      expect(result).toBeDefined();
-      expect(result!.price).toBe(3.00);
-    });
-
-    it('should find tariff for los_arenales -> san_jacinto', () => {
-      const result = findTariff('los_arenales', 'san_jacinto');
-      expect(result).toBeDefined();
-      expect(result!.price).toBe(1.50);
+    it('allows up to the technical passenger limit', () => {
+      expect(MAX_PASSENGERS).toBe(20);
+      expect(calculateFare(MAX_PASSENGERS)).toBe(10);
     });
   });
 
   describe('findNearestSector', () => {
     it('should return centro sector for coordinates near centro', () => {
-      const result = findNearestSector(-1.0448, -80.5432);
+      const result = findNearestSector(-0.86297781, -80.53690632);
       expect(result.id).toBe('centro');
     });
 
     it('should return playa sector for coordinates near playa', () => {
-      const result = findNearestSector(-1.0470, -80.5485);
+      const result = findNearestSector(-0.8652, -80.5422);
       expect(result.id).toBe('playa');
     });
 
     it('should return las_gilces for coordinates near las_gilces', () => {
-      const result = findNearestSector(-1.0395, -80.5350);
+      const result = findNearestSector(-0.82141437, -80.52405601);
       expect(result.id).toBe('las_gilces');
     });
 
     it('should return los_arenales for coordinates near los_arenales', () => {
-      const result = findNearestSector(-1.0520, -80.5410);
+      const result = findNearestSector(-0.8702, -80.5347);
       expect(result.id).toBe('los_arenales');
     });
 
+    it('should return la_boca for coordinates near la_boca', () => {
+      const result = findNearestSector(-0.80147852, -80.52098189);
+      expect(result.id).toBe('la_boca');
+    });
+
     it('should return san_jacinto for coordinates near san_jacinto', () => {
-      const result = findNearestSector(-1.0600, -80.5370);
+      const result = findNearestSector(-0.8782, -80.5307);
       expect(result.id).toBe('san_jacinto');
     });
 
     it('should return the closest sector even for distant coordinates', () => {
-      // Far north - closest to las_gilces (most northern sector)
-      const result = findNearestSector(-1.0300, -80.5350);
-      expect(result.id).toBe('las_gilces');
+      // Far north - closest to la_boca (most northern sector)
+      const result = findNearestSector(-0.7500, -80.5200);
+      expect(result.id).toBe('la_boca');
     });
 
     it('should handle edge case of equidistant points by returning first match', () => {
       // Use exact midpoint between two sectors - should return one of them
-      const result = findNearestSector(-1.0459, -80.5458);
+      const result = findNearestSector(-0.8641, -80.5396);
       expect(SECTORS.map(s => s.id)).toContain(result.id);
     });
 

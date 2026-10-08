@@ -38,6 +38,10 @@ interface IncomingRideRequest {
   sectorOrigen: string;
   sectorDestino: string;
   pasajeroNombre: string;
+  /** Número de personas del viaje (cobro de 0,50 USD por persona) */
+  pasajeros?: number;
+  /** Referencia de texto libre del destino */
+  destinoDescripcion?: string;
   tarifa: number;
 }
 
@@ -257,6 +261,9 @@ export const DriverConsoleScreen: React.FC = () => {
                   <Ionicons name="location" size={14} color={COLORS.secondary} />
                   <Text style={styles.requestRouteText}>
                     {incomingRequest?.sectorDestino}
+                    {incomingRequest?.destinoDescripcion
+                      ? ` · ${incomingRequest.destinoDescripcion}`
+                      : ''}
                   </Text>
                 </View>
               </View>
@@ -264,6 +271,10 @@ export const DriverConsoleScreen: React.FC = () => {
               {/* Tarifa */}
               <Text style={styles.requestPrice}>
                 ${incomingRequest?.tarifa.toFixed(2)}
+              </Text>
+              <Text style={styles.requestSubtitle}>
+                {incomingRequest?.pasajeros ?? 1}{' '}
+                {(incomingRequest?.pasajeros ?? 1) === 1 ? 'persona' : 'personas'}
               </Text>
 
               {/* Botones de acción (grandes para facilitar toque en conducción) */}
