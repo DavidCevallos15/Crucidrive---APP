@@ -4,17 +4,17 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
-  Dimensions,
   Alert,
 } from 'react-native';
 import MapView, { Marker } from '../components/Map';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { Easing, FadeInUp, FadeOut, ReduceMotion } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { GlassCard } from '../components/GlassCard';
 import { GlassButton } from '../components/GlassButton';
 import { BlurContainer } from '../components/BlurContainer';
+import { PressableScale } from '../components/PressableScale';
 import { PanicButton } from '../components/PanicButton';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { useLocation } from '../hooks/useLocation';
@@ -25,24 +25,29 @@ import { useLocationStore, type NearbyDriver } from '../store/useLocationStore';
 import { useRideStore } from '../store/useRideStore';
 import { SECTORS, MAX_PASSENGERS } from '../constants/sectors';
 import { LOCATION_CONFIG, API_CONFIG } from '../constants/config';
-import { COLORS, FONTS, SPACING, SHAPES, Z_INDEX } from '../constants/theme';
+import { COLORS, FONTS, SPACING, SHAPES, Z_INDEX, ANIMATION } from '../constants/theme';
 import { authFetch } from '../utils/authFetch';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+/** Entrada de paneles: corta y con ease-out; respeta "reducir movimiento" del sistema. */
+const PANEL_IN = FadeInUp.duration(ANIMATION.enterDuration)
+  .easing(Easing.bezier(...ANIMATION.easeOut))
+  .reduceMotion(ReduceMotion.System);
+const PANEL_OUT = FadeOut.duration(ANIMATION.exitDuration).reduceMotion(ReduceMotion.System);
 
 /**
  * Pantalla principal del mapa para el pasajero.
  *
  * Muestra:
  * - Mapa interactivo a pantalla completa con marcadores de tricimotos
- * - Barra de búsqueda flotante estilo píldora (sector de destino)
+ * - Píldora de estado con el sector donde estás
  * - Bottom sheet con el total (0,50 USD por persona)
  * - Botón de Pánico (SOS) flotante
  *
  * Diseño: DESIGN.md §3.B — Panel del Mapa y Ficha de Destino
  */
 export const MapScreen: React.FC = () => {
-  const { userCoords, currentSectorId } = useLocation(false);
+  const insets = useSafeAreaInsets();
+  const { userCoords, currentSectorId, hasPermission } = useLocation(false);
   const { joinSector, onEvent } = useSocket();
   const nearbyDrivers = useLocationStore((s) => s.nearbyDrivers);
   const updateNearbyDriver = useLocationStore((s) => s.updateNearbyDriver);
@@ -56,6 +61,11 @@ export const MapScreen: React.FC = () => {
   const { total, formattedPrice, formattedPricePerPerson } = useTariff(passengers);
 
   const originName = SECTORS.find((s) => s.id === currentSectorId)?.name ?? '';
+  const statusText = currentSectorId
+    ? `Estás en ${originName}`
+    : hasPermission
+      ? 'Buscando tu ubicación...'
+      : 'Activa tu ubicación';
   const destinationName = SECTORS.find((s) => s.id === selectedDestination)?.name ?? '';
 
   // ─── Región inicial del mapa ───────────────────────────────
@@ -218,22 +228,20 @@ export const MapScreen: React.FC = () => {
         ))}
       </MapView>
 
-      {/* ─── BARRA DE BÚSQUEDA FLOTANTE (PÍLDORA) ─────────── */}
+      {/* ─── ESTADO DE UBICACIÓN ───────────────────────────── */}
       <Animated.View
-        entering={FadeInDown.delay(200).duration(500)}
-        style={styles.searchBarContainer}
+        entering={PANEL_IN}
+        style={[styles.statusContainer, { top: insets.top + 12 }]}
+        pointerEvents="none"
       >
-        <BlurContainer
-          intensity={30}
-          style={styles.searchBar}
-        >
+        <BlurContainer intensity={30} style={styles.statusPill}>
           <Ionicons
-            name="search"
-            size={20}
-            color={COLORS.glassTextMutedDark}
+            name={currentSectorId ? 'location' : 'location-outline'}
+            size={18}
+            color={currentSectorId ? COLORS.primaryLight : COLORS.secondaryLight}
           />
-          <Text style={styles.searchText}>
-            ¿A dónde vas?
+          <Text style={styles.statusText} numberOfLines={1}>
+            {statusText}
           </Text>
         </BlurContainer>
       </Animated.View>
@@ -241,11 +249,16 @@ export const MapScreen: React.FC = () => {
       {/* ─── SELECTOR DE DESTINO ───────────────────────────── */}
       {!showRideSheet && (
         <Animated.View
-          entering={FadeInUp.delay(400).duration(500)}
+          entering={PANEL_IN}
+          exiting={PANEL_OUT}
           style={styles.destinationContainer}
         >
-          <GlassCard style={styles.destinationCard}>
-            <Text style={styles.sectionTitle}>Selecciona tu destino</Text>
+          <GlassCard
+            style={styles.destinationCard}
+            noPadding
+          >
+            <View style={[styles.sheetBody, { paddingBottom: insets.bottom + SPACING.md }]}>
+            <Text style={styles.sectionTitle} accessibilityRole="header">¿A dónde vas?</Text>
             {availableDestinations.map((sector) => (
               <GlassButton
                 key={sector.id}
@@ -263,6 +276,7 @@ export const MapScreen: React.FC = () => {
                 style={styles.destinationButton}
               />
             ))}
+            </View>
           </GlassCard>
         </Animated.View>
       )}
@@ -270,10 +284,12 @@ export const MapScreen: React.FC = () => {
       {/* ─── BOTTOM SHEET: FICHA DE VIAJE ─────────────────── */}
       {showRideSheet && (
         <Animated.View
-          entering={FadeInUp.delay(100).duration(400)}
+          entering={PANEL_IN}
+          exiting={PANEL_OUT}
           style={styles.rideSheetContainer}
         >
-          <GlassCard style={styles.rideSheet}>
+          <GlassCard style={styles.rideSheet} noPadding>
+            <View style={[styles.sheetBody, { paddingBottom: insets.bottom + SPACING.md }]}>
             {/* Encabezado con el total */}
             <View style={styles.rideHeader}>
               <Text style={styles.rideLabel}>Total</Text>
@@ -288,25 +304,27 @@ export const MapScreen: React.FC = () => {
                 <Text style={styles.routeText}>
                   Pasajeros ({formattedPricePerPerson} c/u)
                 </Text>
-                <Pressable
+                <PressableScale
                   accessibilityRole="button"
                   accessibilityLabel="Quitar un pasajero"
                   disabled={passengers <= 1}
+                  pressedScale={0.92}
                   onPress={() => setPassengers((n) => Math.max(1, n - 1))}
                   style={[styles.stepperButton, passengers <= 1 && styles.stepperDisabled]}
                 >
                   <Ionicons name="remove" size={22} color={COLORS.white} />
-                </Pressable>
+                </PressableScale>
                 <Text style={styles.stepperValue}>{passengers}</Text>
-                <Pressable
+                <PressableScale
                   accessibilityRole="button"
                   accessibilityLabel="Agregar un pasajero"
                   disabled={passengers >= MAX_PASSENGERS}
+                  pressedScale={0.92}
                   onPress={() => setPassengers((n) => Math.min(MAX_PASSENGERS, n + 1))}
                   style={[styles.stepperButton, passengers >= MAX_PASSENGERS && styles.stepperDisabled]}
                 >
                   <Ionicons name="add" size={22} color={COLORS.white} />
-                </Pressable>
+                </PressableScale>
               </View>
               <View style={styles.routeRow}>
                 <Ionicons name="location" size={16} color={COLORS.success} />
@@ -355,6 +373,7 @@ export const MapScreen: React.FC = () => {
               size="sm"
               style={styles.cancelButton}
             />
+            </View>
           </GlassCard>
         </Animated.View>
       )}
@@ -371,29 +390,34 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.darkBg,
   },
 
-  // ─── Barra de búsqueda ──────────────────────────────────
-  searchBarContainer: {
+  // ─── Estado de ubicación ────────────────────────────────
+  statusContainer: {
     position: 'absolute',
-    top: 60,
     left: SPACING.md,
     right: SPACING.md,
     zIndex: Z_INDEX.searchBar,
   },
-  searchBar: {
+  statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
     paddingHorizontal: SPACING.md,
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderRadius: SHAPES.borderRadiusFull,
     borderWidth: 1,
     borderColor: COLORS.glassBorderDark,
   },
-  searchText: {
-    color: COLORS.glassTextMutedDark,
-    fontSize: FONTS.sizes.base,
+  statusText: {
+    color: COLORS.glassTextDark,
+    fontSize: FONTS.sizes.sm,
     fontFamily: FONTS.body,
     marginLeft: SPACING.sm,
-    flex: 1,
+    flexShrink: 1,
+  },
+  sheetBody: {
+    paddingHorizontal: SPACING.md,
+    paddingTop: SPACING.md,
   },
 
   // ─── Selector de destino ─────────────────────────────────
@@ -402,9 +426,12 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+    alignItems: 'center',
     zIndex: Z_INDEX.bottomSheet,
   },
   destinationCard: {
+    width: '100%',
+    maxWidth: 520,
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
   },
@@ -426,12 +453,14 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+    alignItems: 'center',
     zIndex: Z_INDEX.bottomSheet,
   },
   rideSheet: {
+    width: '100%',
+    maxWidth: 520,
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
-    paddingBottom: 40,
   },
   rideHeader: {
     flexDirection: 'row',
@@ -449,6 +478,7 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.heading,
     fontWeight: FONTS.weights.bold,
     color: COLORS.secondary,
+    fontVariant: ['tabular-nums'],
   },
   rideCurrency: {
     fontSize: FONTS.sizes.sm,
@@ -497,6 +527,7 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.heading,
     fontWeight: FONTS.weights.bold,
     color: COLORS.glassTextDark,
+    fontVariant: ['tabular-nums'],
   },
   noteInput: {
     marginTop: SPACING.sm,

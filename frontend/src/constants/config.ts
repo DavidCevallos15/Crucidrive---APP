@@ -97,10 +97,11 @@ export const LOCATION_CONFIG = {
 
   /** Región inicial del mapa (Crucita, Manabí) */
   defaultRegion: {
-    latitude: -1.0448,
-    longitude: -80.5432,
-    latitudeDelta: 0.02,
-    longitudeDelta: 0.02,
+    // Encuadra los 5 sectores, de La Boca (norte) a La Loma (sur)
+    latitude: -0.8425,
+    longitude: -80.531,
+    latitudeDelta: 0.11,
+    longitudeDelta: 0.06,
   },
 } as const;
 

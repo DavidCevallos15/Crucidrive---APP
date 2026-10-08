@@ -1,18 +1,14 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import {
   StyleSheet,
   Text,
   type TextStyle,
   type ViewStyle,
   ActivityIndicator,
+  View,
 } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { COLORS, FONTS, SHAPES, ANIMATION, SPACING } from '../constants/theme';
+import { COLORS, FONTS, SHAPES, SPACING } from '../constants/theme';
+import { PressableScale } from './PressableScale';
 
 /**
  * Variantes visuales del botón.
@@ -76,10 +72,11 @@ const SIZE_CONFIG: Record<ButtonSize, { height: number; paddingHorizontal: numbe
 };
 
 /**
- * Botón Glassmorphic con micro-animación de escala.
+ * Botón Glassmorphic con respuesta táctil.
  *
- * Al pulsar, el botón reduce su escala a 0.97 usando react-native-reanimated
- * con una curva spring natural, siguiendo las directrices de DESIGN.md.
+ * Se apoya en PressableScale: se encoge un poco al pulsar y vuelve rápido al
+ * soltar. Funciona con toque, clic y teclado (Enter/Espacio) y respeta
+ * "reducir movimiento".
  *
  * @example
  * <GlassButton
@@ -99,24 +96,7 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
   leftIcon,
   style,
 }) => {
-  const scale = useSharedValue(1);
   const sizeConfig = SIZE_CONFIG[size];
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const tapGesture = Gesture.Tap()
-    .enabled(!disabled && !loading)
-    .onBegin(() => {
-      scale.value = withSpring(ANIMATION.pressScale, ANIMATION.spring);
-    })
-    .onFinalize(() => {
-      scale.value = withSpring(1, ANIMATION.spring);
-    })
-    .onEnd(() => {
-      onPress();
-    });
 
   const containerStyle: ViewStyle = {
     height: sizeConfig.height,
@@ -138,30 +118,23 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
   };
 
   return (
-    <GestureDetector gesture={tapGesture}>
-      <Animated.View
-        style={[styles.container, containerStyle, animatedStyle, style]}
-        accessibilityRole="button"
-        accessibilityLabel={label}
-        accessibilityState={{ disabled, busy: loading }}
-      >
-        {loading ? (
-          <ActivityIndicator
-            color={VARIANT_TEXT_COLORS[variant]}
-            size="small"
-          />
-        ) : (
-          <>
-            {leftIcon && (
-              <Animated.View style={styles.iconContainer}>
-                {leftIcon}
-              </Animated.View>
-            )}
-            <Text style={textStyle}>{label}</Text>
-          </>
-        )}
-      </Animated.View>
-    </GestureDetector>
+    <PressableScale
+      onPress={onPress}
+      disabled={disabled || loading}
+      style={[styles.container, containerStyle, style]}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled, busy: loading }}
+    >
+      {loading ? (
+        <ActivityIndicator color={VARIANT_TEXT_COLORS[variant]} size="small" />
+      ) : (
+        <>
+          {leftIcon && <View style={styles.iconContainer}>{leftIcon}</View>}
+          <Text style={textStyle}>{label}</Text>
+        </>
+      )}
+    </PressableScale>
   );
 };
 

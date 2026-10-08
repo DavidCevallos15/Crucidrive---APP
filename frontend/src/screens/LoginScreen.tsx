@@ -195,7 +195,7 @@ export const LoginScreen: React.FC = () => {
           style={styles.footer}
         >
           <Text style={styles.footerText}>
-            Crucita, Manabí — Ecuador
+            Crucita, Manabí, Ecuador
           </Text>
         </Animated.View>
       </KeyboardAvoidingView>

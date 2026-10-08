@@ -13,6 +13,7 @@ colors:
   successLight: "#34D399"
   darkBg: "#0B0F19"
   lightBg: "#F8FAFC"
+  glassSurface: "rgba(11, 15, 25, 0.82)"
   glassBgDark: "rgba(255, 255, 255, 0.07)"
   glassBgLight: "rgba(15, 23, 42, 0.04)"
   glassBorderDark: "rgba(255, 255, 255, 0.12)"
@@ -87,6 +88,13 @@ Para implementar estos tokens de forma nativa en la aplicación móvil con React
 
 ---
 
+### Legibilidad y movimiento (reglas de este sistema)
+- **Superficie del cristal:** `glassSurface` (negro azulado al 82 %) con desenfoque. El blanco translúcido al 7 % no garantiza contraste sobre un mapa claro; el texto debe cumplir WCAG AA (4,5:1) sobre cualquier mapa.
+- **Movimiento:** los paneles entran en 220 ms con ease-out `cubic-bezier(0.23, 1, 0.32, 1)` y salen en 140 ms; sin retardos de entrada. Respuesta táctil al pulsar: escala 0.97 (0.92 en los botones de contador), 100 ms al bajar y 160 ms al soltar. Todo respeta "reducir movimiento".
+- **Botones:** se construyen sobre `PressableScale` (toque, clic y teclado), no sobre gestos sueltos.
+- **Cifras:** precios y contadores usan numerales tabulares para que no salten al cambiar.
+- **Tipografía:** Outfit para títulos, Inter para cuerpo. Sin guiones largos en el texto visible.
+
 ## 3. Guías de Componentes Clave
 
 ### A. Pantalla de Autenticación (Login con SMS)
@@ -96,10 +104,10 @@ Para implementar estos tokens de forma nativa en la aplicación móvil con React
 - **Botón de Acción (SMS):** Sólido, color naranja atardecer (`#F59E0B`), con un ligero reflejo superior para darle tridimensionalidad.
 
 ### B. Panel del Mapa y Ficha de Destino (Pasajero)
-- **Mapa Base:** Ocupa el 100% de la pantalla (OpenStreetMap / Mapbox).
-- **Barra de Búsqueda de Destino:** Flota en la parte superior. Estructura de cápsula horizontal ultra-translúcida (`borderRadiusFull`), con desenfoque de fondo y borde de cristal fino.
+- **Mapa Base:** Ocupa el 100% de la pantalla. En Android es Google Maps con estilo nocturno (D-02); en la versión web, OpenStreetMap con un velo oscuro.
+- **Píldora de estado:** Flota arriba a la izquierda y dice dónde estás ("Estás en La Loma") o si falta activar la ubicación. No es un campo de búsqueda: el destino se elige en la ficha de abajo, bajo la pregunta "¿A dónde vas?".
 - **Ficha de Información del Viaje (Bottom Sheet):** Se despliega desde la parte inferior. Fondo translúcido con desenfoque intenso. Muestra el total (0,50 USD por persona, con selector de pasajeros) de forma destacada utilizando tipografía en peso `bold` y tamaño `xxl`.
-- **Botón de Pánico (SOS):** Flotante, circular, color rojo brillante (`#EF4444`). Posee un efecto de pulso animado en el fondo (`react-native-reanimated`) que simula ondas de sonar.
+- **Botón de Pánico (SOS):** Flotante arriba a la derecha (bajo la barra de estado, para que ninguna ficha lo tape), circular, rojo (`#EF4444`). Se activa manteniéndolo 2 s: un relleno claro crece de forma lineal mientras se mantiene y retrocede en 200 ms si se suelta. Un único anillo de latido lento lo mantiene localizable y se apaga con "reducir movimiento".
 
 ### C. Consola del Conductor (Modo Conductor)
 - **Switch de Estado Operativo (Disponible / Ocupado):** Ubicado en el encabezado. Su diseño debe ser sumamente visible, con estados de color intuitivos: verde esmeralda (`#10B981`) para disponible y gris/naranja para ocupado.

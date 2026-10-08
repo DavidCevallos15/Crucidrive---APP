@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
   container: {
     overflow: 'hidden',
     borderWidth: SHAPES.glassBorderWidth,
-    backgroundColor: COLORS.glassBgDark,
+    backgroundColor: COLORS.glassSurface,
   },
   blurView: {
     overflow: 'hidden',

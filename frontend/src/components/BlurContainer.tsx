@@ -59,6 +59,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   background: {
-    backgroundColor: COLORS.glassBgDark,
+    backgroundColor: COLORS.glassSurface,
   },
 });
