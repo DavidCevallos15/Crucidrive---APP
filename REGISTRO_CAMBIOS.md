@@ -2,6 +2,45 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.16.0] - 2026-10-08 (Hora Local)
+
+### Frontend: pulido de interfaz (impeccable + design-taste + emil-design-eng)
+- **Legibilidad:** el cristal pasa de blanco al 7 % a `glassSurface` (negro azulado al 82 %), que cumple contraste AA sobre cualquier mapa. Mapa nativo con estilo nocturno de Google; versión web con OpenStreetMap y velo oscuro (sin filtro CSS, que era costoso de pintar) y atribución visible.
+- **Honestidad de la interfaz:** la barra "¿A dónde vas?" era texto decorativo; ahora es una píldora de estado ("Estás en …" / "Activa tu ubicación") y la pregunta vive en la ficha de destinos.
+- **SOS:** sube arriba a la derecha (ya no se monta sobre la ficha), relleno de progreso mientras se mantiene (2 s lineal, 200 ms al soltar), un solo anillo de latido lento y apagado con "reducir movimiento".
+- **Movimiento:** entradas de 220 ms con ease-out y salidas de 140 ms (antes 400 a 500 ms con retardos de 200 a 400 ms); `PressableScale` con respuesta táctil asimétrica 100/160 ms.
+- **Botones accesibles:** `GlassButton` ya no depende de `Gesture.Tap` (no respondía al clic ni al teclado en web); usa `PressableScale`.
+- **Layout:** márgenes de zona segura arriba y abajo, ficha centrada con ancho máximo 520 en pantallas anchas, numerales tabulares en precio y contador.
+- **Corrección:** la región inicial del mapa (`config.ts`) seguía en las coordenadas viejas, ~19 km al sur de Crucita; ahora enmarca los 5 sectores.
+- Sin guiones largos en el texto visible; `absoluteFillObject` (inexistente en RN 0.86) reemplazado.
+- Recuperado de la rama anterior: registro 1.14.0 y cierre de T16 en `tasks.md` y `specs/README.md` (no habían llegado a `main`); la entrada 1.15.0 no se había escrito.
+
+### Pruebas
+- Frontend 72/72; sin errores de tipos en `src/` ni `app/`. Verificado en el navegador integrado a tamaño de teléfono y de escritorio.
+
+---
+
+## [1.15.0] - 2026-10-08 (Hora Local)
+
+### Corregido (frontend web, detectado al abrir la app en el navegador; PR #12)
+- `#root` medía 0 de alto: los paneles pegados abajo (selector de destino y ficha del viaje) quedaban fuera de la pantalla. `public/index.html` ahora da altura completa a `html`, `body` y `#root`.
+- Las fuentes se registraban como `Outfit-Regular`, `Inter-Medium`… pero los estilos piden `Outfit` e `Inter`: todo el texto caía a serif. Se añadieron los alias en `app/_layout.tsx`.
+- El service worker de la PWA servía el paquete viejo en desarrollo; ya no se registra en `localhost`.
+
+### Añadido
+- `.claude/launch.json` con `backend` (puerto 3000) y `frontend-web` (puerto 8081) para previsualizar.
+
+---
+
+## [1.14.0] - 2026-10-08 (Hora Local)
+
+### Verificado (T16, cierra el paso 001)
+- Prueba de humo `npm run smoke` con 2 usuarios reales contra Supabase: 11/11 pasos OK (registro de pasajero y conductor, solicitud de 3 pasajeros con tarifa 1,50 fijada por la BD, aceptación, chat por socket e historial REST, `en_curso`, `finalizado`).
+- Datos de prueba que quedan en la BD: 2 perfiles, 1 tricimoto, 1 viaje finalizado, 1 hilo de chat con 1 mensaje.
+- Pendiente del 001: solo T18 (deuda de tipos del frontend), que pasa a `007-hardening`.
+
+---
+
 ## [1.13.0] - 2026-10-08 (Hora Local)
 
 ### Cambiado

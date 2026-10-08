@@ -6,7 +6,7 @@ Flujo por paso: spec → aprobación → plan → tareas → implementación (co
 | Paso | Carpeta | Estado |
 | --- | --- | --- |
 | 0 | (validación de campo, sin código) | Pendiente (D-07: aliado institucional) |
-| 1 | `001-cimientos` | Implementado y en producción; enmienda 1 (tarifa por persona) aplicada; falta la prueba de humo con 2 usuarios (T16) |
+| 1 | `001-cimientos` | **Completo** (T18, deuda de tipos del frontend, pasa a 007) |
 | 2 | `002-identidad` | Sin iniciar |
 | 3 | `003-despacho` | Sin iniciar |
 | 4 | `004-tracking-push` | Sin iniciar |

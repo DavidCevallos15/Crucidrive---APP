@@ -132,7 +132,7 @@ export default function ProfileScreen() {
 
         {/* Footer */}
         <Text style={styles.version}>CruciDrive v1.0.0</Text>
-        <Text style={styles.location}>Crucita, Manabí — Ecuador</Text>
+        <Text style={styles.location}>Crucita, Manabí, Ecuador</Text>
       </ScrollView>
     </View>
   );

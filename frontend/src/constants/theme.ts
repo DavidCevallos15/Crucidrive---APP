@@ -37,6 +37,12 @@ export const COLORS = {
   // ─── COLORES GLASSMORPHIC ─────────────────────────────────
   /** Fondo translúcido de las tarjetas de cristal (modo oscuro) */
   glassBgDark: 'rgba(255, 255, 255, 0.07)',
+  /**
+   * Superficie del cristal sobre el mapa. Es lo bastante opaca para que el texto
+   * claro cumpla contraste AA (>= 4.5:1) sobre cualquier fondo, también un mapa claro.
+   */
+  glassSurface: 'rgba(11, 15, 25, 0.82)',
+
   /** Fondo translúcido de las tarjetas de cristal (modo claro) */
   glassBgLight: 'rgba(15, 23, 42, 0.04)',
 
@@ -171,6 +177,13 @@ export const ANIMATION = {
   durationNormal: 250,
   /** Duración de transiciones complejas (ms) */
   durationSlow: 400,
+
+  /** Entrada de paneles: corta, para que la interfaz se sienta inmediata (< 300 ms) */
+  enterDuration: 220,
+  /** Salida: más rápida que la entrada, el sistema responde enseguida */
+  exitDuration: 140,
+  /** ease-out exponencial (cubic-bezier) para entradas y respuestas táctiles */
+  easeOut: [0.23, 1, 0.32, 1] as const,
 
   /** Curva de aceleración para entradas */
   easingEnter: 'easeOut' as const,
