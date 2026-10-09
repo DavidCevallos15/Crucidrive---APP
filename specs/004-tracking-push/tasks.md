@@ -1,0 +1,21 @@
+# 004 · Tareas
+
+Cada tarea indica su prueba y se tilda solo al cumplirse. Orden sugerido de PR: BD (T2), backend (T3 a T7), configuración de David (T8), app (T9 a T13) y cierre (T14 a T17).
+
+- [x] T1 · Spec con D-12 (avisos de Expo) y D-13 (ubicación adaptativa) → PR #35
+- [ ] T2 · Migración `0014_avisos_y_privacidad.sql`: `dispositivos_push`, `registrar_dispositivo` y `olvidar_dispositivo` con reasignación, `ubicacion_conductor_viaje`, y revoke y grant por columna en `tricimotos` (P3, P15, P16) → prueba: `rls_004.sql` en Docker (11, 14, 15, 16); `rls_001` a `rls_003` siguen en verde. **No se aplica a producción hasta que el backend de la T4 esté listo**
+- [ ] T3 · Backend: `src/ubicacion/servicio.js` compartido por el socket y por `POST /api/conductores/ubicacion` (rate limit de 1 cada 3 s por usuario), y parámetros `UBICACION_*` en la respuesta de disponibilidad (P11, P12, P14) → prueba: `tests/spec004.test.js` (validación, mismo resultado por socket y por REST, 429 por exceso)
+- [ ] T4 · Backend: seguimiento del conductor: `conductor_ubicacion` solo a la sala del pasajero del viaje `aceptado` o `en_curso`, sin reenvío al sector cuando está ocupado (P14) → prueba: `tests/spec004.test.js` (13, 14, 15)
+- [ ] T5 · Backend: `src/avisos/` (cliente HTTP de Expo con `fetch`, lotes, `EXPO_ACCESS_TOKEN`, `DeviceNotRegistered`), mensajes sin datos del pasajero y `POST`/`DELETE /api/dispositivos` (P1 a P4, P7) → prueba: `tests/avisos.test.js` (6, 11, 12)
+- [ ] T6 · Backend: despachador con candidato por token (P5) y avisos de oferta, retirada, aceptado y sin conductor (P6 a P9) → prueba: `tests/spec004.test.js` y `tests/despachador.test.js` actualizados (6, 8, 10, 12)
+- [ ] T7 · Consentimiento 0.2: texto en `specs/002-identidad/consentimiento-lopdp.md`, `consent.js` y `consentimiento.ts`; respuesta 428 `consentimiento_pendiente` en disponibilidad; `POST /api/auth/consentimiento` (P18) → prueba: `tests/spec004.test.js` (5)
+- [ ] T8 · **David:** Firebase (`google-services.json`), clave FCM V1 en EAS, variable de archivo `GOOGLE_SERVICES_JSON` en EAS y token de acceso de Expo en `EXPO_ACCESS_TOKEN` → comprobación: `npx eas-cli credentials` muestra la clave FCM V1 y el backend arranca con el token
+- [ ] T9 · Frontend: `npx expo install expo-notifications expo-task-manager`, `app.config.js` (P21), canales Android y registro y borrado del token al iniciar y cerrar sesión (11) → prueba: `tests/avisos.test.ts` (registro y borrado con un cliente simulado) y `npx expo config --type public` sin errores
+- [ ] T10 · Frontend: tarea de ubicación en segundo plano (`debeEnviar`, envío por socket o REST, servicio en primer plano), arranque y parada con la disponibilidad, `PermisoUbicacionScreen` y aviso si se niega el permiso (P10 a P13, P19) → prueba: `tests/avisos.test.ts` (2, 19) y revisión en el APK (1, 3, 4)
+- [ ] T11 · Frontend: aviso de oferta: descarte en primer plano, al tocar abre la oferta si sigue vigente o "Esta oferta ya no está disponible", y retirada con `dismissNotificationAsync` (P6 a P8) → prueba: `tests/avisos.test.ts` (7, 8, 9)
+- [ ] T12 · Frontend: pasajero: avisos de aceptado y sin conductor; conductor en el mapa con distancia y "Última posición hace X s" (P9, P17) → prueba: `tests/avisos.test.ts` (10, 13, 15, 17)
+- [ ] T13 · Frontend: "Estuviste fuera del despacho" con enlace a los ajustes, y re-aceptación del consentimiento 0.2 antes de ponerse disponible (P18, P20) → prueba: `tests/avisos.test.ts` (5, 20)
+- [ ] T14 · Sin errores de tipos nuevos en `src/` ni `app/` → prueba: `npx tsc --noEmit` filtrado a `^(src|app)/`
+- [ ] T15 · Aplicar 0014 al proyecto real y `get_advisors(security)` sin hallazgos nuevos → comprobación: salida del linter (solo D-10)
+- [ ] T16 · Prueba de humo ampliada: registro del token, `conductor_ubicacion` al pasajero y no a un tercero, envío por REST y bytes por envío, con la proyección de 10 h (18) → prueba: salida OK completa
+- [ ] T17 · **David:** campo con el APK `preview` en 2 teléfonos (conductor y pasajero): 10 min en segundo plano sin salir del despacho (1), aviso permanente (3), aviso de oferta en menos de 5 s cronometrado en 5 intentos (6) y un teléfono con ahorro de batería (20) → comprobación: notas con los tiempos en `REGISTRO_CAMBIOS.md`
