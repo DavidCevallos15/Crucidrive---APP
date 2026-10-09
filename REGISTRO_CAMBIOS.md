@@ -2,6 +2,17 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.34.0] - 2026-10-09 (Hora Local)
+
+### Paso 003 · T16 y T17, verificación
+- T16: `npx tsc --noEmit` sin errores en `src/` ni `app/` con todo el frontend del 003. Solo queda el aviso de `baseUrl` (deuda conocida, paso 007).
+- T17: las migraciones 0011, 0012 y 0013 están en el historial del proyecto real. El linter de seguridad de Supabase muestra solo `auth_leaked_password_protection` (D-10, pospuesta).
+
+### Pendiente del 003
+- T18: prueba de humo de punta a punta. Necesita el backend con `SUPABASE_SERVICE_ROLE_KEY` y cuentas reales de pasajero y conductor.
+
+---
+
 ## [1.33.0] - 2026-10-09 (Hora Local)
 
 ### Paso 003 · T15, lugares del administrador
