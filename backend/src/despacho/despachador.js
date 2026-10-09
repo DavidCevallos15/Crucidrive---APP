@@ -20,12 +20,18 @@ const { salaUsuario } = require('./salas');
  * @param {{ estaConectado: (userId: string) => boolean }} deps.conexiones
  * @param {ReturnType<import('./config').leerConfigDespacho>} deps.config
  * @param {() => number} [deps.ahora]
+ * @param {ReturnType<import('../avisos').crearAvisos> | null} [deps.avisos] - Avisos con la app
+ *   cerrada (paso 004). Se envían sin esperar: si fallan, el despacho sigue igual (criterio 12).
  */
-const crearDespachador = ({ obtenerDb, io, conexiones, config, ahora = Date.now }) => {
+const crearDespachador = ({ obtenerDb, io, conexiones, config, ahora = Date.now, avisos = null }) => {
   /** viajeId → { viaje, fase, enviadas, timer, cola } */
   const activos = new Map();
 
   const emitir = (userId, evento, datos) => io.to(salaUsuario(userId)).emit(evento, datos);
+  /** Aviso con la app cerrada, sin esperar el resultado (criterio 12 del 004). */
+  const avisar = (accion, ...args) => {
+    if (avisos) Promise.resolve(avisos[accion](...args)).catch(() => {});
+  };
   const limite = (viaje) => new Date(viaje.creado_en).getTime() + config.maxSeg * 1000;
 
   const rpc = async (nombre, args) => {
@@ -75,8 +81,10 @@ const crearDespachador = ({ obtenerDb, io, conexiones, config, ahora = Date.now 
     for (const { tipo, viaje_id: viajeId, usuario_id: userId } of filas) {
       if (tipo === 'oferta_vencida' || tipo === 'oferta_retirada') {
         emitir(userId, 'oferta_retirada', { viajeId });
+        avisar('retirada', userId, viajeId);
       } else if (tipo === 'viaje_sin_conductor') {
         emitir(userId, 'viaje_sin_conductor', { viajeId });
+        avisar('sinConductor', userId, viajeId);
         olvidar(viajeId);
       }
     }
@@ -87,12 +95,26 @@ const crearDespachador = ({ obtenerDb, io, conexiones, config, ahora = Date.now 
     olvidar(viajeId);
   };
 
+  /**
+   * Candidatos a los que se puede llegar: con socket conectado o con un teléfono para avisos
+   * (paso 004, plan P5; enmienda de R6 del 003). La ubicación de menos de 60 s la sigue exigiendo
+   * candidatos_despacho en la BD (criterio 2 del 003).
+   */
   const candidatosConectados = async (viajeId) => {
     const candidatos = await rpc('candidatos_despacho', {
       p_viaje: viajeId,
       p_ubicacion_max_seg: config.ubicacionMaxSeg,
     });
-    return candidatos.filter((c) => conexiones.estaConectado(c.conductor_id));
+    const sinSocket = candidatos.filter((c) => !conexiones.estaConectado(c.conductor_id)).map((c) => c.conductor_id);
+    let conToken = new Set();
+    if (avisos && sinSocket.length) {
+      try {
+        conToken = await avisos.conToken(sinSocket);
+      } catch (err) {
+        console.error(`[despacho] No se pudieron leer los teléfonos para avisos: ${err.message}`);
+      }
+    }
+    return candidatos.filter((c) => conexiones.estaConectado(c.conductor_id) || conToken.has(c.conductor_id));
   };
 
   const ofrecer = async (estado, conductores, fase, venceEn) => {
@@ -103,7 +125,10 @@ const crearDespachador = ({ obtenerDb, io, conexiones, config, ahora = Date.now 
       p_vence_en: new Date(venceEn).toISOString(),
     });
     for (const oferta of creadas) {
-      emitir(oferta.conductor_id, 'oferta_viaje', armarOferta(estado.viaje, oferta));
+      const datos = armarOferta(estado.viaje, oferta);
+      emitir(oferta.conductor_id, 'oferta_viaje', datos);
+      // También por aviso: con la app abierta la app lo descarta (criterio 9; plan P6).
+      avisar('oferta', oferta.conductor_id, datos);
     }
     return creadas;
   };
@@ -197,12 +222,16 @@ const crearDespachador = ({ obtenerDb, io, conexiones, config, ahora = Date.now 
       olvidar(viaje.id);
       try {
         for (const o of await ofertasDelViaje(viaje.id)) {
-          if (o.resultado === 'tomada') emitir(o.conductor_id, 'oferta_retirada', { viajeId: viaje.id });
+          if (o.resultado === 'tomada') {
+            emitir(o.conductor_id, 'oferta_retirada', { viajeId: viaje.id });
+            avisar('retirada', o.conductor_id, viaje.id);
+          }
         }
       } catch (err) {
         console.error(`[despacho] Retirar ofertas del viaje ${viaje.id}: ${err.message}`);
       }
       emitir(viaje.pasajero_id, 'viaje_aceptado', { viajeId: viaje.id, ...datosConductor });
+      avisar('aceptado', viaje.pasajero_id, viaje.id, datosConductor?.conductor);
     },
 
     /** El pasajero canceló mientras se buscaba (criterio 12): la BD ya cerró las ofertas. */
@@ -210,7 +239,10 @@ const crearDespachador = ({ obtenerDb, io, conexiones, config, ahora = Date.now 
       olvidar(viajeId);
       try {
         for (const o of await ofertasDelViaje(viajeId)) {
-          if (o.resultado === 'cancelada') emitir(o.conductor_id, 'oferta_retirada', { viajeId });
+          if (o.resultado === 'cancelada') {
+            emitir(o.conductor_id, 'oferta_retirada', { viajeId });
+            avisar('retirada', o.conductor_id, viajeId);
+          }
         }
       } catch (err) {
         console.error(`[despacho] Retirar ofertas del viaje cancelado ${viajeId}: ${err.message}`);

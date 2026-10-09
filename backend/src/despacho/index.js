@@ -7,6 +7,7 @@ const { crearDespachador } = require('./despachador');
 const { conexiones } = require('./conexiones');
 const { leerConfigDespacho } = require('./config');
 const { getAdminClient } = require('../config/supabase');
+const { crearAvisos } = require('../avisos');
 
 let despachador = null;
 let barrido = null;
@@ -17,7 +18,9 @@ let barrido = null;
  */
 const iniciarDespacho = async (io, config = leerConfigDespacho()) => {
   getAdminClient(); // falla al arrancar si falta SUPABASE_SERVICE_ROLE_KEY
-  despachador = crearDespachador({ obtenerDb: getAdminClient, io, conexiones, config });
+  // Avisos con la app cerrada (paso 004, D-12): leen los teléfonos con la misma clave de servicio.
+  const avisos = crearAvisos({ obtenerDb: getAdminClient });
+  despachador = crearDespachador({ obtenerDb: getAdminClient, io, conexiones, config, avisos });
   await despachador.recuperar();
   barrido = setInterval(() => despachador.barrer(), config.barridoSeg * 1000);
   barrido.unref?.();

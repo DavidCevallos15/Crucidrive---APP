@@ -167,7 +167,7 @@ const VIAJE = 'a0000000-0000-0000-0000-000000000001';
 const [A, B, C, D] = ['c-a', 'c-b', 'c-c', 'c-d'];
 const CONFIG = { secuenciales: 3, ofertaSeg: 15, maxSeg: 120, ubicacionMaxSeg: 60, barridoSeg: 15 };
 
-const montar = ({ candidatos = [A, B, C, D], conectados = candidatos } = {}) => {
+const montar = ({ candidatos = [A, B, C, D], conectados = candidatos, avisos = null } = {}) => {
   const bd = crearBdDespachoFalsa();
   bd.agregarViaje({
     id: VIAJE, pasajero_id: PASAJERO, pasajeros: 2, tarifa: '1.00',
@@ -182,6 +182,7 @@ const montar = ({ candidatos = [A, B, C, D], conectados = candidatos } = {}) => 
     io,
     conexiones: { estaConectado: (id) => conectadosSet.has(id) },
     config: CONFIG,
+    avisos,
   });
   const eventos = (evento) => io.emitidos.filter((e) => e.evento === evento);
   const ofertasA = (conductor) => eventos('oferta_viaje').filter((e) => e.sala === `usuario:${conductor}`);
@@ -332,6 +333,121 @@ describe('T8 · despachador (D-11)', () => {
     await expect(despachador.barrer()).resolves.toBeUndefined();
     expect(errores).toHaveBeenCalled();
     errores.mockRestore();
+    despachador.detener();
+  });
+});
+
+// ─── Paso 004 · T6: avisos con la app cerrada en el despacho ──────────────────
+/** Avisos falsos: `conToken` son los conductores con teléfono registrado. */
+const crearAvisosFalsos = ({ conToken = [], fallar = false } = {}) => {
+  const conTokenSet = new Set(conToken);
+  const accion = () => jest.fn(() => (fallar ? Promise.reject(new Error('Expo caído')) : Promise.resolve()));
+  return {
+    conToken: jest.fn(async (ids) => {
+      if (fallar) throw new Error('BD caída');
+      return new Set(ids.filter((id) => conTokenSet.has(id)));
+    }),
+    oferta: accion(),
+    retirada: accion(),
+    aceptado: accion(),
+    sinConductor: accion(),
+  };
+};
+
+describe('T6 · despacho con avisos (paso 004, criterios 6, 8, 10 y 12; plan P5 y P6)', () => {
+  beforeEach(() => jest.useFakeTimers({ now: new Date('2026-10-09T12:00:00Z') }));
+  afterEach(() => jest.useRealTimers());
+
+  test('P5: un conductor sin socket pero con teléfono para avisos es candidato y recibe la oferta', async () => {
+    const avisos = crearAvisosFalsos({ conToken: [A] });
+    const { despachador, ofertasA } = montar({ conectados: [], avisos });
+    await despachador.iniciar(VIAJE);
+    expect(ofertasA(A)).toHaveLength(1);
+    expect(avisos.oferta).toHaveBeenCalledWith(A, ofertasA(A)[0].datos);
+    despachador.detener();
+  });
+
+  test('P5: sin socket ni teléfono no es candidato; se pasa al siguiente que sí llega', async () => {
+    const avisos = crearAvisosFalsos({ conToken: [B] });
+    const { despachador, ofertasA } = montar({ conectados: [], avisos });
+    await despachador.iniciar(VIAJE);
+    expect(ofertasA(A)).toHaveLength(0);
+    expect(ofertasA(B)).toHaveLength(1);
+    despachador.detener();
+  });
+
+  test('P6: con socket también va el aviso (la app lo descarta si está abierta)', async () => {
+    const avisos = crearAvisosFalsos();
+    const { despachador, ofertasA } = montar({ avisos });
+    await despachador.iniciar(VIAJE);
+    expect(avisos.oferta).toHaveBeenCalledTimes(1);
+    expect(avisos.oferta).toHaveBeenCalledWith(A, ofertasA(A)[0].datos);
+    // Con todos conectados ni siquiera se consulta quién tiene teléfono.
+    expect(avisos.conToken).not.toHaveBeenCalled();
+    despachador.detener();
+  });
+
+  test('criterio 8: al vencer, aviso de retirada al conductor', async () => {
+    const avisos = crearAvisosFalsos();
+    const { despachador } = montar({ avisos });
+    await despachador.iniciar(VIAJE);
+    await jest.advanceTimersByTimeAsync(15100);
+    expect(avisos.retirada).toHaveBeenCalledWith(A, VIAJE);
+    despachador.detener();
+  });
+
+  test('criterio 10: sin conductor, aviso al pasajero', async () => {
+    const avisos = crearAvisosFalsos();
+    const { despachador } = montar({ candidatos: [], avisos });
+    await despachador.iniciar(VIAJE);
+    expect(avisos.sinConductor).toHaveBeenCalledWith(PASAJERO, VIAJE);
+  });
+
+  test('criterios 8 y 10: al aceptar, aviso al pasajero y retirada a los que la perdieron', async () => {
+    const E = 'c-e';
+    const avisos = crearAvisosFalsos();
+    const { bd, despachador } = montar({ candidatos: [A, B, C, D, E], avisos });
+    await despachador.iniciar(VIAJE);
+    await jest.advanceTimersByTimeAsync(45300); // aviso abierto a D y E
+    bd.aceptar(VIAJE, D);
+    const conductor = { id: D, nombre: 'Diego', placa: 'DEF-456', telefono: '0994444444' };
+    await despachador.aceptado({ id: VIAJE, pasajero_id: PASAJERO }, { conductor });
+    expect(avisos.aceptado).toHaveBeenCalledWith(PASAJERO, VIAJE, conductor);
+    // E perdió la carrera: su aviso se retira. D, que aceptó, no recibe retirada.
+    expect(avisos.retirada).toHaveBeenCalledWith(E, VIAJE);
+    expect(avisos.retirada).not.toHaveBeenCalledWith(D, VIAJE);
+  });
+
+  test('criterio 12 del 003: cancelar retira también el aviso de la oferta abierta', async () => {
+    const avisos = crearAvisosFalsos();
+    const { bd, despachador } = montar({ avisos });
+    await despachador.iniciar(VIAJE);
+    bd.cancelarViaje(VIAJE);
+    await despachador.cancelar(VIAJE);
+    expect(avisos.retirada).toHaveBeenCalledWith(A, VIAJE);
+  });
+
+  test('criterio 12: si los avisos fallan, el despacho sigue igual por el socket', async () => {
+    const espia = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const avisos = crearAvisosFalsos({ conToken: [B], fallar: true });
+    const { despachador, ofertasA, eventos } = montar({ conectados: [A], avisos });
+    await despachador.iniciar(VIAJE);
+    expect(ofertasA(A)).toHaveLength(1);
+    expect(avisos.oferta).toHaveBeenCalled(); // falló, pero el socket ya llevó la oferta
+    await jest.advanceTimersByTimeAsync(15100);
+    // B no tiene socket y la lectura de teléfonos falló: no es candidato. Nadie más llega,
+    // así que el despacho termina normalmente, como en el 003.
+    expect(ofertasA(B)).toHaveLength(0);
+    expect(eventos('oferta_retirada').map((e) => e.sala)).toEqual([`usuario:${A}`]);
+    expect(eventos('viaje_sin_conductor')).toHaveLength(1);
+    espia.mockRestore();
+  });
+
+  test('sin módulo de avisos (pruebas del 003) se comporta como antes', async () => {
+    const { despachador, ofertasA } = montar({ conectados: [B] });
+    await despachador.iniciar(VIAJE);
+    expect(ofertasA(A)).toHaveLength(0);
+    expect(ofertasA(B)).toHaveLength(1);
     despachador.detener();
   });
 });

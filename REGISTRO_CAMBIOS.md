@@ -2,6 +2,20 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.43.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · T6, el despacho envía avisos
+- **Candidato (P5, enmienda de R6 del 003):** socket conectado **o** teléfono registrado para avisos. La ubicación de menos de 60 s la sigue exigiendo la BD.
+  - Solo se consulta quién tiene teléfono cuando hay candidatos sin socket.
+- Cada oferta sale por socket y por aviso (P6; la app descarta el aviso si está abierta).
+- Avisos de retirada al vencer, al cancelar el pasajero o al perder la carrera; al pasajero, avisos de aceptado y de sin conductor.
+- Los avisos se envían sin esperar el resultado. Si fallan, o falla la lectura de teléfonos, el despacho sigue por el socket (criterio 12).
+
+### Pruebas
+- 9 nuevas en `despachador.test.js`. Backend 269/269.
+
+---
+
 ## [1.42.0] - 2026-10-09 (Hora Local)
 
 ### Paso 004 · T5, avisos de Expo en el backend
