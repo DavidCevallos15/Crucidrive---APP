@@ -2,6 +2,20 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.22.0] - 2026-10-08 (Hora Local)
+
+### Paso 003 · T2, catálogo de lugares (BD)
+- `0011_lugares.sql`: `pg_trgm` y `unaccent` en `extensions`; tabla `lugares` (nombre normalizado, categoría, ubicación, sector por el centro más cercano, fuente `osm`/`admin`/`david`, `osm_id` único, `editado_por_admin`, `visible`); RLS (todos leen lo visible, también visitantes; solo el admin crea, corrige u oculta; nadie borra); `buscar_lugares(q)` con hasta 20 resultados, sin tildes y tolerante a errores leves; semilla de David (Muelle de Crucita, Los Ranchos).
+- Una edición del admin queda marcada y una nueva importación de OSM no la pisa.
+
+### Pruebas
+- `supabase/tests/rls_003.sql`: 21 en verde en Docker (Postgres 16 + PostGIS). rls_001 (17) y rls_002 (16) siguen en verde.
+
+### Pendiente
+- Aplicar `0011` al proyecto real y pasar el linter de seguridad (T17).
+
+---
+
 ## [1.21.0] - 2026-10-08 (Hora Local)
 
 ### Paso 003 · plan y tareas (en revisión)
