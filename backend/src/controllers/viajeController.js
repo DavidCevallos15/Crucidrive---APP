@@ -5,28 +5,41 @@ const {
   isUuid, isSectorId, isPasajerosValido, normalizarDescripcion, MAX_DESCRIPCION, MAX_PASAJEROS,
 } = require('../utils/validation');
 const { findViajeById } = require('../utils/supabaseHelpers');
+const { obtenerDespachador } = require('../despacho');
+
+const tieneCoordenadas = (p) => p != null && p.lat != null && p.lng != null;
 
 /**
- * Crea una nueva solicitud de viaje para el pasajero autenticado.
+ * Crea una nueva solicitud de viaje para el pasajero autenticado y arranca el despacho (paso 003).
  * El cobro es por persona (D-08): la tarifa NO se envía ni se calcula aquí;
  * la fija un trigger de la BD como precio_por_persona × pasajeros.
- * Cuerpo: { origen, destino, pasajeros?, sectorOrigenId?, sectorDestinoId?,
- *           origenDescripcion?, destinoDescripcion? }
+ * Con un lugar del catálogo, la BD toma sus coordenadas, su nombre y su sector (criterio 19);
+ * sin sector, la BD usa el del centro más cercano.
+ * Cuerpo: { origen?, destino?, lugarOrigenId?, lugarDestinoId?, pasajeros?, sectorOrigenId?,
+ *           sectorDestinoId?, origenDescripcion?, destinoDescripcion? }
  */
 const solicitarViaje = asyncHandler(async (req, res) => {
-  const { origen, destino, sectorOrigenId, sectorDestinoId } = req.body;
+  const { origen, destino, sectorOrigenId, sectorDestinoId, lugarOrigenId, lugarDestinoId } = req.body;
   const pasajeros = req.body.pasajeros === undefined ? 1 : req.body.pasajeros;
   const origenDescripcion = normalizarDescripcion(req.body.origenDescripcion);
   const destinoDescripcion = normalizarDescripcion(req.body.destinoDescripcion);
   const pasajeroId = req.user.id;
   const db = req.supabase;
 
-  if (!origen || !destino || origen.lat == null || origen.lng == null || destino.lat == null || destino.lng == null) {
-    return errorResponse(res, 400, 'Las coordenadas de origen (lat, lng) y destino (lat, lng) son obligatorias.');
+  for (const lugar of [lugarOrigenId, lugarDestinoId]) {
+    if (lugar != null && !isUuid(lugar)) {
+      return errorResponse(res, 400, 'El identificador del lugar no es válido.');
+    }
   }
 
-  if (!isValidCoordinate(origen.lat, origen.lng) || !isValidCoordinate(destino.lat, destino.lng)) {
-    return errorResponse(res, 400, 'Las coordenadas proporcionadas no son válidas.');
+  if ((!lugarOrigenId && !tieneCoordenadas(origen)) || (!lugarDestinoId && !tieneCoordenadas(destino))) {
+    return errorResponse(res, 400, 'Las coordenadas de origen (lat, lng) y destino (lat, lng) son obligatorias si no eliges un lugar.');
+  }
+
+  for (const punto of [origen, destino]) {
+    if (tieneCoordenadas(punto) && !isValidCoordinate(punto.lat, punto.lng)) {
+      return errorResponse(res, 400, 'Las coordenadas proporcionadas no son válidas.');
+    }
   }
 
   if (!isPasajerosValido(pasajeros)) {
@@ -48,8 +61,11 @@ const solicitarViaje = asyncHandler(async (req, res) => {
     .insert([
       {
         pasajero_id: pasajeroId,
-        origen: toWKT(origen.lng, origen.lat),
-        destino: toWKT(destino.lng, destino.lat),
+        // Con lugar, la BD reemplaza el punto por el del lugar (el cliente no puede moverlo).
+        origen: tieneCoordenadas(origen) ? toWKT(origen.lng, origen.lat) : null,
+        destino: tieneCoordenadas(destino) ? toWKT(destino.lng, destino.lat) : null,
+        lugar_origen_id: lugarOrigenId ?? null,
+        lugar_destino_id: lugarDestinoId ?? null,
         sector_origen_id: sectorOrigenId ?? null,
         sector_destino_id: sectorDestinoId ?? null,
         pasajeros,
@@ -62,30 +78,42 @@ const solicitarViaje = asyncHandler(async (req, res) => {
     .single();
 
   if (error) {
+    // Índice único de 0012: un viaje activo por pasajero (criterio 13).
+    if (error.code === '23505') {
+      return errorResponse(res, 409, 'Ya tienes un viaje activo. Termínalo o cancélalo antes de pedir otro.', error.message);
+    }
+    if (String(error.message).includes('lugar_no_disponible')) {
+      return errorResponse(res, 400, 'El lugar elegido ya no está disponible. Elige otro o escribe una referencia.', error.message);
+    }
     return errorResponse(res, 400, 'Error al registrar la solicitud del viaje.', error.message);
   }
+
+  // El despacho corre aparte: la respuesta no espera la primera oferta (errores al log).
+  obtenerDespachador()?.iniciar(viaje);
 
   successResponse(res, viaje, 'Viaje solicitado correctamente.', 201);
 });
 
-/**
- * Devuelve un viaje a "solicitado" si falla un paso posterior a la aceptación.
- * Registra el fallo del rollback: un viaje atascado en "aceptado" sin chat
- * debe poder diagnosticarse. La aceptación atómica llega en el paso 003.
- */
-const revertirAceptacion = async (db, viajeId) => {
-  const { error } = await db
-    .from('viajes')
-    .update({ conductor_id: null, estado: 'solicitado', aceptado_en: null })
-    .eq('id', viajeId);
-  if (error) {
-    console.error(`[aceptarViaje] Falló el rollback del viaje ${viajeId}: ${error.message}`);
-  }
+// Errores de aceptar_viaje (0012) → respuesta para el conductor.
+const ERRORES_ACEPTAR = {
+  viaje_no_disponible: [409, 'Este viaje ya fue tomado o ya no está disponible.'],
+  oferta_no_vigente: [409, 'La oferta venció o no era para ti.'],
+  conductor_no_aprobado: [403, 'Tu cuenta de conductor aún no está aprobada.'],
+};
+
+/** Lo que el pasajero ve del conductor que aceptó (criterio 10; criterio 9 del 002). */
+const datosDelConductor = async (db, conductorId) => {
+  const [{ data: perfil }, { data: tricimoto }] = await Promise.all([
+    db.from('perfiles').select('nombre, telefono').eq('id', conductorId).single(),
+    db.from('tricimotos').select('placa').eq('conductor_id', conductorId).single(),
+  ]);
+  return { id: conductorId, nombre: perfil?.nombre ?? null, telefono: perfil?.telefono ?? null, placa: tricimoto?.placa ?? null };
 };
 
 /**
- * Permite a un conductor aceptar un viaje en estado 'solicitado'.
- * Crea transaccionalmente el canal de chat (thread) e ingresa a ambos miembros.
+ * El conductor acepta la oferta que recibió. Todo pasa en una sola operación de la BD
+ * (aceptar_viaje, 0012): solo gana uno, se exige una oferta vigente, la tricimoto queda
+ * ocupada y se crea el chat con los dos participantes (criterios 8, 9 y 10).
  */
 const aceptarViaje = asyncHandler(async (req, res) => {
   const { viajeId } = req.body;
@@ -100,69 +128,38 @@ const aceptarViaje = asyncHandler(async (req, res) => {
     return errorResponse(res, 400, 'El identificador del viaje no es válido.');
   }
 
+  const { data: filas, error: rpcError } = await db.rpc('aceptar_viaje', { p_viaje: viajeId });
+
+  if (rpcError) {
+    const clave = Object.keys(ERRORES_ACEPTAR).find((k) => String(rpcError.message).includes(k));
+    const [status, mensaje] = clave ? ERRORES_ACEPTAR[clave] : [500, 'No se pudo aceptar el viaje.'];
+    return errorResponse(res, status, mensaje, rpcError.message);
+  }
+
+  const threadId = filas?.[0]?.thread_id ?? null;
   const { viaje, error: getError } = await findViajeById(db, viajeId);
-
   if (getError || !viaje) {
-    return errorResponse(res, 404, 'No se encontró el viaje solicitado.', getError ? getError.message : null);
+    // La aceptación ya quedó hecha en la BD; solo falló la lectura de la respuesta.
+    console.error(`[aceptarViaje] Viaje ${viajeId} aceptado pero no se pudo leer: ${getError?.message}`);
   }
 
-  if (viaje.estado !== 'solicitado') {
-    return errorResponse(res, 400, `El viaje no puede ser aceptado porque está en estado: ${viaje.estado}`);
-  }
-
-  const { data: viajeActualizado, error: updateError } = await db
-    .from('viajes')
-    .update({
-      conductor_id: conductorId,
-      estado: 'aceptado',
-      aceptado_en: new Date().toISOString()
-    })
-    .eq('id', viajeId)
-    .select()
-    .single();
-
-  if (updateError) {
-    return errorResponse(res, 400, 'Error al aceptar el viaje.', updateError.message);
-  }
-
-  const { data: thread, error: threadError } = await db
-    .from('threads')
-    .insert([{ viaje_id: viajeId, created_by: conductorId }])
-    .select()
-    .single();
-
-  if (threadError) {
-    await revertirAceptacion(db, viajeId);
-    return errorResponse(res, 500, 'Error al inicializar el hilo de comunicación del viaje.', threadError.message);
-  }
-
-  const miembros = [
-    { thread_id: thread.id, user_id: viaje.pasajero_id },
-    { thread_id: thread.id, user_id: conductorId }
-  ];
-
-  const { error: membersError } = await db
-    .from('thread_members')
-    .insert(miembros);
-
-  if (membersError) {
-    const { error: deleteThreadError } = await db.from('threads').delete().eq('id', thread.id);
-    if (deleteThreadError) {
-      console.error(`[aceptarViaje] Falló el borrado del hilo ${thread.id} en rollback: ${deleteThreadError.message}`);
-    }
-    await revertirAceptacion(db, viajeId);
-    return errorResponse(res, 500, 'Error al registrar los participantes en el chat del viaje.', membersError.message);
+  if (viaje) {
+    const conductor = await datosDelConductor(db, conductorId);
+    await obtenerDespachador()?.aceptado(viaje, { conductor, chat: { threadId } });
   }
 
   successResponse(res, {
-    viaje: viajeActualizado,
-    chat: { threadId: thread.id }
+    viaje: viaje ?? { id: viajeId, estado: 'aceptado', conductor_id: conductorId },
+    chat: { threadId }
   }, 'Viaje aceptado correctamente e hilo de chat inicializado.');
 });
 
+const ESTADOS_FINALES = ['finalizado', 'cancelado', 'sin_conductor'];
+
 /**
  * Cambia el estado del viaje (en_curso, finalizado, cancelado).
- * Valida que el solicitante sea participante del viaje.
+ * Valida que el solicitante sea participante del viaje. La BD valida además cada
+ * transición (trigger de 0012), así que esta es la primera barrera, no la única.
  */
 const cambiarEstadoViaje = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -196,10 +193,11 @@ const cambiarEstadoViaje = asyncHandler(async (req, res) => {
     return errorResponse(res, 400, 'El viaje debe estar "en_curso" antes de finalizar.');
   }
 
-  if (estado === 'cancelado' && ['finalizado', 'cancelado'].includes(viaje.estado)) {
+  if (estado === 'cancelado' && ESTADOS_FINALES.includes(viaje.estado)) {
     return errorResponse(res, 400, `No se puede cancelar un viaje que ya está ${viaje.estado}.`);
   }
 
+  // La BD vuelve a fijar finalizado_en con su propia hora al cerrar el viaje (trigger de 0012).
   const { data: viajeActualizado, error: updateError } = await db
     .from('viajes')
     .update({
@@ -212,6 +210,11 @@ const cambiarEstadoViaje = asyncHandler(async (req, res) => {
 
   if (updateError) {
     return errorResponse(res, 400, 'Error al actualizar el estado del viaje.', updateError.message);
+  }
+
+  // Cancelado mientras buscaba conductor: la BD ya cerró las ofertas; se retiran de las pantallas (criterio 12).
+  if (estado === 'cancelado' && viaje.estado === 'solicitado') {
+    await obtenerDespachador()?.cancelar(id);
   }
 
   successResponse(res, viajeActualizado, `Estado del viaje actualizado a "${estado}" correctamente.`);

@@ -107,22 +107,16 @@ describe('spec 001 · controladores alineados al esquema', () => {
     expect(moto.filas[0].placa).toBe('AB-123C');
   });
 
-  it('aceptarViaje registra aceptado_en y crea el hilo con created_by', async () => {
+  it('aceptarViaje ya no escribe viajes ni threads a mano: lo hace la RPC atómica (paso 003)', async () => {
     const { aceptarViaje } = require('../src/controllers/viajeController');
-    const { db, llamadas } = crearDb([
-      { data: { id: '0a1b2c3d-0000-4000-8000-000000000001', estado: 'solicitado', pasajero_id: 'p1' }, error: null },
-      { data: { id: '0a1b2c3d-0000-4000-8000-000000000001', estado: 'aceptado' }, error: null },
-      { data: { id: '0b1c2d3e-0000-4000-8000-000000000001' }, error: null },
-    ]);
+    const { db, llamadas } = crearDb([{ data: { id: '0a1b2c3d-0000-4000-8000-000000000001', estado: 'aceptado', pasajero_id: 'p1' }, error: null }]);
+    db.rpc = jest.fn().mockResolvedValue({ data: [{ viaje_id: '0a1b2c3d-0000-4000-8000-000000000001', thread_id: 't1' }], error: null });
     const req = { body: { viajeId: '0a1b2c3d-0000-4000-8000-000000000001' }, user: { id: 'c1' }, supabase: db };
 
     await aceptarViaje(req, res());
 
-    const upd = llamadas.find((l) => l.tabla === 'viajes' && l.op === 'update');
-    expect(upd.valores).toEqual(expect.objectContaining({ estado: 'aceptado', conductor_id: 'c1', aceptado_en: expect.any(String) }));
-    expect(upd.valores).not.toHaveProperty('updated_at');
-    const hilo = llamadas.find((l) => l.tabla === 'threads');
-    expect(hilo.filas[0]).toEqual({ viaje_id: '0a1b2c3d-0000-4000-8000-000000000001', created_by: 'c1' });
+    expect(db.rpc).toHaveBeenCalledWith('aceptar_viaje', { p_viaje: '0a1b2c3d-0000-4000-8000-000000000001' });
+    expect(llamadas.filter((l) => l.op === 'update' || l.op === 'insert')).toEqual([]);
   });
 
   it('cambiarEstadoViaje a finalizado registra finalizado_en y no envía updated_at', async () => {
