@@ -18,8 +18,9 @@
 ### Pruebas
 - `tests/importarLugares.test.js` 14 en verde; backend 138/138. SQL: rls_001 20, rls_002 18, rls_003 60 y concurrencia 1, todo en verde; `0013` aplicada dos veces sin duplicar y respetando una edición del admin.
 
-### Pendiente
-- T6: David revisa la lista. `0013` y `0012` no están en producción (al fusionar #20 y #21 la integración de GitHub no aplicó nada).
+### Producción
+- T6: David aprobó la lista. `0013` aplicada al proyecto real con la herramienta de Supabase: 108 lugares de OSM y 2 de David, todos con sector; `buscar_lugares('farmacia')` devuelve las 4 farmacias.
+- `0012` sigue sin aplicar a propósito: va con el backend (T9). Al fusionar el #20 y el #21, la integración de GitHub no aplicó ninguna migración.
 
 ---
 
