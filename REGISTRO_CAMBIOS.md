@@ -2,6 +2,25 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.45.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · T9, avisos en la app
+- Dependencias nuevas con `npx expo install` (las justifica el plan del 004): `expo-notifications` y `expo-task-manager` (esta la usa la T10). `npm audit --omit=dev` lista los mismos paquetes que antes.
+- `app.config.js` extiende `app.json` (P21):
+  - `android.googleServicesFile` sale de la variable de archivo `GOOGLE_SERVICES_JSON` de EAS o, en local, de `frontend/google-services.json` si existe. Sin ninguno, la app compila sin avisos.
+  - Plugin `expo-notifications` con el ícono monocromo y el color de la marca.
+  - `google-services.json` va en `.gitignore`.
+- `src/servicios/avisos.ts`: canales de Android `ofertas` (importancia máxima) y `viaje`, y token de Expo. En la web y en Expo Go no hay token, y la app sigue igual.
+- `src/servicios/registroAvisos.ts`: registro y borrado del token (criterio 11). Se registra al tener sesión con perfil y se borra al cerrar sesión, antes de invalidar el JWT. Las dos operaciones van en cola para que un inicio y un cierre seguidos no se crucen.
+
+### Pruebas
+- `tests/avisos.test.ts`: 12 pruebas con una API simulada. Frontend 192/192. `npx expo config --type public` sin errores, con y sin `google-services.json`.
+
+### Pendiente
+- Para que lleguen avisos al APK falta la T8 de David (Firebase y clave FCM V1 en EAS).
+
+---
+
 ## [1.44.0] - 2026-10-09 (Hora Local)
 
 ### Paso 004 · T7, consentimiento 0.2

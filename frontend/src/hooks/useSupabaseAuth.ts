@@ -5,6 +5,7 @@ import type { UserProfile, VerificationInfo } from '../store/useAuthStore';
 import { API_CONFIG } from '../constants/config';
 import { authFetch } from '../utils/authFetch';
 import { normalizarEmail } from '../utils/validators';
+import { registroAvisos } from '../servicios/avisos';
 
 /** Resultado de una acción de cuenta: ok, o un mensaje listo para mostrar. */
 export interface ResultadoAccion {
@@ -145,6 +146,16 @@ export const useSupabaseAuth = ({ bootstrap = false }: { bootstrap?: boolean } =
     }
   }, [session, profile, verificationChecked, fetchVerification]);
 
+  // Con perfil, el teléfono se registra para avisos de esta cuenta (paso 004, criterio 11).
+  // Sin perfil no: la BD exige que el usuario exista en 'perfiles'.
+  useEffect(() => {
+    if (!bootstrap) return;
+    const usuarioId = session?.user?.id;
+    if (usuarioId && profile?.id === usuarioId) {
+      registroAvisos.registrar(usuarioId);
+    }
+  }, [session?.user?.id, profile?.id]);
+
   // ─── Crear cuenta ─────────────────────────────────────────
   const signUp = useCallback(async (email: string, password: string): Promise<ResultadoAccion> => {
     setAuthError(null);
@@ -224,6 +235,8 @@ export const useSupabaseAuth = ({ bootstrap = false }: { bootstrap?: boolean } =
   // ─── Cerrar sesión ────────────────────────────────────────
   const signOut = useCallback(async () => {
     try {
+      // Primero el teléfono deja de recibir avisos: después ya no hay JWT para pedirlo.
+      await registroAvisos.olvidar();
       await supabase.auth.signOut();
     } catch (err) {
       console.error('[Auth] Error al cerrar sesión:', err);

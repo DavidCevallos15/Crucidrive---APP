@@ -39,3 +39,6 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Firebase (paso 004, P21): llega por la variable de archivo GOOGLE_SERVICES_JSON de EAS
+google-services.json

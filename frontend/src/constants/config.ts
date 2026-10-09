@@ -58,6 +58,11 @@ export const API_CONFIG = {
     chat: {
       messages: (threadId: string) => `/api/chats/${threadId}/mensajes`,
     },
+    dispositivos: {
+      registrar: '/api/dispositivos',
+      // El token lleva corchetes: va codificado en la ruta.
+      olvidar: (token: string) => `/api/dispositivos/${encodeURIComponent(token)}`,
+    },
   },
 } as const;
 
