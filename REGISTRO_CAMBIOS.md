@@ -2,6 +2,27 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.28.0] - 2026-10-09 (Hora Local)
+
+### Producción
+- **`0012_despacho.sql` aplicada al proyecto real** con la herramienta de Supabase (autorizada por David).
+  - El viaje `solicitado` que quedaba de las pruebas del 8 oct quedó `sin_conductor`.
+  - Linter de seguridad: solo el aviso conocido de D-10.
+  - Comprobado: `authenticated` no ejecuta las funciones del despachador ni puede escribir `conductor_id`, `anon` no ejecuta `aceptar_viaje` y `cerrar_vencidos` corre sin errores.
+
+### Paso 003 · T10, disponibilidad y rechazo
+- `PATCH /api/conductores/disponibilidad` `{ disponible }`:
+  - Pone la tricimoto en `disponible` o `inactivo`.
+  - Responde 403 si el conductor no está aprobado y 409 si tiene un viaje en curso (la tricimoto está `ocupado` y vuelve sola al terminar).
+  - Al dejar de estar disponible con una oferta abierta, el despachador pasa al siguiente sin esperar los 15 s.
+- Socket `rechazar_oferta` `{ viajeId }`: el conductor rechaza con su propio JWT (`rechazar_oferta` de la 0012) y el despachador pasa al siguiente candidato.
+
+### Pruebas
+- 10 nuevas en `spec003.test.js`. Backend 185/185.
+- Arranque real contra la BD con la 0012 durante 20 s: despachador iniciado y 4 barridos sin errores.
+
+---
+
 ## [1.27.0] - 2026-10-09 (Hora Local)
 
 ### Paso 003 · T9, solicitar y aceptar con el despacho

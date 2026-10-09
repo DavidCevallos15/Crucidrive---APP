@@ -1,7 +1,7 @@
 /**
  * Paso 003 · criterios que viven en los controladores REST.
  * T9: solicitar con lugares y un viaje activo por pasajero (13, 19), aceptar con la RPC atómica (8, 9, 10)
- * y cancelar mientras busca (12). El despachador se simula: su lógica está en despachador.test.js.
+ * y cancelar mientras busca (12). T10: disponibilidad (1) y rechazo por socket (6). El despachador se simula: su lógica está en despachador.test.js.
  */
 process.env.SUPABASE_URL = process.env.SUPABASE_URL || 'http://localhost:54321';
 process.env.SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'anon-de-prueba';
@@ -9,7 +9,7 @@ process.env.SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'anon-de-prueba
 jest.mock('../src/utils/asyncHandler', () => (fn) => fn);
 jest.mock('../src/config/supabase', () => ({ supabase: {}, createUserClient: jest.fn(), getAdminClient: jest.fn() }));
 
-const mockDespachador = { iniciar: jest.fn(), aceptado: jest.fn(), cancelar: jest.fn() };
+const mockDespachador = { iniciar: jest.fn(), aceptado: jest.fn(), cancelar: jest.fn(), alResponder: jest.fn() };
 jest.mock('../src/despacho', () => ({ obtenerDespachador: jest.fn(() => mockDespachador) }));
 
 const { solicitarViaje, aceptarViaje, cambiarEstadoViaje } = require('../src/controllers/viajeController');
@@ -168,5 +168,133 @@ describe('T9 · cancelar mientras busca (criterio 12)', () => {
     await cambiarEstadoViaje({ params: { id: VIAJE }, body: { estado: 'cancelado' }, user: { id: PASAJERO }, supabase: db }, r);
     expect(r.status).toHaveBeenCalledWith(400);
     expect(mockDespachador.cancelar).not.toHaveBeenCalled();
+  });
+});
+
+// ─── T10 · disponibilidad y rechazo ──────────────────────────────────────────
+const { cambiarDisponibilidad } = require('../src/controllers/conductorController');
+const initSocketHandler = require('../src/sockets/socketHandler');
+
+/**
+ * BD falsa para tricimotos y ofertas_viaje: cada consulta (lectura del estado, ofertas abiertas
+ * y update) toma la siguiente respuesta de la lista, sin importar cómo termine la cadena.
+ */
+const crearDbSecuencial = (respuestas) => {
+  const cola = [...respuestas];
+  const updates = [];
+  const siguiente = () => Promise.resolve(cola.shift() || { data: null, error: null });
+  const db = {
+    from: jest.fn(() => {
+      const q = {
+        select: () => q,
+        eq: () => q,
+        update: (valores) => { updates.push(valores); return q; },
+        maybeSingle: siguiente,
+        single: siguiente,
+        then: (ok, mal) => siguiente().then(ok, mal),
+      };
+      return q;
+    }),
+  };
+  return { db, updates };
+};
+
+describe('T10 · PATCH /api/conductores/disponibilidad (criterio 1)', () => {
+  const pedir = async (body, respuestas) => {
+    const { db, updates } = crearDbSecuencial(respuestas);
+    const r = res();
+    await cambiarDisponibilidad({ body, user: { id: CONDUCTOR }, supabase: db }, r);
+    return { r, updates, db };
+  };
+
+  test('exige un booleano', async () => {
+    const { r, db } = await pedir({ disponible: 'si' }, []);
+    expect(r.status).toHaveBeenCalledWith(400);
+    expect(db.from).not.toHaveBeenCalled();
+  });
+
+  test('un conductor disponible pasa a "disponible" en la BD', async () => {
+    const { r, updates } = await pedir({ disponible: true }, [
+      { data: { estado: 'inactivo' }, error: null },
+      { data: [{ estado: 'disponible', disponible_desde: '2026-10-09T12:00:00Z' }], error: null },
+    ]);
+    expect(updates).toEqual([{ estado: 'disponible' }]);
+    expect(r.status).toHaveBeenCalledWith(200);
+    expect(r.json.mock.calls[0][0].data.estado).toBe('disponible');
+  });
+
+  test('al dejar de estar disponible con una oferta abierta, el despachador pasa al siguiente', async () => {
+    const { r, updates } = await pedir({ disponible: false }, [
+      { data: { estado: 'disponible' }, error: null },
+      { data: [{ viaje_id: VIAJE }], error: null },
+      { data: [{ estado: 'inactivo', disponible_desde: null }], error: null },
+    ]);
+    expect(updates).toEqual([{ estado: 'inactivo' }]);
+    expect(r.status).toHaveBeenCalledWith(200);
+    expect(mockDespachador.alResponder).toHaveBeenCalledWith(VIAJE);
+  });
+
+  test('un conductor sin aprobar recibe 403 (la RLS no actualiza ninguna fila)', async () => {
+    const { r } = await pedir({ disponible: true }, [
+      { data: { estado: 'inactivo' }, error: null },
+      { data: [], error: null },
+    ]);
+    expect(r.status).toHaveBeenCalledWith(403);
+  });
+
+  test('con un viaje en curso (tricimoto ocupada) responde 409 y no toca nada', async () => {
+    const { r, updates } = await pedir({ disponible: false }, [{ data: { estado: 'ocupado' }, error: null }]);
+    expect(r.status).toHaveBeenCalledWith(409);
+    expect(updates).toEqual([]);
+  });
+
+  test('sin tricimoto registrada responde 404', async () => {
+    const { r } = await pedir({ disponible: true }, [{ data: null, error: null }]);
+    expect(r.status).toHaveBeenCalledWith(404);
+  });
+});
+
+describe('T10 · socket rechazar_oferta (criterio 6)', () => {
+  const conectarConductor = (rpc, rol = 'conductor') => {
+    let alConectar;
+    const io = { use: () => {}, on: (evento, fn) => { if (evento === 'connection') alConectar = fn; } };
+    initSocketHandler(io, { conexiones: { agregar: () => {}, quitar: () => {} } });
+    const manejadores = {};
+    const socket = {
+      id: 's1',
+      user: { id: CONDUCTOR, rol, nombre: 'Carla' },
+      supabase: { rpc: jest.fn(rpc) },
+      join: () => {},
+      emit: jest.fn(),
+      on: (evento, fn) => { manejadores[evento] = fn; },
+    };
+    alConectar(socket);
+    return { socket, manejadores };
+  };
+
+  test('rechaza con el JWT del conductor y el despachador pasa al siguiente', async () => {
+    const { socket, manejadores } = conectarConductor(() => Promise.resolve({ data: true, error: null }));
+    await manejadores.rechazar_oferta({ viajeId: VIAJE });
+    expect(socket.supabase.rpc).toHaveBeenCalledWith('rechazar_oferta', { p_viaje: VIAJE });
+    expect(mockDespachador.alResponder).toHaveBeenCalledWith(VIAJE);
+  });
+
+  test('si la oferta ya no estaba pendiente, no mueve el despacho', async () => {
+    const { manejadores } = conectarConductor(() => Promise.resolve({ data: false, error: null }));
+    await manejadores.rechazar_oferta({ viajeId: VIAJE });
+    expect(mockDespachador.alResponder).not.toHaveBeenCalled();
+  });
+
+  test('un pasajero no puede rechazar ofertas', async () => {
+    const { socket, manejadores } = conectarConductor(() => Promise.resolve({ data: true, error: null }), 'pasajero');
+    await manejadores.rechazar_oferta({ viajeId: VIAJE });
+    expect(socket.supabase.rpc).not.toHaveBeenCalled();
+  });
+
+  test('un viajeId manipulado se rechaza sin llamar a la BD', async () => {
+    const { socket, manejadores } = conectarConductor(() => Promise.resolve({ data: true, error: null }));
+    await manejadores.rechazar_oferta({ viajeId: "x' or 1=1" });
+    expect(socket.supabase.rpc).not.toHaveBeenCalled();
+    expect(socket.emit).toHaveBeenCalledWith('error_message', expect.stringContaining('no es válido'));
   });
 });
