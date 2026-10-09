@@ -7,6 +7,7 @@ import {
   Modal,
   Alert,
   ActivityIndicator,
+  AppState,
 } from 'react-native';
 import MapView from '../components/Map';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -19,8 +20,12 @@ import { useLocation } from '../hooks/useLocation';
 import { useSocket } from '../hooks/useSocket';
 import { useMapRegion } from '../hooks/useMapRegion';
 import { useConsolaConductor } from '../hooks/useConsolaConductor';
+import { useSeguimientoFondo } from '../hooks/useSeguimientoFondo';
+import { PermisoUbicacionScreen } from './PermisoUbicacionScreen';
+import { canalUbicacion } from '../servicios/ubicacion';
+import { debeSeguir } from '../utils/seguimiento';
+import { AVISO_SEGUIMIENTO } from '../constants/permisoUbicacion';
 import { useAuthStore } from '../store/useAuthStore';
-import { LOCATION_CONFIG } from '../constants/config';
 import { COLORS, FONTS, SPACING, SHAPES } from '../constants/theme';
 import { nombreSector } from '../utils/solicitud';
 import {
@@ -53,28 +58,32 @@ export const DriverConsoleScreen: React.FC = () => {
   const profile = useAuthStore((s) => s.profile);
   const { userCoords, currentSectorId } = useLocation(true);
   const socket = useSocket();
-  const { updateLocation, isConnected } = socket;
+  const { isConnected } = socket;
   const consola = useConsolaConductor(socket);
-  const { estado, cambiando, oferta, segundos, aceptando } = consola;
+  const { estado, cambiando, oferta, segundos, aceptando, parametros } = consola;
   const disponible = estado === 'disponible';
+  const seguimiento = useSeguimientoFondo(estado, parametros);
 
   // ─── Región del mapa ──────────────────────────────────────
   const region = useMapRegion(userCoords);
 
-  // ─── Emitir ubicación GPS al backend ──────────────────────
-  // Solo disponible: sin ubicación reciente (60 s) no se reciben ofertas (criterio 2).
-  const ubicacion = useRef({ coords: userCoords, sectorId: currentSectorId });
-  ubicacion.current = { coords: userCoords, sectorId: currentSectorId };
+  // ─── Emitir ubicación GPS al backend con la app abierta ───
+  // Disponible: sin ubicación reciente (60 s) no se reciben ofertas (criterio 2 del 003).
+  // Ocupado: el pasajero ve al conductor (004, criterio 13). Por socket o, sin él, por REST (P11).
+  // En segundo plano envía la tarea (src/tareas/ubicacionFondo.ts).
+  const coordsRef = useRef(userCoords);
+  coordsRef.current = userCoords;
+  const seguir = debeSeguir(estado);
   useEffect(() => {
-    if (!disponible || !isConnected) return;
+    if (!seguir) return;
     const enviar = () => {
-      const { coords, sectorId } = ubicacion.current;
-      if (coords && sectorId) updateLocation(sectorId, coords);
+      const coords = coordsRef.current;
+      if (coords && AppState.currentState === 'active') void canalUbicacion.enviar(coords);
     };
     enviar();
-    const interval = setInterval(enviar, LOCATION_CONFIG.driverUpdateIntervalMs);
+    const interval = setInterval(enviar, parametros.abiertaSeg * 1000);
     return () => clearInterval(interval);
-  }, [disponible, isConnected, updateLocation]);
+  }, [seguir, parametros.abiertaSeg]);
 
   // ─── Interruptor de disponibilidad ────────────────────────
   const handleToggleAvailability = useCallback(async (value: boolean) => {
@@ -176,7 +185,29 @@ export const DriverConsoleScreen: React.FC = () => {
             <Text style={styles.offlineText}>Sin conexión: no recibirás viajes</Text>
           </View>
         )}
+
+        {/* Sin seguimiento en segundo plano: puede seguir con la app abierta (004, criterio 4) */}
+        {seguimiento.aviso && (
+          <View style={styles.offlineBanner} accessibilityRole="alert">
+            <Ionicons name="location-outline" size={18} color={COLORES_OFERTA.avisoTexto} />
+            <Text style={styles.offlineText}>{AVISO_SEGUIMIENTO[seguimiento.aviso].texto}</Text>
+            <PressableScale
+              onPress={seguimiento.abrirAjustes}
+              accessibilityRole="button"
+              style={styles.bannerAction}
+            >
+              <Text style={styles.bannerActionText}>{AVISO_SEGUIMIENTO[seguimiento.aviso].accion}</Text>
+            </PressableScale>
+          </View>
+        )}
       </Animated.View>
+
+      {/* Explicación antes del permiso del sistema (004, criterio 5) */}
+      <PermisoUbicacionScreen
+        visible={seguimiento.explicando}
+        onContinuar={seguimiento.continuar}
+        onAhoraNo={seguimiento.ahoraNo}
+      />
 
       {/* ─── MODAL: OFERTA DE VIAJE ───────────────────────── */}
       <Modal
@@ -358,6 +389,20 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.sm,
     borderRadius: SHAPES.borderRadiusMd,
     backgroundColor: COLORES_OFERTA.avisoFondo,
+  },
+  bannerAction: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.sm,
+    borderRadius: SHAPES.borderRadiusMd,
+    borderWidth: 1,
+    borderColor: COLORES_OFERTA.avisoTexto,
+  },
+  bannerActionText: {
+    color: COLORES_OFERTA.avisoTexto,
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONTS.body,
+    fontWeight: FONTS.weights.bold,
   },
   offlineInModal: {
     alignSelf: 'stretch',

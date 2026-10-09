@@ -215,6 +215,11 @@ const SOLICITUD = {
   paso('Sockets autenticados; el servidor envía su hora (R14)', Number.isFinite(sCon.desfaseMs),
     Number.isFinite(sCon.desfaseMs) ? `desfase=${sCon.desfaseMs} ms` : 'sin hora_servidor');
 
+  // Paso 004 (criterio 5): ponerse disponible exige el consentimiento vigente (0.2).
+  const consentimiento = await http(con.token, 'POST', '/api/auth/consentimiento', { consentimiento: true });
+  paso('El conductor acepta el consentimiento vigente', consentimiento.status === 201,
+    `HTTP ${consentimiento.status}, versión ${consentimiento.json.data?.version}`);
+
   const noDisp = await http(con.token, 'PATCH', '/api/conductores/disponibilidad', { disponible: false });
   const disp = await http(con.token, 'PATCH', '/api/conductores/disponibilidad', { disponible: true });
   if (!paso('El conductor cambia su disponibilidad en el servidor (criterio 1)',

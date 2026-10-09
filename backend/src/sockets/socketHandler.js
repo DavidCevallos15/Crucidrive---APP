@@ -1,5 +1,5 @@
 const { supabase, createUserClient } = require('../config/supabase');
-const { toWKT, isValidCoordinate } = require('../utils/geo');
+const { guardarUbicacion } = require('../ubicacion/servicio');
 const { checkThreadMembership } = require('../utils/supabaseHelpers');
 const { isUuid, isSectorId, MAX_MENSAJE } = require('../utils/validation');
 const { conexiones: conexionesProceso } = require('../despacho/conexiones');
@@ -83,47 +83,17 @@ const initSocketHandler = (io, { conexiones = conexionesProceso } = {}) => {
 
     // Solo ubicación y sector. La disponibilidad se cambia con PATCH /api/conductores/disponibilidad
     // y "ocupado" lo pone la aceptación (plan R10): si llega "estado", se ignora.
+    // La misma lógica atiende POST /api/conductores/ubicacion (paso 004, plan P11 y P14).
     socket.on('update_location', async ({ sectorId, coords } = {}) => {
       try {
-        if (socket.user.rol !== 'conductor') {
-          return socket.emit('error_message', 'Acción denegada. Solo los conductores pueden actualizar geolocalización.');
-        }
-
-        if (!coords || !isSectorId(sectorId)) {
-          return socket.emit('error_message', 'Parámetros de ubicación incompletos.');
-        }
-
-        const lat = Number(coords.lat);
-        const lng = Number(coords.lng);
-        if (!isValidCoordinate(lat, lng)) {
-          return socket.emit('error_message', 'Coordenadas inválidas.');
-        }
-
-        const { data: actualizadas, error } = await socket.supabase
-          .from('tricimotos')
-          .update({
-            ubicacion_actual: toWKT(lng, lat),
-            sector_id: sectorId
-          })
-          .eq('conductor_id', socket.user.id)
-          .select('conductor_id, estado');
-
-        if (error) {
-          console.error(`[Socket.io] Error al guardar GPS en DB: ${error.message}`);
-          return socket.emit('error_message', 'Error al guardar la ubicación.');
-        }
-
-        // La RLS no da error si el conductor no está aprobado: simplemente no actualiza ninguna fila.
-        if (!actualizadas || actualizadas.length === 0) {
-          return socket.emit('error_message', 'Tu cuenta de conductor aún no está aprobada.');
-        }
-
-        socket.to(`sector:${sectorId}`).emit('location_updated', {
-          conductorId: socket.user.id,
-          nombre: socket.user.nombre,
-          coords: { lat, lng },
-          estado: actualizadas[0].estado
+        const resultado = await guardarUbicacion({
+          db: socket.supabase,
+          usuario: socket.user,
+          sectorId,
+          coords,
+          emitir: (sala, evento, datos) => socket.to(sala).emit(evento, datos),
         });
+        if (!resultado.ok) socket.emit('error_message', resultado.mensaje);
       } catch (err) {
         console.error(`[Socket.io] Error en update_location: ${err.message}`);
         socket.emit('error_message', 'Error interno al actualizar la ubicación.');

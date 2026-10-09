@@ -2,6 +2,144 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.46.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · T10, ubicación del conductor en segundo plano
+- `src/tareas/ubicacionFondo.ts`: tarea de `expo-location` con servicio en primer plano y aviso permanente ("CruciDrive está usando tu ubicación"). Se define en `index.ts`, antes de Expo Router, para que exista si Android relanza la app sin interfaz.
+- Frecuencia adaptativa (`src/utils/seguimiento.ts`, D-13): pide una posición cada `fondoMovSeg` y solo la envía si se movió más de 15 m o si pasaron `fondoQuietoSeg`. Las frecuencias llegan en la respuesta de disponibilidad; si no son válidas se usan las de por defecto.
+- `src/servicios/canalUbicacion.ts`: un solo canal para la consola y la tarea. Usa el socket si está conectado y, si no, `POST /api/conductores/ubicacion` con el JWT guardado. Un 403 o la falta de sesión apagan el seguimiento.
+- Arranque y parada (`useSeguimientoFondo`): sigue con `disponible` u `ocupado` y se detiene con `inactivo` y al cerrar sesión.
+- `PermisoUbicacionScreen`: explicación propia antes del diálogo del sistema (qué, para qué, cuándo se detiene). Si el conductor no concede el permiso, la consola muestra "Solo recibirás ofertas con la app abierta" con un botón a los ajustes.
+- Cambio en la consola: con la app abierta ahora también envía la ubicación cuando está **ocupado**, para que el pasajero vea a su conductor. La frecuencia la fija el servidor (`abiertaSeg`).
+- `app.json`: `isAndroidForegroundServiceEnabled` y el texto del permiso "todo el tiempo".
+
+### Pruebas
+- 26 nuevas en `tests/avisos.test.ts`. Frontend 218/218. Sin errores de tipos en `src/` ni `app/`.
+
+### Pendiente
+- Revisión en el APK de los criterios 1, 3 y 4: necesita la T8 y va con la T17. En Expo Go no hay ubicación en segundo plano; la consola muestra el aviso de "solo con la app abierta".
+
+---
+
+## [1.45.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · T9, avisos en la app
+- Dependencias nuevas con `npx expo install` (las justifica el plan del 004): `expo-notifications` y `expo-task-manager` (esta la usa la T10). `npm audit --omit=dev` lista los mismos paquetes que antes.
+- `app.config.js` extiende `app.json` (P21):
+  - `android.googleServicesFile` sale de la variable de archivo `GOOGLE_SERVICES_JSON` de EAS o, en local, de `frontend/google-services.json` si existe. Sin ninguno, la app compila sin avisos.
+  - Plugin `expo-notifications` con el ícono monocromo y el color de la marca.
+  - `google-services.json` va en `.gitignore`.
+- `src/servicios/avisos.ts`: canales de Android `ofertas` (importancia máxima) y `viaje`, y token de Expo. En la web y en Expo Go no hay token, y la app sigue igual.
+- `src/servicios/registroAvisos.ts`: registro y borrado del token (criterio 11). Se registra al tener sesión con perfil y se borra al cerrar sesión, antes de invalidar el JWT. Las dos operaciones van en cola para que un inicio y un cierre seguidos no se crucen.
+
+### Pruebas
+- `tests/avisos.test.ts`: 12 pruebas con una API simulada. Frontend 192/192. `npx expo config --type public` sin errores, con y sin `google-services.json`.
+
+### Pendiente
+- Para que lleguen avisos al APK falta la T8 de David (Firebase y clave FCM V1 en EAS).
+
+---
+
+## [1.44.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · T7, consentimiento 0.2
+- Texto 0.2 en `consentimiento-lopdp.md`, `consent.js` y `consentimiento.ts`:
+  - Ubicación del conductor en segundo plano mientras está disponible, con un aviso permanente en el teléfono.
+  - Identificador del teléfono para avisos, que se borra al cerrar sesión.
+  - Durante el viaje, el pasajero ve a su conductor y nadie más.
+  - Expo y Google entregan los avisos, sin datos del pasajero.
+  - **Corrección:** la 0.1 decía que se guardaba un historial de ubicaciones con un identificador anónimo. En realidad solo se guarda la última posición.
+- `PATCH /api/conductores/disponibilidad` con `disponible: true` responde 428 si el conductor no aceptó la versión vigente. Dejar de estar disponible no lo exige.
+- `POST /api/auth/consentimiento { consentimiento: true }` registra la versión que fija el servidor.
+- `npm run smoke` acepta la 0.2 antes de probar la disponibilidad.
+
+### Pruebas
+- 6 nuevas en `spec004.test.js`. Las pruebas de disponibilidad del 003 incluyen la consulta de consentimiento. Backend 275/275 y frontend 180/180.
+
+### Pendiente
+- La pantalla de la app que pide la 0.2 es la T13. Hasta entonces, un conductor con la 0.1 recibe 428 al ponerse disponible desde la app.
+
+---
+
+## [1.43.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · T6, el despacho envía avisos
+- **Candidato (P5, enmienda de R6 del 003):** socket conectado **o** teléfono registrado para avisos. La ubicación de menos de 60 s la sigue exigiendo la BD.
+  - Solo se consulta quién tiene teléfono cuando hay candidatos sin socket.
+- Cada oferta sale por socket y por aviso (P6; la app descarta el aviso si está abierta).
+- Avisos de retirada al vencer, al cancelar el pasajero o al perder la carrera; al pasajero, avisos de aceptado y de sin conductor.
+- Los avisos se envían sin esperar el resultado. Si fallan, o falla la lectura de teléfonos, el despacho sigue por el socket (criterio 12).
+
+### Pruebas
+- 9 nuevas en `despachador.test.js`. Backend 269/269.
+
+---
+
+## [1.42.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · T5, avisos de Expo en el backend
+- `src/avisos/expo.js`: cliente de la API de Expo con `fetch`, sin SDK (regla 8).
+  - Lotes de 100, límite de 5 s y sin reintentos.
+  - `EXPO_ACCESS_TOKEN` opcional (seguridad reforzada).
+  - Devuelve los tokens con `DeviceNotRegistered` para borrarlos.
+- `src/avisos/mensajes.js`: oferta (personas, total, origen y destino, sin datos del pasajero; caduca con la oferta), retirada (aviso de datos, sin texto), aceptado y sin conductor.
+- `src/avisos/index.js`: lee los tokens con la clave de servicio, envía sin que el despacho espere (criterio 12) y borra los tokens muertos (11).
+- `POST /api/dispositivos` y `DELETE /api/dispositivos/:token`, con el JWT del usuario.
+- `.env.example`: `EXPO_ACCESS_TOKEN` y `AVISOS_ACTIVOS`.
+
+### Pruebas
+- `tests/avisos.test.js`: 25 nuevas. Backend 260/260.
+
+---
+
+## [1.41.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · T4, el pasajero ve a su conductor
+- Con el conductor `ocupado`, cada envío de ubicación (socket o REST) va como `conductor_ubicacion { viajeId, lat, lng, en }` **solo** a la sala del pasajero de su viaje `aceptado` o `en_curso` (criterios 13 y 14).
+- **Cambio de comportamiento (criterio 14):** la posición de un conductor ocupado ya no se reenvía a todo el sector, con su nombre, como pasaba desde el 001.
+- `inactivo`: no se reenvía a nadie. Al terminar el viaje la tricimoto vuelve a `disponible` y el pasajero deja de recibirla (15).
+
+### Pruebas
+- 6 nuevas en `spec004.test.js`. Backend 235/235.
+- `despachador.test.js` (R10 del 003) ahora usa un conductor disponible, porque el caso ocupado cambió por el criterio 14.
+
+---
+
+## [1.40.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · T3, ubicación del conductor por socket y por REST
+- `src/ubicacion/servicio.js`: un solo camino para guardar la última posición y reenviarla al sector. Lo usan el socket (`update_location`, la vía normal) y el nuevo `POST /api/conductores/ubicacion` (respaldo cuando la app está en segundo plano y el socket se cayó).
+  - Este respaldo responde 204 sin cuerpo.
+  - Tiene un límite de 2 envíos cada 5 s por conductor (no por IP, por el CGNAT).
+- `src/ubicacion/config.js`: `UBICACION_ABIERTA_SEG=5`, `UBICACION_FONDO_MOV_SEG=10` y `UBICACION_FONDO_QUIETO_SEG=30` (D-13).
+  - La app los recibe en la respuesta de `PATCH /api/conductores/disponibilidad`.
+  - El servidor no arranca si el valor de detenido no cabe en la ventana de 60 s del despacho.
+- `app.set('io', io)`: los controladores REST pueden reenviar por socket.
+
+### Pruebas
+- `tests/spec004.test.js`: 18 nuevas, entre ellas que el socket y el REST dan el mismo resultado y que el tercer envío en 5 s recibe 429. Backend 229/229.
+
+---
+
+## [1.39.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · T2, migración 0014 (avisos y privacidad de la ubicación)
+- `dispositivos_push`: los tokens de avisos solo se escriben con `registrar_dispositivo` y `olvidar_dispositivo`.
+  - Si el teléfono cambia de cuenta, el token pasa a la nueva (criterio 11).
+  - Como mucho 3 teléfonos por cuenta.
+  - El sistema los lee con la clave de servicio.
+- **Privacidad (criterio 14):** se cerró la lectura de `tricimotos.ubicacion_actual` con permisos por columna. Antes cualquier usuario autenticado podía seguir por la API REST a un conductor durante un viaje ajeno.
+- `ubicacion_conductor_viaje(viaje)`: el pasajero de un viaje `aceptado` o `en_curso` ve a su conductor; nadie más, y al terminar el viaje deja de verse (13, 15, 17). No se guarda historial (16).
+- Ajustes necesarios por el cierre de la columna:
+  - `authController.registerProfile` insertaba la tricimoto con `.select()` (todas las columnas). Ahora pide columnas explícitas; sin el cambio, el registro de conductores habría fallado.
+  - `rls_003` refrescaba la ubicación leyendo la misma columna; ahora usa un valor literal.
+
+### Pruebas
+- `rls_004.sql`: 21 en verde. `rls_001` (20), `rls_002` (18) y `rls_003` (60) siguen en verde, en Postgres 16 + PostGIS 3 local.
+- Backend 211/211; la prueba del registro falla con el código anterior.
+
+---
+
 ## [1.38.0] - 2026-10-09 (Hora Local)
 
 ### Paso 004 · plan y tareas

@@ -4,6 +4,7 @@ import { SOCKET_CONFIG } from '../constants/config';
 import { useAuthStore } from '../store/useAuthStore';
 import type { EventoViajeAceptado, EventoViajeSinConductor } from '../utils/viaje';
 import type { OfertaViaje } from '../utils/oferta';
+import { devolverSocket, prestarSocket } from '../servicios/ubicacion';
 
 /**
  * Tipo para los eventos que el cliente puede emitir.
@@ -113,11 +114,14 @@ export const useSocket = () => {
     });
 
     socketRef.current = socket;
+    // La ubicación en segundo plano usa este socket mientras exista (paso 004, P11).
+    prestarSocket(socket);
 
     // Limpieza al desmontar o al cambiar de sesión
     return () => {
       socket.removeAllListeners();
       socket.disconnect();
+      devolverSocket(socket);
       socketRef.current = null;
       setIsConnected(false);
     };
