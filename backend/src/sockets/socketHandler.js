@@ -2,16 +2,19 @@ const { supabase, createUserClient } = require('../config/supabase');
 const { toWKT, isValidCoordinate } = require('../utils/geo');
 const { checkThreadMembership } = require('../utils/supabaseHelpers');
 const { isUuid, isSectorId, MAX_MENSAJE } = require('../utils/validation');
+const { conexiones: conexionesProceso } = require('../despacho/conexiones');
 
-const ESTADOS_TRICIMOTO = ['disponible', 'ocupado', 'inactivo'];
+/** Sala personal de cada usuario: ahí le llegan ofertas y avisos del despacho (plan R12). */
+const salaUsuario = (userId) => `usuario:${userId}`;
 
 /**
  * Registra y maneja los eventos de Socket.io para geolocalización y chat en tiempo real.
  * Todo acceso a datos usa socket.supabase (JWT del usuario), así RLS aplica.
  *
  * @param {import('socket.io').Server} io - Instancia del servidor de Socket.io.
+ * @param {{ conexiones?: import('../despacho/conexiones').RegistroConexiones }} [opciones]
  */
-const initSocketHandler = (io) => {
+const initSocketHandler = (io, { conexiones = conexionesProceso } = {}) => {
   io.use(async (socket, next) => {
     try {
       const token = socket.handshake.auth?.token ||
@@ -63,6 +66,11 @@ const initSocketHandler = (io) => {
   io.on('connection', (socket) => {
     console.log(`[Socket.io] Cliente conectado: ${socket.user.nombre} (${socket.user.rol}) - ID: ${socket.id}`);
 
+    socket.join(salaUsuario(socket.user.id));
+    conexiones.agregar(socket.user.id, socket.id);
+    // Hora del servidor para que la app corrija el desfase de su reloj en la cuenta regresiva (plan R14).
+    socket.emit('hora_servidor', { ahora: Date.now() });
+
     // --- MÓDULO 1: GEOLOCALIZACIÓN Y GEOCERCAS ---
 
     socket.on('join_sector', ({ sectorId } = {}) => {
@@ -74,7 +82,9 @@ const initSocketHandler = (io) => {
       console.log(`[Socket.io] ${socket.user.nombre} se unió a ${room}`);
     });
 
-    socket.on('update_location', async ({ sectorId, coords, estado } = {}) => {
+    // Solo ubicación y sector. La disponibilidad se cambia con PATCH /api/conductores/disponibilidad
+    // y "ocupado" lo pone la aceptación (plan R10): si llega "estado", se ignora.
+    socket.on('update_location', async ({ sectorId, coords } = {}) => {
       try {
         if (socket.user.rol !== 'conductor') {
           return socket.emit('error_message', 'Acción denegada. Solo los conductores pueden actualizar geolocalización.');
@@ -90,20 +100,14 @@ const initSocketHandler = (io) => {
           return socket.emit('error_message', 'Coordenadas inválidas.');
         }
 
-        const estadoFinal = estado || 'disponible';
-        if (!ESTADOS_TRICIMOTO.includes(estadoFinal)) {
-          return socket.emit('error_message', 'Estado de tricimoto inválido.');
-        }
-
         const { data: actualizadas, error } = await socket.supabase
           .from('tricimotos')
           .update({
             ubicacion_actual: toWKT(lng, lat),
-            estado: estadoFinal,
             sector_id: sectorId
           })
           .eq('conductor_id', socket.user.id)
-          .select('conductor_id');
+          .select('conductor_id, estado');
 
         if (error) {
           console.error(`[Socket.io] Error al guardar GPS en DB: ${error.message}`);
@@ -119,7 +123,7 @@ const initSocketHandler = (io) => {
           conductorId: socket.user.id,
           nombre: socket.user.nombre,
           coords: { lat, lng },
-          estado: estadoFinal
+          estado: actualizadas[0].estado
         });
       } catch (err) {
         console.error(`[Socket.io] Error en update_location: ${err.message}`);
@@ -195,9 +199,11 @@ const initSocketHandler = (io) => {
     });
 
     socket.on('disconnect', () => {
+      conexiones.quitar(socket.user.id, socket.id);
       console.log(`[Socket.io] Cliente desconectado: ${socket.user.nombre} - ID: ${socket.id}`);
     });
   });
 };
 
 module.exports = initSocketHandler;
+module.exports.salaUsuario = salaUsuario;

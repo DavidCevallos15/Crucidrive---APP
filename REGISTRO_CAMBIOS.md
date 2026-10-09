@@ -2,6 +2,21 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.25.0] - 2026-10-09 (Hora Local)
+
+### Paso 003 · T7, base del despacho en el backend
+- `src/despacho/config.js`: lee `DESPACHO_SECUENCIALES` (3), `DESPACHO_OFERTA_SEG` (15), `DESPACHO_MAX_SEG` (120), `DESPACHO_UBICACION_MAX_SEG` (60) y `DESPACHO_BARRIDO_SEG` (15). Un valor fuera de rango, o una fase secuencial que no deja tiempo para el aviso abierto, impide arrancar el servidor. Documentadas en `.env.example`.
+- `src/despacho/conexiones.js`: registro de quién tiene un socket abierto (el despachador solo ofrece a conductores conectados).
+- Sockets: cada usuario entra a su sala `usuario:{id}` y recibe `hora_servidor` al conectar; `update_location` ya no cambia el estado de la tricimoto (antes la ponía en `disponible` en cada envío, pisando `ocupado`) y avisa al sector con el estado real de la BD.
+
+### Pruebas
+- `tests/despachador.test.js` (14 nuevas); `hardening.test.js` ajustada a la sala personal. Backend 152/152.
+
+### Pendiente
+- Mientras no llegue `PATCH /api/conductores/disponibilidad` (T10), un conductor no puede ponerse disponible desde la app: T7 a T11 se fusionan juntas.
+
+---
+
 ## [1.24.0] - 2026-10-09 (Hora Local)
 
 ### Paso 003 · T5, importación de lugares desde OpenStreetMap
@@ -18,8 +33,9 @@
 ### Pruebas
 - `tests/importarLugares.test.js` 14 en verde; backend 138/138. SQL: rls_001 20, rls_002 18, rls_003 60 y concurrencia 1, todo en verde; `0013` aplicada dos veces sin duplicar y respetando una edición del admin.
 
-### Pendiente
-- T6: David revisa la lista. `0013` y `0012` no están en producción (al fusionar #20 y #21 la integración de GitHub no aplicó nada).
+### Producción
+- T6: David aprobó la lista. `0013` aplicada al proyecto real con la herramienta de Supabase: 108 lugares de OSM y 2 de David, todos con sector; `buscar_lugares('farmacia')` devuelve las 4 farmacias.
+- `0012` sigue sin aplicar a propósito: va con el backend (T9). Al fusionar el #20 y el #21, la integración de GitHub no aplicó ninguna migración.
 
 ---
 

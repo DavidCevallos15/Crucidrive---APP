@@ -3,8 +3,17 @@ const { Server } = require('socket.io');
 const dotenv = require('dotenv');
 const { createApp, getAllowedOrigins } = require('./app');
 const initSocketHandler = require('./sockets/socketHandler');
+const { leerConfigDespacho } = require('./despacho/config');
 
 dotenv.config();
+
+// Parámetros del despacho inválidos: mejor no arrancar (plan R21).
+try {
+  leerConfigDespacho();
+} catch (err) {
+  console.error(`[CruciDrive] Configuración del despacho inválida: ${err.message}`);
+  process.exit(1);
+}
 
 const port = process.env.PORT || 3000;
 const app = createApp();
