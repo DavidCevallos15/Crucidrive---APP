@@ -2,6 +2,23 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.49.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · T12, el pasajero ve a su conductor
+- `useConductorDelViaje` (lógica pura en `src/utils/conductorDelViaje.ts`):
+  - Escucha `conductor_ubicacion`, que solo llega a la sala del pasajero.
+  - Al abrir el viaje y al reconectar, lee la RPC `ubicacion_conductor_viaje` (criterio 17).
+  - Si los datos pasan de 15 s, relee cada 30 s como respaldo.
+  - Un evento atrasado no hace retroceder al conductor.
+  - Al terminar el viaje, el marcador desaparece en ese momento (criterio 15).
+- Mapa del pasajero: marcador propio del conductor, "Tu conductor está a 240 m" (en línea recta al punto de partida) y "Última posición hace X s" cuando los datos no son frescos.
+- Los avisos de aceptado y sin conductor llevan al mapa al tocarlos, que ya sincroniza el viaje con la BD (T11, R23 del 003).
+
+### Pruebas
+- 13 nuevas en `tests/avisos.test.ts`. Frontend 252/252. Sin errores de tipos en `src/` ni `app/`.
+
+---
+
 ## [1.48.0] - 2026-10-09 (Hora Local)
 
 ### Paso 004 · T11, aviso de oferta en la app

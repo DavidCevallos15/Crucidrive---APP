@@ -18,11 +18,19 @@ import {
   ofertaDesdeFila,
   type FilaOferta,
 } from '../src/utils/avisoOferta';
+import {
+  alRecibirPosicion,
+  debeVerConductor,
+  leerPosicion,
+  puntoDeOrigen,
+  textoUltimaPosicion,
+} from '../src/utils/conductorDelViaje';
 
 /**
  * Paso 004 · avisos y ubicación en la app. T9: registro y borrado del token (criterio 11).
  * T10: ubicación en segundo plano (criterios 2, 4, 5 y 19; P11 y P13).
  * T11: aviso de oferta (criterios 7, 8 y 9; P6 a P8).
+ * T12: el pasajero ve a su conductor (criterios 10, 13, 15 y 17; P9 y P17).
  */
 
 const TOKEN = 'ExponentPushToken[telefonoDePrueba01]';
@@ -418,5 +426,79 @@ describe('T11 · al tocar el aviso (criterios 7 y 8)', () => {
     expect(destinoDeAviso(leerDatosAviso({ tipo: 'oferta', viajeId: VIAJE }), 'pasajero')).toBeNull();
     expect(destinoDeAviso(leerDatosAviso({ tipo: 'viaje_aceptado', viajeId: VIAJE }), 'conductor')).toBeNull();
     expect(destinoDeAviso(leerDatosAviso({ tipo: 'oferta_retirada', viajeId: VIAJE }), 'conductor')).toBeNull();
+  });
+});
+
+// ─── T12 · el pasajero ve a su conductor ────────────────────────────────────
+describe('T12 · posición del conductor del viaje (criterios 13, 15 y 17)', () => {
+  const OTRO_VIAJE = 'b0000000-0000-4000-8000-000000000002';
+  const evento = { viajeId: VIAJE, lat: -0.87, lng: -80.54, en: '2026-10-09T12:00:00.000Z' };
+
+  test('solo con el viaje aceptado o en curso; al terminar deja de verse', () => {
+    expect(debeVerConductor('aceptado')).toBe(true);
+    expect(debeVerConductor('en_curso')).toBe(true);
+    for (const estado of ['solicitado', 'sin_conductor', 'finalizado', 'cancelado', null, undefined] as const) {
+      expect(debeVerConductor(estado as never)).toBe(false);
+    }
+  });
+
+  test('lee el evento del socket de su viaje', () => {
+    expect(leerPosicion(evento, VIAJE)).toEqual({ viajeId: VIAJE, lat: -0.87, lng: -80.54, en: Date.parse(evento.en) });
+  });
+
+  test('lee la fila de la RPC al abrir o reconectar', () => {
+    const fila = { lat: -0.87, lng: -80.54, actualizado_en: '2026-10-09T11:59:30+00:00' };
+    expect(leerPosicion(fila, VIAJE)?.en).toBe(Date.parse('2026-10-09T11:59:30Z'));
+  });
+
+  test.each([
+    ['de otro viaje', { ...evento, viajeId: OTRO_VIAJE }],
+    ['sin coordenadas', { viajeId: VIAJE, en: evento.en }],
+    ['coordenadas imposibles', { ...evento, lat: 120 }],
+    ['sin hora', { viajeId: VIAJE, lat: -0.87, lng: -80.54 }],
+    ['vacío', null],
+  ])('ignora una posición %s', (_caso, datos) => {
+    expect(leerPosicion(datos, VIAJE)).toBeNull();
+  });
+
+  test('un evento atrasado no hace retroceder al conductor', () => {
+    const nueva = leerPosicion(evento, VIAJE);
+    const vieja = leerPosicion({ ...evento, lat: -0.8, en: '2026-10-09T11:59:00.000Z' }, VIAJE);
+    expect(alRecibirPosicion(nueva, vieja)).toBe(nueva);
+    expect(alRecibirPosicion(vieja, nueva)).toBe(nueva);
+    expect(alRecibirPosicion(nueva, null)).toBe(nueva);
+  });
+
+  test('"Última posición hace X s" solo si pasaron más de 15 s (criterio 17)', () => {
+    const en = Date.parse(evento.en);
+    expect(textoUltimaPosicion(en, en + 15_000)).toBe('');
+    expect(textoUltimaPosicion(en, en + 40_000)).toBe('Última posición hace 40 s');
+    expect(textoUltimaPosicion(en, en + 200_000)).toBe('Última posición hace 3 min');
+    // Reloj del teléfono atrasado: no muestra tiempos negativos.
+    expect(textoUltimaPosicion(en, en - 5_000)).toBe('');
+  });
+
+  test('la distancia se mide al punto de partida elegido o, si no, al GPS', () => {
+    const gps = { coords: { lat: -0.86, lng: -80.53 }, sectorId: 'malecon' };
+    const lugar = { id: 'x', nombre: 'Muelle', categoria: 'otro', sector_id: null, lat: -0.85, lng: -80.52 };
+    expect(puntoDeOrigen({ tipo: 'lugar', lugar } as never, gps)).toEqual({ lat: -0.85, lng: -80.52 });
+    expect(puntoDeOrigen({ tipo: 'gps', coords: { lat: -0.84, lng: -80.51 }, sectorId: 'malecon' }, gps))
+      .toEqual({ lat: -0.84, lng: -80.51 });
+    expect(puntoDeOrigen(null, gps)).toEqual({ lat: -0.86, lng: -80.53 });
+    expect(puntoDeOrigen(null, null)).toBeNull();
+  });
+});
+
+describe('T12 · avisos al pasajero (criterio 10)', () => {
+  test('aceptado y sin conductor llevan al mapa, que lee el viaje de la BD', () => {
+    expect(destinoDeAviso(leerDatosAviso({ tipo: 'viaje_aceptado', viajeId: VIAJE }), 'pasajero'))
+      .toEqual({ pathname: '/(app)/(passenger)' });
+    expect(destinoDeAviso(leerDatosAviso({ tipo: 'viaje_sin_conductor', viajeId: VIAJE }), 'pasajero'))
+      .toEqual({ pathname: '/(app)/(passenger)' });
+  });
+
+  test('con la app abierta se muestran: el pasajero puede estar en otra app o pantalla', () => {
+    const consola = { abierta: false, conectada: true };
+    expect(mostrarEnPrimerPlano(leerDatosAviso({ tipo: 'viaje_sin_conductor', viajeId: VIAJE }), consola)).toBe(true);
   });
 });
