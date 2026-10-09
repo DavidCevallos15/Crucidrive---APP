@@ -8,7 +8,7 @@ Flujo por paso: spec → aprobación → plan → tareas → implementación (co
 | 0 | (validación de campo, sin código) | Pendiente (D-07: aliado institucional) |
 | 1 | `001-cimientos` | **Completo** (T18, deuda de tipos del frontend, pasa a 007) |
 | 2 | `002-identidad` | **Completo** (prueba de humo 28/28). Pendiente: texto de consentimiento revisado por un abogado y ver con sesiones reales las vistas del conductor y del administrador |
-| 3 | `003-despacho` | **Plan en revisión** (spec aprobada en el PR #18) |
+| 3 | `003-despacho` | **En implementación**: BD y backend completos (T1 a T11), app en curso (T12 y T13 hechas; siguen T14 a T18) |
 | 4 | `004-tracking-push` | Sin iniciar |
 | 5 | `005-viaje` | Sin iniciar |
 | 6 | `006-sos-admin` | Sin iniciar |

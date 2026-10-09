@@ -2,6 +2,28 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.31.0] - 2026-10-09 (Hora Local)
+
+### Paso 003 · T13, origen y estados de la solicitud del pasajero
+- Origen del viaje (criterio 21):
+  - Con GPS se usa la ubicación del pasajero; si no hay GPS, la ficha dice "Sin GPS: elige desde dónde sales".
+  - "Cambiar" o "Elegir" abre "¿Desde dónde sales?" con el mismo buscador de lugares, los sectores y "Usar mi ubicación".
+  - Con un sector como origen aparece "¿Dónde te recogen?" para la referencia que ve el conductor.
+- Estados tras pedir:
+  - "Buscando tricimoto…" con "Cancelar solicitud" (criterios 12 y 16).
+  - "No hay tricimotos disponibles ahora" con "Volver a pedir", que reenvía la misma solicitud con la posición actual del GPS, y "Cambiar el viaje" (criterio 11).
+  - "Tu tricimoto va en camino" con nombre, placa, "Llamar" y "Abrir chat" (criterio 10).
+- `useViajePasajero`: escucha `viaje_aceptado` y `viaje_sin_conductor` y vuelve a leer el viaje de la BD (con RLS) al conectar y cada 30 s mientras busca (enmienda R23 del plan). Con un 409 muestra el viaje activo.
+- Los avisos que llegan antes que la respuesta de `/solicitar` (sin candidatos, el cierre es inmediato) se guardan y se aplican al crear el viaje local.
+- `useSocket`: los listeners se vuelven a enganchar si el socket se recrea (antes se perdían al cambiar el token) e `isConnected` es reactivo.
+- `src/utils/solicitud.ts` y `src/utils/viaje.ts`: lógica sin React para probarla. El cuerpo de la solicitud no lleva precio.
+
+### Pruebas
+- `tests/despacho.test.ts`: 23 nuevas. Frontend 149/149, sin errores de tipos nuevos en `src/` ni `app/`.
+- Navegador a 390 px como visitante sin GPS: elegir origen por búsqueda ("muelle") y destino por sector. Los tres estados se revisaron forzando el estado local; sin errores en la consola. Falta el flujo real con backend y sesión (T18).
+
+---
+
 ## [1.30.0] - 2026-10-09 (Hora Local)
 
 ### Paso 003 · T12, buscador de lugares en la app

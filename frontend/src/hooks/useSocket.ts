@@ -1,7 +1,8 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import { SOCKET_CONFIG } from '../constants/config';
 import { useAuthStore } from '../store/useAuthStore';
+import type { EventoViajeAceptado, EventoViajeSinConductor } from '../utils/viaje';
 
 /**
  * Tipo para los eventos que el cliente puede emitir.
@@ -36,7 +37,12 @@ interface ServerEvents {
     perfiles: { nombre: string; rol: string };
   }) => void;
   error_message: (message: string) => void;
+  // Paso 003 (plan R12): avisos al pasajero en su sala usuario:{id}.
+  viaje_aceptado: (data: EventoViajeAceptado) => void;
+  viaje_sin_conductor: (data: EventoViajeSinConductor) => void;
 }
+
+type Handler = (...args: any[]) => void;
 
 /**
  * Hook para gestionar la conexión Socket.io con autenticación JWT.
@@ -50,6 +56,10 @@ interface ServerEvents {
  */
 export const useSocket = () => {
   const socketRef = useRef<Socket | null>(null);
+  // Listeners registrados con onEvent: se vuelven a enganchar en cada socket nuevo
+  // (cambio de token), para no perder avisos como viaje_aceptado.
+  const handlersRef = useRef(new Map<string, Set<Handler>>());
+  const [isConnected, setIsConnected] = useState(false);
   const session = useAuthStore((state) => state.session);
 
   // ─── Conexión y desconexión automática ─────────────────────
@@ -76,10 +86,12 @@ export const useSocket = () => {
 
     socket.on('connect', () => {
       console.log('[Socket.io] Conectado al servidor:', socket.id);
+      setIsConnected(true);
     });
 
     socket.on('disconnect', (reason) => {
       console.log('[Socket.io] Desconectado:', reason);
+      setIsConnected(false);
     });
 
     socket.on('connect_error', (error) => {
@@ -90,6 +102,10 @@ export const useSocket = () => {
       console.warn('[Socket.io] Error del servidor:', message);
     });
 
+    handlersRef.current.forEach((handlers, event) => {
+      handlers.forEach((handler) => socket.on(event, handler));
+    });
+
     socketRef.current = socket;
 
     // Limpieza al desmontar o al cambiar de sesión
@@ -97,6 +113,7 @@ export const useSocket = () => {
       socket.removeAllListeners();
       socket.disconnect();
       socketRef.current = null;
+      setIsConnected(false);
     };
   }, [session?.access_token]);
 
@@ -154,9 +171,14 @@ export const useSocket = () => {
    */
   const onEvent = useCallback(
     <K extends keyof ServerEvents>(event: K, handler: ServerEvents[K]) => {
-      socketRef.current?.on(event as string, handler as any);
+      const fn = handler as Handler;
+      const handlers = handlersRef.current.get(event) ?? new Set<Handler>();
+      handlers.add(fn);
+      handlersRef.current.set(event, handlers);
+      socketRef.current?.on(event as string, fn);
       return () => {
-        socketRef.current?.off(event as string, handler as any);
+        handlers.delete(fn);
+        socketRef.current?.off(event as string, fn);
       };
     },
     []
@@ -165,8 +187,8 @@ export const useSocket = () => {
   return {
     /** Referencia al socket actual */
     socket: socketRef.current,
-    /** Indica si el socket está conectado */
-    isConnected: socketRef.current?.connected ?? false,
+    /** Indica si el socket está conectado (se actualiza al conectar y desconectar) */
+    isConnected,
 
     // Métodos
     joinSector,
