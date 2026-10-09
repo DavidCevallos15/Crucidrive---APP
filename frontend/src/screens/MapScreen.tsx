@@ -5,6 +5,7 @@ import {
   Text,
   TextInput,
   Alert,
+  ScrollView,
 } from 'react-native';
 import MapView, { Marker } from '../components/Map';
 import Animated from 'react-native-reanimated';
@@ -31,6 +32,9 @@ import { rutaInicial } from '../utils/routing';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../store/useAuthStore';
 import { authFetch } from '../utils/authFetch';
+import { GlassInput } from '../components/GlassInput';
+import { useBuscarLugares } from '../hooks/useBuscarLugares';
+import { ATRIBUCION_OSM, ICONO_CATEGORIA, type Lugar } from '../utils/lugares';
 
 /**
  * Pantalla principal del mapa para el pasajero.
@@ -59,6 +63,9 @@ export const MapScreen: React.FC = () => {
   const [showRideSheet, setShowRideSheet] = useState(false);
   const [passengers, setPassengers] = useState(1);
   const [destinationNote, setDestinationNote] = useState('');
+  // Lugar del catálogo elegido como destino (paso 003); null si eligió solo el sector.
+  const [selectedPlace, setSelectedPlace] = useState<Lugar | null>(null);
+  const busqueda = useBuscarLugares();
 
   const { total, formattedPrice, formattedPricePerPerson } = useTariff(passengers);
 
@@ -68,7 +75,8 @@ export const MapScreen: React.FC = () => {
     : hasPermission
       ? 'Buscando tu ubicación...'
       : 'Activa tu ubicación';
-  const destinationName = SECTORS.find((s) => s.id === selectedDestination)?.name ?? '';
+  const sectorName = (id: string | null) => SECTORS.find((s) => s.id === id)?.name ?? '';
+  const destinationName = selectedPlace?.nombre ?? sectorName(selectedDestination);
 
   // ─── Región inicial del mapa ───────────────────────────────
   const initialRegion = useMapRegion(userCoords);
@@ -97,7 +105,15 @@ export const MapScreen: React.FC = () => {
 
   // ─── Seleccionar destino ──────────────────────────────────
   const handleSelectDestination = useCallback((sectorId: string) => {
+    setSelectedPlace(null);
     setSelectedDestination(sectorId);
+    setShowRideSheet(true);
+  }, []);
+
+  // Con un lugar, el servidor toma sus coordenadas y su sector (criterio 19).
+  const handleSelectPlace = useCallback((lugar: Lugar) => {
+    setSelectedPlace(lugar);
+    setSelectedDestination(lugar.sector_id);
     setShowRideSheet(true);
   }, []);
 
@@ -122,10 +138,11 @@ export const MapScreen: React.FC = () => {
         method: 'POST',
         body: JSON.stringify({
           origen: userCoords ?? originSector.center,
-          destino: destinationSector.center,
+          ...(selectedPlace
+            ? { lugarDestinoId: selectedPlace.id }
+            : { destino: destinationSector.center, sectorDestinoId: destinationSector.id }),
           pasajeros: passengers,
           sectorOrigenId: originSector.id,
-          sectorDestinoId: destinationSector.id,
           ...(note ? { destinoDescripcion: note } : {}),
         }),
       });
@@ -144,7 +161,7 @@ export const MapScreen: React.FC = () => {
         originSectorId: originSector.id,
         originName: originSector.name,
         destinationSectorId: destinationSector.id,
-        destinationName: destinationSector.name,
+        destinationName: selectedPlace?.nombre ?? destinationSector.name,
         passengers,
         price: Number(data.data?.tarifa ?? total),
         destinationNote: note,
@@ -166,6 +183,7 @@ export const MapScreen: React.FC = () => {
     userCoords,
     passengers,
     destinationNote,
+    selectedPlace,
     total,
     setActiveRide,
     setRequesting,
@@ -285,6 +303,54 @@ export const MapScreen: React.FC = () => {
           >
             <View style={[styles.sheetBody, { paddingBottom: insets.bottom + SPACING.md }]}>
             <Text style={styles.sectionTitle} accessibilityRole="header">¿A dónde vas?</Text>
+            <GlassInput
+              label="Busca un lugar"
+              placeholder="Farmacia, muelle, letras…"
+              value={busqueda.texto}
+              onChangeText={busqueda.escribir}
+              autoCorrect={false}
+              returnKeyType="search"
+              maxLength={80}
+              accessibilityHint="Escribe al menos 2 letras"
+            />
+            {busqueda.cargando && (
+              <Text style={styles.searchHint}>Buscando…</Text>
+            )}
+            {busqueda.error && (
+              <Text style={styles.searchHint} accessibilityLiveRegion="polite">{busqueda.error}</Text>
+            )}
+            {busqueda.buscado && !busqueda.error && busqueda.resultados.length === 0 && (
+              <Text style={styles.searchHint} accessibilityLiveRegion="polite">
+                No encontramos «{busqueda.texto.trim()}». Elige el sector y escribe una referencia.
+              </Text>
+            )}
+            {busqueda.resultados.length > 0 && (
+              <>
+                <ScrollView style={styles.placeList} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
+                  {busqueda.resultados.map((lugar) => (
+                    <PressableScale
+                      key={lugar.id}
+                      onPress={() => handleSelectPlace(lugar)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${lugar.nombre}, ${sectorName(lugar.sector_id)}`}
+                      style={styles.placeRow}
+                    >
+                      <Ionicons
+                        name={ICONO_CATEGORIA[lugar.categoria] as keyof typeof Ionicons.glyphMap}
+                        size={18}
+                        color={COLORS.primaryLight}
+                      />
+                      <View style={styles.placeText}>
+                        <Text style={styles.placeName} numberOfLines={1}>{lugar.nombre}</Text>
+                        <Text style={styles.placeSector} numberOfLines={1}>{sectorName(lugar.sector_id)}</Text>
+                      </View>
+                    </PressableScale>
+                  ))}
+                </ScrollView>
+                <Text style={styles.attribution}>{ATRIBUCION_OSM}</Text>
+              </>
+            )}
+            <Text style={styles.sectorsTitle}>O elige un sector</Text>
             {availableDestinations.map((sector) => (
               <GlassButton
                 key={sector.id}
@@ -392,6 +458,7 @@ export const MapScreen: React.FC = () => {
               onPress={() => {
                 setShowRideSheet(false);
                 setSelectedDestination(null);
+                setSelectedPlace(null);
                 setPassengers(1);
                 setDestinationNote('');
               }}
@@ -411,6 +478,54 @@ export const MapScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  // ─── Buscador de lugares (paso 003) ─────────────────────
+  searchHint: {
+    color: COLORS.glassTextMutedDark,
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONTS.body,
+    marginBottom: SPACING.sm,
+  },
+  placeList: {
+    maxHeight: 220,
+    marginBottom: SPACING.xs,
+  },
+  placeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 52,
+    paddingHorizontal: SPACING.sm,
+    gap: SPACING.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: COLORS.glassBorderDark,
+  },
+  placeText: {
+    flex: 1,
+  },
+  placeName: {
+    color: COLORS.glassTextDark,
+    fontSize: FONTS.sizes.base,
+    fontFamily: FONTS.body,
+  },
+  placeSector: {
+    color: COLORS.glassTextMutedDark,
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONTS.body,
+  },
+  attribution: {
+    color: COLORS.glassTextMutedDark,
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONTS.body,
+    textAlign: 'right',
+    marginBottom: SPACING.sm,
+  },
+  sectorsTitle: {
+    color: COLORS.glassTextMutedDark,
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONTS.body,
+    marginTop: SPACING.xs,
+    marginBottom: SPACING.xs,
+  },
+
   container: {
     flex: 1,
     backgroundColor: COLORS.darkBg,

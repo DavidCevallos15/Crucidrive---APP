@@ -2,6 +2,29 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.30.0] - 2026-10-09 (Hora Local)
+
+### Paso 003 · T12, buscador de lugares en la app
+- Ficha "¿A dónde vas?":
+  - Buscador de lugares que llama a `buscar_lugares` directamente con supabase-js, también sin sesión, sin API de pago ni descarga de mapa.
+  - Espera 250 ms entre teclas, descarta respuestas viejas y muestra un aviso si no hay conexión.
+  - Cada resultado lleva ícono por categoría y su sector, y se muestra la atribución "© OpenStreetMap".
+  - Sin coincidencias, el pasajero elige el sector y escribe una referencia, como antes.
+- Al elegir un lugar, la solicitud envía `lugarDestinoId` y el servidor toma coordenadas, nombre y sector.
+- `src/utils/texto.ts` (`normalizar`, igual que en la BD) y `src/utils/lugares.ts`: buscador sin React, para poder probarlo.
+- `.claude/launch.json`: `frontend-web-2` en el puerto 8082, para previsualizar cuando otra sesión ocupa el 8081.
+
+### Pruebas
+- `tests/despacho.test.ts` (12 nuevas). Frontend 126/126, sin errores de tipos nuevos en `src/` ni `app/`.
+- Navegador, como visitante y contra la BD real:
+  - "farmacia" devuelve las 4 farmacias.
+  - "muele crusita" encuentra el Muelle.
+  - Sin coincidencias aparece el aviso.
+  - Elegir "Letras Crucita" abre la ficha con el destino por nombre.
+  - Sin errores en la consola.
+
+---
+
 ## [1.29.0] - 2026-10-09 (Hora Local)
 
 ### Paso 003 · T11, oferta y lugares del administrador
