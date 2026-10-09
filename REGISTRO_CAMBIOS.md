@@ -11,8 +11,8 @@
 ### Pruebas
 - `supabase/tests/rls_003.sql`: 21 en verde en Docker (Postgres 16 + PostGIS). rls_001 (17) y rls_002 (16) siguen en verde.
 
-### Pendiente
-- Aplicar `0011` al proyecto real y pasar el linter de seguridad (T17).
+### Producción
+- `0011` aplicada al proyecto real con la herramienta de Supabase (autorizado por David). Linter de seguridad: solo el aviso conocido de D-10. `buscar_lugares('muelle')` responde.
 
 ---
 
