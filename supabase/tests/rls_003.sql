@@ -51,6 +51,8 @@ insert into perfiles (id, rol, nombre, telefono) values
   ('44444444-4444-4444-4444-444444444444', 'conductor', 'Diego', '0994444444'),
   ('77777777-7777-7777-7777-777777777777', 'conductor', 'Nuevo', '0997777777');
 
+-- La prueba usa su propio catálogo: se quita el que trae la migración generada de OSM (0013).
+delete from lugares where fuente = 'osm';
 -- Lugares que llegarían de OSM (los inserta el sistema, como la migración generada de la T5).
 insert into lugares (nombre, categoria, ubicacion, fuente, osm_id) values
   ('Cevichería El Manaba',   'comida', extensions.st_geogfromtext('SRID=4326;POINT(-80.5390 -0.8690)'), 'osm', 'node/1'),
