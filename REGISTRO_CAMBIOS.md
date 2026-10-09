@@ -2,6 +2,23 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.48.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · T11, aviso de oferta en la app
+- `src/utils/avisoOferta.ts` (lógica pura): lee el `data` del aviso (objeto o texto JSON, según cómo lo entregue Expo), decide qué se muestra con la app abierta, valida la oferta leída de la BD y elige adónde lleva tocar el aviso.
+- Con la app abierta (criterio 9): el aviso de oferta no se muestra si la consola está en pantalla y conectada, porque ya está el modal. Sin socket sí se muestra.
+- Al tocar el aviso (criterio 7): la consola lee su oferta en `ofertas_viaje` con el viaje. Si ya no está pendiente, venció o el viaje no sigue solicitado, muestra "Esta oferta ya no está disponible".
+- Retirada (criterio 8): `src/tareas/avisosFondo.ts` recibe el aviso de datos `oferta_retirada` y quita el aviso de la barra. También se quita al llegar la retirada por socket, al vencer, al aceptar y al rechazar.
+- `useRespuestaAvisos` en el layout raíz navega solo cuando la cuenta está lista, para que la guardia de rutas no deshaga la navegación. Los avisos del pasajero llevan al mapa, que ya sincroniza el viaje (R23 del 003).
+
+### Pruebas
+- 21 nuevas en `tests/avisos.test.ts`. Frontend 239/239. Sin errores de tipos en `src/` ni `app/`. Los bundles de Android y web compilan.
+
+### Pendiente
+- Comprobar en el APK el aviso y su retirada (T17, con la T8).
+
+---
+
 ## [1.47.0] - 2026-10-09 (Hora Local)
 
 ### Paso 004 · T15, migración 0014 en producción

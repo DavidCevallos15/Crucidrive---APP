@@ -11,10 +11,18 @@ import {
 import { distanciaMetros } from '../src/utils/geo';
 import { crearCanalUbicacion, type SocketUbicacion } from '../src/servicios/canalUbicacion';
 import { PERMISO_UBICACION, AVISO_SEGUIMIENTO } from '../src/constants/permisoUbicacion';
+import {
+  destinoDeAviso,
+  leerDatosAviso,
+  mostrarEnPrimerPlano,
+  ofertaDesdeFila,
+  type FilaOferta,
+} from '../src/utils/avisoOferta';
 
 /**
  * Paso 004 · avisos y ubicación en la app. T9: registro y borrado del token (criterio 11).
  * T10: ubicación en segundo plano (criterios 2, 4, 5 y 19; P11 y P13).
+ * T11: aviso de oferta (criterios 7, 8 y 9; P6 a P8).
  */
 
 const TOKEN = 'ExponentPushToken[telefonoDePrueba01]';
@@ -302,5 +310,113 @@ describe('T10 · envío por socket o REST (P11, P13)', () => {
     await canal.enviar(PARADA);
     canal.reiniciar();
     expect(canal.ultimoEnvio()).toBeNull();
+  });
+});
+
+// ─── T11 · aviso de oferta ──────────────────────────────────────────────────
+const VIAJE = 'b0000000-0000-4000-8000-000000000001';
+
+describe('T11 · datos del aviso', () => {
+  test('lee la oferta como objeto (primer plano y toque)', () => {
+    expect(leerDatosAviso({ tipo: 'oferta', viajeId: VIAJE, venceEn: 123 }))
+      .toEqual({ tipo: 'oferta', viajeId: VIAJE, venceEn: 123 });
+  });
+
+  test('lee la retirada como texto JSON (tarea de segundo plano)', () => {
+    const carga = { dataString: JSON.stringify({ tipo: 'oferta_retirada', viajeId: VIAJE }) };
+    expect(leerDatosAviso(carga)).toEqual({ tipo: 'oferta_retirada', viajeId: VIAJE });
+    expect(leerDatosAviso({ body: JSON.stringify({ tipo: 'oferta_retirada', viajeId: VIAJE }) }))
+      .toEqual({ tipo: 'oferta_retirada', viajeId: VIAJE });
+  });
+
+  test.each([
+    [null],
+    ['no es json'],
+    [{ tipo: 'otro', viajeId: VIAJE }],
+    [{ tipo: 'oferta', viajeId: 'no-es-uuid' }],
+    [{ tipo: 'oferta' }],
+  ])('ignora datos inesperados (%p)', (crudo) => {
+    expect(leerDatosAviso(crudo)).toBeNull();
+  });
+});
+
+describe('T11 · con la app abierta (criterio 9)', () => {
+  const oferta = leerDatosAviso({ tipo: 'oferta', viajeId: VIAJE, venceEn: 1 });
+
+  test('con la consola abierta y conectada, el aviso de oferta no se muestra: ya está el modal', () => {
+    expect(mostrarEnPrimerPlano(oferta, { abierta: true, conectada: true })).toBe(false);
+  });
+
+  test('sin conexión o en otra pantalla, el aviso de oferta sí se muestra', () => {
+    expect(mostrarEnPrimerPlano(oferta, { abierta: true, conectada: false })).toBe(true);
+    expect(mostrarEnPrimerPlano(oferta, { abierta: false, conectada: true })).toBe(true);
+  });
+
+  test('la retirada nunca se muestra y los avisos del viaje sí', () => {
+    const consola = { abierta: false, conectada: false };
+    expect(mostrarEnPrimerPlano(leerDatosAviso({ tipo: 'oferta_retirada', viajeId: VIAJE }), consola)).toBe(false);
+    expect(mostrarEnPrimerPlano(leerDatosAviso({ tipo: 'viaje_aceptado', viajeId: VIAJE }), consola)).toBe(true);
+  });
+});
+
+describe('T11 · al tocar el aviso (criterios 7 y 8)', () => {
+  const ahora = Date.parse('2026-10-09T12:00:00Z');
+  const fila = (cambios: Partial<FilaOferta> = {}, viaje: Partial<NonNullable<FilaOferta['viaje']>> = {}): FilaOferta => ({
+    fase: 'secuencial',
+    vence_en: '2026-10-09T12:00:09Z',
+    distancia_m: 240,
+    resultado: 'pendiente',
+    viaje: {
+      id: VIAJE,
+      estado: 'solicitado',
+      pasajeros: 2,
+      tarifa: '1.00',
+      sector_origen_id: 'malecon',
+      sector_destino_id: 'la-loma',
+      origen_descripcion: 'Muelle',
+      destino_descripcion: null,
+      ...viaje,
+    },
+    ...cambios,
+  });
+
+  test('una oferta pendiente y vigente se abre con lo que le queda según el servidor', () => {
+    const oferta = ofertaDesdeFila(fila(), ahora);
+    expect(oferta).toEqual({
+      viajeId: VIAJE,
+      pasajeros: 2,
+      tarifa: 1,
+      origen: { sectorId: 'malecon', descripcion: 'Muelle' },
+      destino: { sectorId: 'la-loma', descripcion: null },
+      distanciaM: 240,
+      fase: 'secuencial',
+      venceEn: Date.parse('2026-10-09T12:00:09Z'),
+    });
+  });
+
+  test.each([
+    ['vencida por la hora', fila({ vence_en: '2026-10-09T11:59:59Z' }), ahora],
+    ['vence justo ahora', fila({ vence_en: '2026-10-09T12:00:00Z' }), ahora],
+    ['la tomó otro', fila({ resultado: 'tomada' }), ahora],
+    ['el pasajero canceló', fila({ resultado: 'cancelada' }), ahora],
+    ['ya la rechazó', fila({ resultado: 'rechazada' }), ahora],
+    ['el viaje ya no está solicitado', fila({}, { estado: 'cancelado' }), ahora],
+    ['la BD no devuelve el viaje (RLS)', fila({ viaje: null }), ahora],
+    ['no hay oferta para este conductor', null, ahora],
+  ])('no se abre una oferta muerta: %s', (_caso, f, t) => {
+    expect(ofertaDesdeFila(f as FilaOferta | null, t as number)).toBeNull();
+  });
+
+  test('el aviso de oferta lleva a la consola con su viaje; los del viaje, al mapa del pasajero', () => {
+    expect(destinoDeAviso(leerDatosAviso({ tipo: 'oferta', viajeId: VIAJE }), 'conductor'))
+      .toEqual({ pathname: '/(app)/(driver)', params: { oferta: VIAJE } });
+    expect(destinoDeAviso(leerDatosAviso({ tipo: 'viaje_sin_conductor', viajeId: VIAJE }), 'pasajero'))
+      .toEqual({ pathname: '/(app)/(passenger)' });
+  });
+
+  test('un aviso que no es para el rol de la cuenta no lleva a ninguna parte', () => {
+    expect(destinoDeAviso(leerDatosAviso({ tipo: 'oferta', viajeId: VIAJE }), 'pasajero')).toBeNull();
+    expect(destinoDeAviso(leerDatosAviso({ tipo: 'viaje_aceptado', viajeId: VIAJE }), 'conductor')).toBeNull();
+    expect(destinoDeAviso(leerDatosAviso({ tipo: 'oferta_retirada', viajeId: VIAJE }), 'conductor')).toBeNull();
   });
 });

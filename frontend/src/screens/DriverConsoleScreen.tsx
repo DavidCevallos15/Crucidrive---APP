@@ -14,6 +14,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { BlurContainer } from '../components/BlurContainer';
 import { PressableScale } from '../components/PressableScale';
 import { useLocation } from '../hooks/useLocation';
@@ -23,6 +24,8 @@ import { useConsolaConductor } from '../hooks/useConsolaConductor';
 import { useSeguimientoFondo } from '../hooks/useSeguimientoFondo';
 import { PermisoUbicacionScreen } from './PermisoUbicacionScreen';
 import { canalUbicacion } from '../servicios/ubicacion';
+import { marcarConsola } from '../servicios/avisos';
+import { OFERTA_NO_DISPONIBLE } from '../utils/avisoOferta';
 import { debeSeguir } from '../utils/seguimiento';
 import { AVISO_SEGUIMIENTO } from '../constants/permisoUbicacion';
 import { useAuthStore } from '../store/useAuthStore';
@@ -84,6 +87,28 @@ export const DriverConsoleScreen: React.FC = () => {
     const interval = setInterval(enviar, parametros.abiertaSeg * 1000);
     return () => clearInterval(interval);
   }, [seguir, parametros.abiertaSeg]);
+
+  // ─── Avisos de oferta (004, criterios 7 y 9) ──────────────
+  // Con la consola en pantalla y conectada, el aviso de oferta no se muestra: ya está el modal.
+  useFocusEffect(useCallback(() => {
+    marcarConsola({ abierta: true });
+    return () => marcarConsola({ abierta: false });
+  }, []));
+  useEffect(() => {
+    marcarConsola({ conectada: isConnected });
+  }, [isConnected]);
+
+  // Al tocar el aviso: la oferta se abre solo si sigue viva en la BD.
+  const { oferta: ofertaDeAviso } = useLocalSearchParams<{ oferta?: string }>();
+  const router = useRouter();
+  const { abrirOfertaDeAviso } = consola;
+  useEffect(() => {
+    if (!ofertaDeAviso) return;
+    router.setParams({ oferta: undefined });
+    void abrirOfertaDeAviso(ofertaDeAviso).then((abierta) => {
+      if (!abierta) Alert.alert(OFERTA_NO_DISPONIBLE, 'Venció, la tomó otro conductor o el pasajero la canceló.');
+    });
+  }, [ofertaDeAviso, abrirOfertaDeAviso, router]);
 
   // ─── Interruptor de disponibilidad ────────────────────────
   const handleToggleAvailability = useCallback(async (value: boolean) => {
