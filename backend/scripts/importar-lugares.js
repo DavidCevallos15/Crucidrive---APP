@@ -14,6 +14,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { normalizar } = require('../src/utils/texto');
 
 // Centros de los 5 sectores (migración 0009). El límite administrativo de Crucita en OSM
 // no llega a La Boca, así que también entra lo que esté cerca de cada centro.
@@ -43,14 +44,6 @@ const LUGARES_POBLADOS = new Set(['hamlet', 'village', 'town', 'neighbourhood', 
 const EDIFICIOS_SIN_INTERES = new Set(['house', 'residential', 'construction', 'shed', 'garage', 'roof']);
 const PALABRAS_MENORES = new Set(['de', 'del', 'la', 'las', 'el', 'los', 'y', 'e', 'a', 'en']);
 
-/** Minúsculas, sin tildes y con espacios simples (igual que private.normalizar en la BD). */
-const normalizar = (texto) =>
-  String(texto || '')
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .trim();
 
 /** Distancia en metros entre dos puntos (haversine). */
 const distanciaM = (a, b) => {
