@@ -41,6 +41,8 @@ export const API_CONFIG = {
     driver: {
       verification: '/api/conductores/verificacion',
       availability: '/api/conductores/disponibilidad',
+      // Respaldo de la ubicación sin socket (paso 004, P11).
+      location: '/api/conductores/ubicacion',
     },
     admin: {
       drivers: '/api/admin/conductores',

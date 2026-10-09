@@ -14,6 +14,7 @@ import {
   type EstadoTricimoto,
   type OfertaViaje,
 } from '../utils/oferta';
+import { leerParametros, PARAMETROS_POR_DEFECTO, type ParametrosUbicacion } from '../utils/seguimiento';
 import type { useSocket } from './useSocket';
 
 type Resultado = { ok: true } | { ok: false; mensaje: string };
@@ -36,6 +37,8 @@ export const useConsolaConductor = (
   const [oferta, setOferta] = useState<OfertaViaje | null>(null);
   const [segundos, setSegundos] = useState(0);
   const [aceptando, setAceptando] = useState(false);
+  // Frecuencias de envío de la ubicación, del servidor (paso 004, P12).
+  const [parametros, setParametros] = useState<ParametrosUbicacion>(PARAMETROS_POR_DEFECTO);
   const desfase = useRef(0);
 
   // ─── Estado de la tricimoto según la BD (RLS: la propia) ──
@@ -102,6 +105,7 @@ export const useConsolaConductor = (
         return { ok: false, mensaje: body?.message ?? 'No se pudo cambiar tu disponibilidad.' };
       }
       setEstado((body?.data?.estado as EstadoTricimoto | undefined) ?? (disponible ? 'disponible' : 'inactivo'));
+      if (body?.data?.ubicacion) setParametros(leerParametros(body.data.ubicacion));
       // Al dejar de estar disponible, el servidor da por rechazada la oferta abierta.
       if (!disponible) setOferta(null);
       return { ok: true };
@@ -160,5 +164,5 @@ export const useConsolaConductor = (
     setOferta(null);
   }, [oferta, rechazarOferta]);
 
-  return { estado, cambiando, oferta, segundos, aceptando, cambiarDisponibilidad, aceptar, rechazar };
+  return { estado, cambiando, oferta, segundos, aceptando, parametros, cambiarDisponibilidad, aceptar, rechazar };
 };

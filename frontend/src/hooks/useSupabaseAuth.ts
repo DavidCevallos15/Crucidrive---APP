@@ -6,6 +6,7 @@ import { API_CONFIG } from '../constants/config';
 import { authFetch } from '../utils/authFetch';
 import { normalizarEmail } from '../utils/validators';
 import { registroAvisos } from '../servicios/avisos';
+import { detenerSeguimientoFondo } from '../tareas/ubicacionFondo';
 
 /** Resultado de una acción de cuenta: ok, o un mensaje listo para mostrar. */
 export interface ResultadoAccion {
@@ -235,7 +236,9 @@ export const useSupabaseAuth = ({ bootstrap = false }: { bootstrap?: boolean } =
   // ─── Cerrar sesión ────────────────────────────────────────
   const signOut = useCallback(async () => {
     try {
-      // Primero el teléfono deja de recibir avisos: después ya no hay JWT para pedirlo.
+      // Al cerrar sesión se apaga el GPS en segundo plano (paso 004, criterio 2).
+      await detenerSeguimientoFondo();
+      // El teléfono deja de recibir avisos antes del signOut: después ya no hay JWT para pedirlo.
       await registroAvisos.olvidar();
       await supabase.auth.signOut();
     } catch (err) {

@@ -2,6 +2,25 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.46.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · T10, ubicación del conductor en segundo plano
+- `src/tareas/ubicacionFondo.ts`: tarea de `expo-location` con servicio en primer plano y aviso permanente ("CruciDrive está usando tu ubicación"). Se define en `index.ts`, antes de Expo Router, para que exista si Android relanza la app sin interfaz.
+- Frecuencia adaptativa (`src/utils/seguimiento.ts`, D-13): pide una posición cada `fondoMovSeg` y solo la envía si se movió más de 15 m o si pasaron `fondoQuietoSeg`. Las frecuencias llegan en la respuesta de disponibilidad; si no son válidas se usan las de por defecto.
+- `src/servicios/canalUbicacion.ts`: un solo canal para la consola y la tarea. Usa el socket si está conectado y, si no, `POST /api/conductores/ubicacion` con el JWT guardado. Un 403 o la falta de sesión apagan el seguimiento.
+- Arranque y parada (`useSeguimientoFondo`): sigue con `disponible` u `ocupado` y se detiene con `inactivo` y al cerrar sesión.
+- `PermisoUbicacionScreen`: explicación propia antes del diálogo del sistema (qué, para qué, cuándo se detiene). Si el conductor no concede el permiso, la consola muestra "Solo recibirás ofertas con la app abierta" con un botón a los ajustes.
+- Cambio en la consola: con la app abierta ahora también envía la ubicación cuando está **ocupado**, para que el pasajero vea a su conductor. La frecuencia la fija el servidor (`abiertaSeg`).
+- `app.json`: `isAndroidForegroundServiceEnabled` y el texto del permiso "todo el tiempo".
+
+### Pruebas
+- 26 nuevas en `tests/avisos.test.ts`. Frontend 218/218. Sin errores de tipos en `src/` ni `app/`.
+
+### Pendiente
+- Revisión en el APK de los criterios 1, 3 y 4: necesita la T8 y va con la T17. En Expo Go no hay ubicación en segundo plano; la consola muestra el aviso de "solo con la app abierta".
+
+---
+
 ## [1.45.0] - 2026-10-09 (Hora Local)
 
 ### Paso 004 · T9, avisos en la app

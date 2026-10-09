@@ -40,9 +40,10 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "CruciDrive necesita acceder a tu ubicaci\u00f3n para mostrarte tricimotos cercanas y compartir tu posici\u00f3n durante el viaje.",
+          "locationAlwaysAndWhenInUsePermission": "CruciDrive usa tu ubicaci\u00f3n para mostrarte tricimotos cercanas y, si eres conductor y est\u00e1s disponible, para ofrecerte viajes aunque la app est\u00e9 en segundo plano.",
           "locationWhenInUsePermission": "CruciDrive necesita acceder a tu ubicaci\u00f3n para mostrarte tricimotos cercanas.",
-          "isAndroidBackgroundLocationEnabled": true
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
         }
       ],
       "expo-font"
