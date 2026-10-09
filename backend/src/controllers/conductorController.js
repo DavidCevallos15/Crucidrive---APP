@@ -1,6 +1,7 @@
 const asyncHandler = require('../utils/asyncHandler');
 const { errorResponse, successResponse } = require('../utils/response');
 const { isCedulaValida, normalizarCedula } = require('../utils/validation');
+const { obtenerDespachador } = require('../despacho');
 
 const BUCKET = 'verificacion';
 const TIPOS_FOTO = ['conductor', 'cedula', 'vehiculo'];
@@ -83,4 +84,63 @@ const obtenerMiVerificacion = asyncHandler(async (req, res) => {
   successResponse(res, data || { estado: 'sin_enviar' });
 });
 
-module.exports = { enviarVerificacion, obtenerMiVerificacion, BUCKET, TIPOS_FOTO, rutaFoto };
+/**
+ * El conductor se pone disponible o deja de estarlo (paso 003, criterio 1; plan R10).
+ * Cuerpo: { disponible: boolean }. Un conductor sin aprobar no puede (la RLS no actualiza
+ * ninguna fila). Con un viaje en curso la tricimoto está "ocupado" y no se cambia a mano:
+ * vuelve a "disponible" sola al terminar el viaje.
+ * Si deja de estar disponible con una oferta abierta, la BD la da por rechazada y el
+ * despachador pasa al siguiente candidato sin esperar el vencimiento.
+ */
+const cambiarDisponibilidad = asyncHandler(async (req, res) => {
+  const { disponible } = req.body;
+  const conductorId = req.user.id;
+  const db = req.supabase;
+
+  if (typeof disponible !== 'boolean') {
+    return errorResponse(res, 400, 'Indica "disponible": true o false.');
+  }
+
+  const { data: actual, error: getError } = await db
+    .from('tricimotos')
+    .select('estado')
+    .eq('conductor_id', conductorId)
+    .maybeSingle();
+
+  if (getError) {
+    return errorResponse(res, 500, 'No se pudo leer el estado de tu tricimoto.', getError.message);
+  }
+  if (!actual) {
+    return errorResponse(res, 404, 'No tienes una tricimoto registrada.');
+  }
+  if (actual.estado === 'ocupado') {
+    return errorResponse(res, 409, 'Tienes un viaje en curso. Tu disponibilidad vuelve sola al terminarlo.');
+  }
+
+  // Oferta abierta antes del cambio: si deja de estar disponible, hay que pasar al siguiente.
+  const { data: abiertas } = disponible
+    ? { data: [] }
+    : await db.from('ofertas_viaje').select('viaje_id').eq('conductor_id', conductorId).eq('resultado', 'pendiente');
+
+  const { data: filas, error } = await db
+    .from('tricimotos')
+    .update({ estado: disponible ? 'disponible' : 'inactivo' })
+    .eq('conductor_id', conductorId)
+    .select('estado, disponible_desde');
+
+  if (error) {
+    return errorResponse(res, 400, 'No se pudo cambiar tu disponibilidad.', error.message);
+  }
+  // La RLS no da error si el conductor no está aprobado: simplemente no actualiza nada.
+  if (!filas || filas.length === 0) {
+    return errorResponse(res, 403, 'Tu cuenta de conductor aún no está aprobada.');
+  }
+
+  for (const { viaje_id: viajeId } of abiertas || []) {
+    obtenerDespachador()?.alResponder(viajeId);
+  }
+
+  successResponse(res, filas[0], disponible ? 'Ahora estás disponible.' : 'Ya no estás disponible.');
+});
+
+module.exports = { enviarVerificacion, obtenerMiVerificacion, cambiarDisponibilidad, BUCKET, TIPOS_FOTO, rutaFoto };

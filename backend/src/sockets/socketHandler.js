@@ -4,6 +4,7 @@ const { checkThreadMembership } = require('../utils/supabaseHelpers');
 const { isUuid, isSectorId, MAX_MENSAJE } = require('../utils/validation');
 const { conexiones: conexionesProceso } = require('../despacho/conexiones');
 const { salaUsuario } = require('../despacho/salas');
+const { obtenerDespachador } = require('../despacho');
 
 /**
  * Registra y maneja los eventos de Socket.io para geolocalización y chat en tiempo real.
@@ -129,7 +130,35 @@ const initSocketHandler = (io, { conexiones = conexionesProceso } = {}) => {
       }
     });
 
-    // --- MÓDULO 2: CHAT EN TIEMPO REAL ---
+    // --- MÓDULO 2: DESPACHO (paso 003) ---
+
+    // El conductor rechaza su oferta: la BD la marca (rechazar_oferta, con su JWT) y el
+    // despachador pasa al siguiente sin esperar los 15 s (criterio 6).
+    socket.on('rechazar_oferta', async ({ viajeId } = {}) => {
+      try {
+        if (socket.user.rol !== 'conductor') {
+          return socket.emit('error_message', 'Acción denegada. Solo los conductores responden ofertas.');
+        }
+        if (!isUuid(viajeId)) {
+          return socket.emit('error_message', 'El identificador del viaje no es válido.');
+        }
+
+        const { data: rechazada, error } = await socket.supabase.rpc('rechazar_oferta', { p_viaje: viajeId });
+        if (error) {
+          console.error(`[Socket.io] Error en rechazar_oferta: ${error.message}`);
+          return socket.emit('error_message', 'No se pudo rechazar la oferta.');
+        }
+        // Sin oferta pendiente (ya venció o la tomó otro) no hay nada que hacer.
+        if (rechazada) {
+          obtenerDespachador()?.alResponder(viajeId);
+        }
+      } catch (err) {
+        console.error(`[Socket.io] Error en rechazar_oferta: ${err.message}`);
+        socket.emit('error_message', 'Error interno al rechazar la oferta.');
+      }
+    });
+
+    // --- MÓDULO 3: CHAT EN TIEMPO REAL ---
 
     socket.on('join_chat', async ({ threadId } = {}) => {
       try {
