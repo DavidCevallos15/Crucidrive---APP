@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
 import {
@@ -19,9 +19,40 @@ import { useSupabaseAuth } from '../src/hooks/useSupabaseAuth';
 import { COLORS } from '../src/constants/theme';
 import { rutaInicial, rutaPermitida } from '../src/utils/routing';
 import { useRespuestaAvisos } from '../src/hooks/useRespuestaAvisos';
+import { variablesFaltantes } from '../src/constants/config';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
+
+// Se calcula una vez: las variables quedan fijas al compilar.
+const FALTANTES = variablesFaltantes();
+
+/**
+ * Un APK compilado sin las variables EXPO_PUBLIC_* no puede conectarse a nada. En vez de
+ * cerrarse sin explicación, la app dice cuáles faltan (solo los nombres, nunca valores).
+ */
+export default function RootLayout() {
+  if (FALTANTES.length > 0) return <ConfiguracionFaltante faltantes={FALTANTES} />;
+  return <AppRaiz />;
+}
+
+function ConfiguracionFaltante({ faltantes }: { faltantes: string[] }) {
+  useEffect(() => {
+    SplashScreen.hideAsync();
+  }, []);
+  return (
+    <View style={styles.loadingContainer} accessibilityRole="alert">
+      <StatusBar style="light" />
+      <Text style={styles.configTitulo}>Falta configurar esta versión de la app</Text>
+      <Text style={styles.configTexto}>
+        Se compiló sin estas variables de entorno. Agrégalas en EAS (entorno de este perfil) y vuelve a compilar:
+      </Text>
+      {faltantes.map((nombre) => (
+        <Text key={nombre} style={styles.configVariable}>{nombre}</Text>
+      ))}
+    </View>
+  );
+}
 
 /**
  * Layout raíz de la aplicación CruciDrive.
@@ -31,7 +62,7 @@ SplashScreen.preventAutoHideAsync();
  * 2. Verificar la sesión de autenticación al iniciar
  * 3. Redirigir según sesión y rol; la ruta raíz muestra el mapa del pasajero
  */
-export default function RootLayout() {
+function AppRaiz() {
   const {
     isLoading, isInitialized, session, profile, profileChecked, verification, verificationChecked,
   } = useSupabaseAuth({ bootstrap: true });
@@ -124,5 +155,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.darkBg,
+  },
+  configTitulo: {
+    color: COLORS.white,
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginHorizontal: 24,
+    marginBottom: 12,
+  },
+  configTexto: {
+    color: COLORS.glassTextMutedDark,
+    fontSize: 15,
+    textAlign: 'center',
+    marginHorizontal: 24,
+    marginBottom: 12,
+  },
+  configVariable: {
+    color: COLORS.secondaryLight,
+    fontSize: 15,
+    fontFamily: 'monospace',
+    marginTop: 4,
   },
 });
