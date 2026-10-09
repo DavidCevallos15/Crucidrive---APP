@@ -213,7 +213,8 @@ describe('sockets · validación y autenticación', () => {
     const { socket, handlers, onConnection } = await crearEntorno({ perfil: { rol: 'pasajero', nombre: 'Pedro' } });
     onConnection(socket);
     handlers.join_sector({ sectorId: 'centro:../admin' });
-    expect(socket.join).not.toHaveBeenCalled();
+    // Solo queda en su sala personal (paso 003, R12); ninguna sala de sector.
+    expect(socket.join.mock.calls.map(([sala]) => sala).every((sala) => sala.startsWith('usuario:'))).toBe(true);
     expect(socket.emit).toHaveBeenCalledWith('error_message', expect.stringContaining('sector'));
   });
 
