@@ -2,6 +2,28 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.26.0] - 2026-10-09 (Hora Local)
+
+### Paso 003 · T8, despachador
+- `src/despacho/despachador.js`, regla mixta de D-11:
+  - Ofrece de uno en uno a los 3 candidatos más cercanos y conectados, 15 s cada uno.
+  - Si ninguno acepta, avisa a la vez a los demás hasta los 2 minutos y vuelve a mirar cada 15 s por si se conectó alguien.
+  - Cierra como "sin conductor" si no hay candidatos, si todos rechazan o al cumplirse el máximo.
+  - Avisa por socket: `oferta_viaje`, `oferta_retirada`, `viaje_aceptado` y `viaje_sin_conductor`.
+  - Las tareas de un mismo viaje van en cola, porque el temporizador, el rechazo y el barrido pueden coincidir.
+  - Espera lo que le falta a cada oferta según la BD, para no perder 15 s si los relojes difieren.
+- `src/despacho/oferta.js`: lo que ve el conductor (personas, total, origen, destino, distancia y vencimiento), sin teléfono ni coordenadas del pasajero.
+- `src/despacho/index.js`: arranca con el servidor, retoma las solicitudes pendientes (cierra las de más de 2 minutos) y barre cada 15 s. Sin `SUPABASE_SERVICE_ROLE_KEY` el servidor no arranca.
+
+### Pruebas
+- `tests/despachador.test.js` (13 nuevas) con temporizadores falsos y una BD falsa que imita la 0012. Backend 165/165.
+- `spec001.test.js` ya no depende de que el `.env` local tenga o no la clave de servicio.
+
+### Pendiente
+- Contra producción, el barrido registra errores hasta que se aplique `0012` (no existe `cerrar_vencidos`). Se aplica con la T9.
+
+---
+
 ## [1.25.0] - 2026-10-09 (Hora Local)
 
 ### Paso 003 · T7, base del despacho en el backend

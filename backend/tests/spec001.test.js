@@ -31,6 +31,8 @@ describe('spec 001 · config/supabase', () => {
   });
 
   it('getAdminClient falla si no hay clave de servicio (nunca cae en la clave anon)', () => {
+    // Sin esto, dotenv cargaría la clave del backend/.env local y la prueba dependería de la máquina.
+    jest.doMock('dotenv', () => ({ config: jest.fn() }));
     jest.doMock('@supabase/supabase-js', () => ({ createClient: jest.fn(() => ({})) }));
     const { getAdminClient } = require('../src/config/supabase');
 
