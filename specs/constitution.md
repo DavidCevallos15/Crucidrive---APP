@@ -25,6 +25,10 @@ Reglas no negociables. Cambiarlas requiere editar este archivo y registrarlo en 
 
 - D-11 (8 oct 2026): **Asignación mixta del conductor.** El servidor ofrece el viaje de uno en uno a los 3 candidatos más cercanos al origen (15 s cada uno); si ninguno acepta, avisa a la vez a los demás disponibles y gana el primero. A los 2 minutos sin conductor la solicitud se cierra. El número de candidatos y los tiempos son parámetros del servidor. Se especifica en `003-despacho`.
 
+- D-12 (9 oct 2026): **Avisos con la app cerrada por el servicio de avisos de Expo** (entrega por FCM; se configura en EAS con las credenciales de Firebase). Es gratis para el piloto y no hace falta un servicio propio nuevo. Los avisos no llevan teléfono ni nombre del pasajero. Se especifica en `004-tracking-push`.
+
+- D-13 (9 oct 2026): **Frecuencia de ubicación adaptativa.** Cada 5 s con la app abierta. En segundo plano, cada 10 s en movimiento y cada 30 s detenido, dentro de la ventana de 60 s del despacho. Los valores son parámetros del servidor. Se especifica en `004-tracking-push`.
+
 ## Decisiones abiertas
 - D-10: **Protección contra contraseñas filtradas** de Supabase Auth (aviso del linter). Hoy requiere un plan de pago; se pospone para no gastar. Mitigación mientras tanto: revisar la longitud mínima de contraseña en Supabase Auth. Reevaluar antes del piloto.
 - D-01: el backend es JavaScript (CommonJS). ¿Migrar a TypeScript o mantener JS con JSDoc? Se decide en `007-hardening`.

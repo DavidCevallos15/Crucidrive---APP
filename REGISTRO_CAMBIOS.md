@@ -2,6 +2,19 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.37.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · borrador de la spec
+- `specs/004-tracking-push/spec.md`: avisos con la app cerrada (conductor y pasajero), ubicación del conductor en segundo plano y seguimiento del conductor en el mapa del pasajero.
+- 20 criterios en total, incluidos el permiso y la explicación de la ubicación en segundo plano, una nueva versión del consentimiento, nada de recorridos guardados y el presupuesto de 15 MB.
+- Decisiones abiertas para David:
+  - D-12: servicio de avisos (Expo, Firebase directo o un tercero).
+  - D-13: frecuencia de ubicación (fija o adaptativa).
+- Sin código hasta que la spec esté aprobada.
+- David resolvió D-12 (A: servicio de avisos de Expo) y D-13 (B: frecuencia adaptativa), anotadas en la constitución.
+
+---
+
 ## [1.36.0] - 2026-10-09 (Hora Local)
 
 ### Paso 003 completo · T18, prueba de humo real
