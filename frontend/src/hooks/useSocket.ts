@@ -3,17 +3,19 @@ import { io, type Socket } from 'socket.io-client';
 import { SOCKET_CONFIG } from '../constants/config';
 import { useAuthStore } from '../store/useAuthStore';
 import type { EventoViajeAceptado, EventoViajeSinConductor } from '../utils/viaje';
+import type { OfertaViaje } from '../utils/oferta';
 
 /**
  * Tipo para los eventos que el cliente puede emitir.
  */
 interface ClientEvents {
   join_sector: (data: { sectorId: string }) => void;
+  // Sin "estado": la disponibilidad va por PATCH /api/conductores/disponibilidad (plan R10).
   update_location: (data: {
     sectorId: string;
     coords: { lat: number; lng: number };
-    estado: string;
   }) => void;
+  rechazar_oferta: (data: { viajeId: string }) => void;
   join_chat: (data: { threadId: string }) => void;
   send_message: (data: { threadId: string; content: string }) => void;
 }
@@ -40,6 +42,10 @@ interface ServerEvents {
   // Paso 003 (plan R12): avisos al pasajero en su sala usuario:{id}.
   viaje_aceptado: (data: EventoViajeAceptado) => void;
   viaje_sin_conductor: (data: EventoViajeSinConductor) => void;
+  // Paso 003: ofertas al conductor y hora del servidor para la cuenta regresiva (R12, R14).
+  oferta_viaje: (data: OfertaViaje) => void;
+  oferta_retirada: (data: { viajeId: string }) => void;
+  hora_servidor: (data: { ahora: number }) => void;
 }
 
 type Handler = (...args: any[]) => void;
@@ -134,14 +140,24 @@ export const useSocket = () => {
    * Enviar actualización de ubicación GPS (solo conductores).
    */
   const updateLocation = useCallback(
-    (sectorId: string, coords: { lat: number; lng: number }, estado: string) => {
+    (sectorId: string, coords: { lat: number; lng: number }) => {
       if (!socketRef.current?.connected) {
         return;
       }
-      socketRef.current.emit('update_location', { sectorId, coords, estado });
+      socketRef.current.emit('update_location', { sectorId, coords });
     },
     []
   );
+
+  /**
+   * Rechazar la oferta abierta (solo conductores). El servidor pasa al siguiente candidato.
+   * Devuelve false si no hay conexión.
+   */
+  const rechazarOferta = useCallback((viajeId: string): boolean => {
+    if (!socketRef.current?.connected) return false;
+    socketRef.current.emit('rechazar_oferta', { viajeId });
+    return true;
+  }, []);
 
   /**
    * Unirse a la sala de chat de un viaje.
@@ -193,6 +209,7 @@ export const useSocket = () => {
     // Métodos
     joinSector,
     updateLocation,
+    rechazarOferta,
     joinChat,
     sendMessage,
     onEvent,

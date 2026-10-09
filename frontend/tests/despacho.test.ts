@@ -4,6 +4,8 @@
  * 2 letras, espera entre teclas, respuestas viejas descartadas y atribución de OSM.
  * T13: origen por GPS, lugar o sector (21) y estados de la solicitud del pasajero:
  * buscando (16), sin conductor con "Volver a pedir" (11) y aceptado (10).
+ * T14: consola del conductor: cuenta regresiva desde venceEn con el desfase del reloj (R14),
+ * una oferta a la vez (7), retirada (6, 12), lo que muestra la oferta (15) y contraste (28).
  */
 import { normalizar, puedeBuscar } from '../src/utils/texto';
 import {
@@ -33,6 +35,18 @@ import {
   type LectorViaje,
 } from '../src/utils/viaje';
 import { useRideStore, type ActiveRide } from '../src/store/useRideStore';
+import {
+  COLORES_OFERTA,
+  alRecibirOferta,
+  alRetirarOferta,
+  calcularDesfase,
+  contraste,
+  estadoTrasError,
+  segundosRestantes,
+  textoDistancia,
+  textoPunto,
+  type OfertaViaje,
+} from '../src/utils/oferta';
 import { SECTORS } from '../src/constants/sectors';
 
 const lugar = (nombre: string, extra: Partial<Lugar> = {}): Lugar => ({
@@ -371,5 +385,109 @@ describe('T13 · lectura del viaje al reconectar (criterio 16)', () => {
     const l = lector(null);
     l.viaje = jest.fn().mockRejectedValue(new Error('sin red'));
     await expect(sincronizarViaje(l, viajeLocal(), 'pas-1')).rejects.toThrow('sin red');
+  });
+});
+
+// ─── T14 ─────────────────────────────────────────────────────
+
+const oferta = (extra: Partial<OfertaViaje> = {}): OfertaViaje => ({
+  viajeId: 'viaje-1',
+  pasajeros: 3,
+  tarifa: 1.5,
+  origen: { sectorId: SECTORS[3].id, descripcion: 'Muelle de Crucita' },
+  destino: { sectorId: SECTORS[0].id, descripcion: null },
+  distanciaM: 420,
+  fase: 'secuencial',
+  venceEn: 1_000_000 + 15_000,
+  ...extra,
+});
+
+describe('T14 · cuenta regresiva desde venceEn (R14)', () => {
+  test('con el reloj en hora, una oferta recién creada marca 15 s', () => {
+    expect(segundosRestantes(1_015_000, 0, 1_000_000)).toBe(15);
+  });
+
+  test('si la oferta llega 2 s tarde, marca 13, igual que la BD', () => {
+    expect(segundosRestantes(1_015_000, 0, 1_002_000)).toBe(13);
+  });
+
+  test('corrige el reloj del teléfono atrasado o adelantado con hora_servidor', () => {
+    // El teléfono va 30 s atrasado: sin corregir mostraría 45 s.
+    const desfase = calcularDesfase(1_000_000, 970_000);
+    expect(desfase).toBe(30_000);
+    expect(segundosRestantes(1_015_000, desfase, 970_000)).toBe(15);
+    // Adelantado 5 s.
+    expect(segundosRestantes(1_015_000, calcularDesfase(1_000_000, 1_005_000), 1_005_000)).toBe(15);
+  });
+
+  test('nunca es negativa y redondea hacia arriba (0 solo al vencer)', () => {
+    expect(segundosRestantes(1_015_000, 0, 1_020_000)).toBe(0);
+    expect(segundosRestantes(1_015_000, 0, 1_014_900)).toBe(1);
+  });
+
+  test('una hora del servidor inválida no rompe la cuenta', () => {
+    expect(calcularDesfase(Number.NaN, 1_000_000)).toBe(0);
+  });
+});
+
+describe('T14 · ofertas en pantalla (criterios 6, 7 y 12)', () => {
+  test('una oferta a la vez: la nueva reemplaza a la anterior', () => {
+    const nueva = oferta({ viajeId: 'viaje-2' });
+    expect(alRecibirOferta(oferta(), nueva)).toBe(nueva);
+  });
+
+  test('oferta_retirada cierra la oferta de ese viaje', () => {
+    expect(alRetirarOferta(oferta(), 'viaje-1')).toBeNull();
+  });
+
+  test('una retirada de otro viaje no cierra la oferta actual', () => {
+    const actual = oferta();
+    expect(alRetirarOferta(actual, 'viaje-viejo')).toBe(actual);
+    expect(alRetirarOferta(null, 'viaje-1')).toBeNull();
+  });
+
+  test('un 409 al cambiar la disponibilidad significa viaje en curso', () => {
+    expect(estadoTrasError(409, 'disponible')).toBe('ocupado');
+    expect(estadoTrasError(403, 'inactivo')).toBe('inactivo');
+  });
+});
+
+describe('T14 · lo que ve el conductor (criterio 15)', () => {
+  test('origen y destino: referencia y sector, o solo el sector', () => {
+    expect(textoPunto(oferta().origen)).toBe(`Muelle de Crucita · ${SECTORS[3].name}`);
+    expect(textoPunto(oferta().destino)).toBe(SECTORS[0].name);
+    expect(textoPunto({ sectorId: null, descripcion: null })).toBe('Sin referencia');
+  });
+
+  test('distancia aproximada en m o km', () => {
+    expect(textoDistancia(423)).toBe('a 420 m');
+    expect(textoDistancia(3)).toBe('a 10 m');
+    expect(textoDistancia(1250)).toBe('a 1,3 km');
+    expect(textoDistancia(null)).toBe('');
+  });
+
+  test('el payload de la oferta no trae datos del pasajero', () => {
+    const claves = Object.keys(oferta());
+    for (const prohibida of ['telefono', 'nombre', 'pasajeroNombre', 'lat', 'lng', 'coords']) {
+      expect(claves).not.toContain(prohibida);
+    }
+  });
+});
+
+describe('T14 · regla 6: contraste del modal de oferta (criterio 28)', () => {
+  const c = COLORES_OFERTA;
+  test.each([
+    ['texto', c.texto, c.fondo],
+    ['texto suave', c.textoSuave, c.fondo],
+    ['cuenta regresiva y total', c.cuenta, c.fondo],
+    ['Aceptar', c.aceptarTexto, c.aceptarFondo],
+    ['Rechazar', c.rechazarTexto, c.rechazarFondo],
+    ['aviso sin conexión', c.avisoTexto, c.avisoFondo],
+  ])('%s cumple AA (≥ 4,5:1)', (_nombre, texto, fondo) => {
+    expect(contraste(texto, fondo)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  test('el cálculo de contraste coincide con WCAG (blanco/negro = 21)', () => {
+    expect(contraste('#FFFFFF', '#000000')).toBeCloseTo(21, 5);
   });
 });

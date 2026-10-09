@@ -1,149 +1,99 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import {
   StyleSheet,
   View,
   Text,
   Switch,
-  Dimensions,
   Modal,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import MapView from '../components/Map';
-import Animated, {
-  FadeIn,
-  FadeOut,
-  SlideInDown,
-  BounceIn,
-} from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { GlassCard } from '../components/GlassCard';
-import { GlassButton } from '../components/GlassButton';
 import { BlurContainer } from '../components/BlurContainer';
+import { PressableScale } from '../components/PressableScale';
 import { useLocation } from '../hooks/useLocation';
 import { useSocket } from '../hooks/useSocket';
 import { useMapRegion } from '../hooks/useMapRegion';
+import { useConsolaConductor } from '../hooks/useConsolaConductor';
 import { useAuthStore } from '../store/useAuthStore';
-import { LOCATION_CONFIG, API_CONFIG } from '../constants/config';
-import { COLORS, FONTS, SPACING, SHAPES, ANIMATION } from '../constants/theme';
-import { authFetch } from '../utils/authFetch';
+import { LOCATION_CONFIG } from '../constants/config';
+import { COLORS, FONTS, SPACING, SHAPES } from '../constants/theme';
+import { nombreSector } from '../utils/solicitud';
+import {
+  COLORES_OFERTA,
+  textoDistancia,
+  textoPunto,
+  type EstadoTricimoto,
+} from '../utils/oferta';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-/**
- * Solicitud de viaje entrante que llega desde el backend.
- */
-interface IncomingRideRequest {
-  id: string;
-  sectorOrigen: string;
-  sectorDestino: string;
-  pasajeroNombre: string;
-  /** Número de personas del viaje (cobro de 0,50 USD por persona) */
-  pasajeros?: number;
-  /** Referencia de texto libre del destino */
-  destinoDescripcion?: string;
-  tarifa: number;
-}
+const TEXTO_ESTADO: Record<EstadoTricimoto, string> = {
+  disponible: 'Disponible',
+  inactivo: 'No disponible',
+  ocupado: 'En un viaje',
+};
 
 /**
  * Pantalla de la Consola del Conductor.
  *
  * Funcionalidades:
- * - Switch de estado operativo (disponible/ocupado)
- * - Mapa de tracking en background
- * - Modal de cristal elástico para solicitudes entrantes (15s timeout)
- * - Transmisión de ubicación GPS en tiempo real
+ * - Interruptor de disponibilidad que cambia el estado en el servidor (paso 003, criterio 1)
+ * - Mapa y envío de la ubicación GPS mientras está disponible
+ * - Oferta entrante por socket con cuenta regresiva según el reloj del servidor (15, R14),
+ *   Aceptar y Rechazar; se cierra sola si vence, la toma otro o el pasajero cancela (6, 12)
+ * - Regla 6 (28): modal opaco sin blur, botones de 64 px, contraste AA y aviso de sin conexión
  *
  * Diseño: DESIGN.md §3.C — Consola del Conductor
  */
 export const DriverConsoleScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const profile = useAuthStore((s) => s.profile);
   const { userCoords, currentSectorId } = useLocation(true);
-  const { updateLocation, onEvent } = useSocket();
-
-  const [isAvailable, setIsAvailable] = useState(
-    profile?.estado_operativo === 'disponible'
-  );
-  const [incomingRequest, setIncomingRequest] = useState<IncomingRideRequest | null>(null);
-  const [acceptCountdown, setAcceptCountdown] = useState(15);
-  const [isAccepting, setIsAccepting] = useState(false);
+  const socket = useSocket();
+  const { updateLocation, isConnected } = socket;
+  const consola = useConsolaConductor(socket);
+  const { estado, cambiando, oferta, segundos, aceptando } = consola;
+  const disponible = estado === 'disponible';
 
   // ─── Región del mapa ──────────────────────────────────────
   const region = useMapRegion(userCoords);
 
   // ─── Emitir ubicación GPS al backend ──────────────────────
+  // Solo disponible: sin ubicación reciente (60 s) no se reciben ofertas (criterio 2).
+  const ubicacion = useRef({ coords: userCoords, sectorId: currentSectorId });
+  ubicacion.current = { coords: userCoords, sectorId: currentSectorId };
   useEffect(() => {
-    if (!isAvailable || !userCoords || !currentSectorId) return;
-
-    const interval = setInterval(() => {
-      updateLocation(
-        currentSectorId,
-        userCoords,
-        isAvailable ? 'disponible' : 'ocupado'
-      );
-    }, LOCATION_CONFIG.driverUpdateIntervalMs);
-
+    if (!disponible || !isConnected) return;
+    const enviar = () => {
+      const { coords, sectorId } = ubicacion.current;
+      if (coords && sectorId) updateLocation(sectorId, coords);
+    };
+    enviar();
+    const interval = setInterval(enviar, LOCATION_CONFIG.driverUpdateIntervalMs);
     return () => clearInterval(interval);
-  }, [isAvailable, userCoords, currentSectorId, updateLocation]);
+  }, [disponible, isConnected, updateLocation]);
 
-  // ─── Toggle de estado operativo ───────────────────────────
-  const handleToggleAvailability = useCallback((value: boolean) => {
-    setIsAvailable(value);
-    // TODO: Actualizar estado en backend
-  }, []);
+  // ─── Interruptor de disponibilidad ────────────────────────
+  const handleToggleAvailability = useCallback(async (value: boolean) => {
+    const resultado = await consola.cambiarDisponibilidad(value);
+    if (!resultado.ok) Alert.alert('No se pudo cambiar', resultado.mensaje);
+  }, [consola]);
 
-  // ─── Temporizador de aceptación (15 segundos) ─────────────
-  useEffect(() => {
-    if (!incomingRequest) return;
-
-    setAcceptCountdown(15);
-    const timer = setInterval(() => {
-      setAcceptCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          setIncomingRequest(null);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [incomingRequest]);
-
-  // ─── Aceptar viaje ────────────────────────────────────────
+  // ─── Aceptar y rechazar ───────────────────────────────────
   const handleAcceptRide = useCallback(async () => {
-    if (!incomingRequest) return;
-
-    try {
-      setIsAccepting(true);
-
-      const response = await authFetch(API_CONFIG.endpoints.rides.accept, {
-        method: 'POST',
-        body: JSON.stringify({ viajeId: incomingRequest.id }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        Alert.alert('Error', errorData?.message ?? 'No se pudo aceptar el viaje.');
-        return;
-      }
-
-      setIncomingRequest(null);
-      setIsAvailable(false);
-      // TODO: Navegar a pantalla de viaje en curso
-    } catch (error) {
-      console.error('[DriverConsole] Error al aceptar:', error);
-      Alert.alert('Error de conexión', 'No se pudo conectar con el servidor para aceptar el viaje.');
-    } finally {
-      setIsAccepting(false);
+    const resultado = await consola.aceptar();
+    if (resultado.ok) {
+      Alert.alert('Viaje aceptado', 'Coordina con el pasajero desde la pestaña Chat.');
+    } else {
+      Alert.alert('No se pudo aceptar', resultado.mensaje);
     }
-  }, [incomingRequest]);
+  }, [consola]);
 
-  // ─── Rechazar viaje ───────────────────────────────────────
-  const handleRejectRide = useCallback(() => {
-    setIncomingRequest(null);
-  }, []);
+  const textoEstado = estado ? TEXTO_ESTADO[estado] : 'Cargando…';
+  const colorEstado = disponible ? COLORS.success : estado === 'ocupado' ? COLORS.secondary : COLORS.glassTextMutedDark;
 
   return (
     <View style={styles.container}>
@@ -161,7 +111,7 @@ export const DriverConsoleScreen: React.FC = () => {
       {/* ─── HEADER CON SWITCH DE ESTADO ─────────────────── */}
       <Animated.View
         entering={FadeIn.delay(200).duration(400)}
-        style={styles.headerContainer}
+        style={[styles.headerContainer, { top: insets.top + 12 }]}
       >
         <BlurContainer intensity={30} style={styles.header}>
           <View style={styles.headerContent}>
@@ -170,34 +120,34 @@ export const DriverConsoleScreen: React.FC = () => {
               <Text style={styles.driverName}>
                 {profile?.nombre ?? 'Conductor'}
               </Text>
-              <Text
-                style={[
-                  styles.statusLabel,
-                  { color: isAvailable ? COLORS.success : COLORS.glassTextMutedDark },
-                ]}
-              >
-                {isAvailable ? 'Disponible' : 'No disponible'}
+              <Text style={[styles.statusLabel, { color: colorEstado }]} accessibilityLiveRegion="polite">
+                {textoEstado}
               </Text>
             </View>
 
-            {/* Switch de disponibilidad */}
+            {/* Switch de disponibilidad: el servidor decide (aprobado, sin viaje en curso) */}
             <View style={styles.switchContainer}>
-              <Switch
-                value={isAvailable}
-                onValueChange={handleToggleAvailability}
-                trackColor={{
-                  false: 'rgba(255, 255, 255, 0.1)',
-                  true: COLORS.success,
-                }}
-                thumbColor={COLORS.white}
-                ios_backgroundColor="rgba(255, 255, 255, 0.1)"
-                style={styles.switch}
-                accessibilityLabel={
-                  isAvailable
-                    ? 'Estado: Disponible. Desactiva para dejar de recibir viajes.'
-                    : 'Estado: No disponible. Activa para recibir viajes.'
-                }
-              />
+              {cambiando ? (
+                <ActivityIndicator color={COLORS.white} />
+              ) : (
+                <Switch
+                  value={disponible}
+                  onValueChange={handleToggleAvailability}
+                  disabled={estado === null || estado === 'ocupado' || !isConnected}
+                  trackColor={{
+                    false: 'rgba(255, 255, 255, 0.1)',
+                    true: COLORS.success,
+                  }}
+                  thumbColor={COLORS.white}
+                  ios_backgroundColor="rgba(255, 255, 255, 0.1)"
+                  style={styles.switch}
+                  accessibilityLabel={
+                    disponible
+                      ? 'Estado: Disponible. Desactiva para dejar de recibir viajes.'
+                      : 'Estado: No disponible. Activa para recibir viajes.'
+                  }
+                />
+              )}
             </View>
           </View>
 
@@ -211,92 +161,112 @@ export const DriverConsoleScreen: React.FC = () => {
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>
-                {currentSectorId ?? '--'}
+              <Text style={styles.statValue} numberOfLines={1}>
+                {nombreSector(currentSectorId) || '--'}
               </Text>
               <Text style={styles.statLabel}>Sector</Text>
             </View>
           </View>
         </BlurContainer>
+
+        {/* Regla 6: el estado sin conexión siempre es visible */}
+        {!isConnected && (
+          <View style={styles.offlineBanner} accessibilityRole="alert">
+            <Ionicons name="cloud-offline" size={18} color={COLORES_OFERTA.avisoTexto} />
+            <Text style={styles.offlineText}>Sin conexión: no recibirás viajes</Text>
+          </View>
+        )}
       </Animated.View>
 
-      {/* ─── MODAL: SOLICITUD DE VIAJE ENTRANTE ───────────── */}
+      {/* ─── MODAL: OFERTA DE VIAJE ───────────────────────── */}
       <Modal
-        visible={incomingRequest !== null}
+        visible={oferta !== null}
         transparent
-        animationType="none"
+        animationType="fade"
         statusBarTranslucent
+        onRequestClose={consola.rechazar}
       >
         <View style={styles.modalOverlay}>
-          <Animated.View
-            entering={BounceIn.duration(500)}
-            exiting={FadeOut.duration(200)}
-          >
-            <GlassCard
-              variant="highlight"
-              style={styles.requestCard}
-              blurIntensity={40}
-            >
-              {/* Temporizador visual */}
+          {oferta && (
+            <View style={styles.requestCard} accessibilityViewIsModal>
+              {/* Cuenta regresiva según el servidor */}
               <View style={styles.countdownContainer}>
-                <Text style={styles.countdownText}>{acceptCountdown}</Text>
+                <Text
+                  style={styles.countdownText}
+                  accessibilityLabel={`Quedan ${segundos} segundos`}
+                >
+                  {segundos}
+                </Text>
                 <Text style={styles.countdownLabel}>segundos</Text>
               </View>
 
-              <Text style={styles.requestTitle}>¡Nuevo viaje!</Text>
-              <Text style={styles.requestSubtitle}>
-                {incomingRequest?.pasajeroNombre ?? 'Pasajero'}
-              </Text>
+              <Text style={styles.requestTitle} accessibilityRole="header">¡Nuevo viaje!</Text>
+              {oferta.fase === 'abierta' && (
+                <Text style={styles.requestSubtitle}>Aviso a varios: gana el primero que acepte</Text>
+              )}
+              {textoDistancia(oferta.distanciaM) !== '' && (
+                <Text style={styles.requestSubtitle}>
+                  El pasajero está {textoDistancia(oferta.distanciaM)}
+                </Text>
+              )}
 
               {/* Detalles de la ruta */}
               <View style={styles.requestRoute}>
                 <View style={styles.requestRouteRow}>
-                  <Ionicons name="radio-button-on" size={14} color={COLORS.primary} />
-                  <Text style={styles.requestRouteText}>
-                    {incomingRequest?.sectorOrigen}
-                  </Text>
+                  <Ionicons name="radio-button-on" size={16} color={COLORS.primaryLight} />
+                  <Text style={styles.requestRouteText}>{textoPunto(oferta.origen)}</Text>
                 </View>
                 <View style={styles.requestRouteLine} />
                 <View style={styles.requestRouteRow}>
-                  <Ionicons name="location" size={14} color={COLORS.secondary} />
-                  <Text style={styles.requestRouteText}>
-                    {incomingRequest?.sectorDestino}
-                    {incomingRequest?.destinoDescripcion
-                      ? ` · ${incomingRequest.destinoDescripcion}`
-                      : ''}
-                  </Text>
+                  <Ionicons name="location" size={16} color={COLORES_OFERTA.cuenta} />
+                  <Text style={styles.requestRouteText}>{textoPunto(oferta.destino)}</Text>
                 </View>
               </View>
 
-              {/* Tarifa */}
-              <Text style={styles.requestPrice}>
-                ${incomingRequest?.tarifa.toFixed(2)}
-              </Text>
+              {/* Total (lo fija la BD) y personas */}
+              <Text style={styles.requestPrice}>${oferta.tarifa.toFixed(2)}</Text>
               <Text style={styles.requestSubtitle}>
-                {incomingRequest?.pasajeros ?? 1}{' '}
-                {(incomingRequest?.pasajeros ?? 1) === 1 ? 'persona' : 'personas'}
+                {oferta.pasajeros} {oferta.pasajeros === 1 ? 'persona' : 'personas'}
               </Text>
 
-              {/* Botones de acción (grandes para facilitar toque en conducción) */}
+              {!isConnected && (
+                <View style={[styles.offlineBanner, styles.offlineInModal]} accessibilityRole="alert">
+                  <Ionicons name="cloud-offline" size={18} color={COLORES_OFERTA.avisoTexto} />
+                  <Text style={styles.offlineText}>Sin conexión: no se puede aceptar</Text>
+                </View>
+              )}
+
+              {/* Botones grandes para tocarlos sin mirar dos veces */}
               <View style={styles.actionButtons}>
-                <GlassButton
-                  label="Rechazar"
-                  onPress={handleRejectRide}
-                  variant="danger"
-                  size="lg"
-                  style={styles.actionButton}
-                />
-                <GlassButton
-                  label="Aceptar"
+                <PressableScale
+                  onPress={consola.rechazar}
+                  accessibilityRole="button"
+                  accessibilityLabel="Rechazar viaje"
+                  style={[styles.actionButton, styles.rejectButton]}
+                >
+                  <Ionicons name="close" size={24} color={COLORES_OFERTA.rechazarTexto} />
+                  <Text style={[styles.actionText, { color: COLORES_OFERTA.rechazarTexto }]}>Rechazar</Text>
+                </PressableScale>
+                <PressableScale
                   onPress={handleAcceptRide}
-                  variant="primary"
-                  size="lg"
-                  loading={isAccepting}
-                  style={styles.actionButton}
-                />
+                  disabled={aceptando || !isConnected}
+                  accessibilityRole="button"
+                  accessibilityLabel="Aceptar viaje"
+                  accessibilityState={{ disabled: aceptando || !isConnected, busy: aceptando }}
+                  style={[styles.actionButton, styles.acceptButton, !isConnected && styles.actionDisabled]}
+                >
+                  {aceptando ? (
+                    <ActivityIndicator color={COLORES_OFERTA.aceptarTexto} />
+                  ) : (
+                    <>
+                      <Ionicons name="checkmark" size={24} color={COLORES_OFERTA.aceptarTexto} />
+                      <Text style={[styles.actionText, { color: COLORES_OFERTA.aceptarTexto }]}>Aceptar</Text>
+                    </>
+                  )}
+                </PressableScale>
               </View>
-            </GlassCard>
-          </Animated.View>
+            </View>
+          )}
         </View>
       </Modal>
     </View>
@@ -312,7 +282,6 @@ const styles = StyleSheet.create({
   // ─── Header ──────────────────────────────────────────────
   headerContainer: {
     position: 'absolute',
-    top: 50,
     left: SPACING.md,
     right: SPACING.md,
   },
@@ -379,47 +348,79 @@ const styles = StyleSheet.create({
     marginHorizontal: SPACING.md,
   },
 
-  // ─── Modal de solicitud ──────────────────────────────────
+  // ─── Sin conexión (regla 6) ──────────────────────────────
+  offlineBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginTop: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: SHAPES.borderRadiusMd,
+    backgroundColor: COLORES_OFERTA.avisoFondo,
+  },
+  offlineInModal: {
+    alignSelf: 'stretch',
+    marginTop: 0,
+    marginBottom: SPACING.md,
+  },
+  offlineText: {
+    flex: 1,
+    color: COLORES_OFERTA.avisoTexto,
+    fontSize: FONTS.sizes.base,
+    fontFamily: FONTS.body,
+    fontWeight: FONTS.weights.semibold,
+  },
+
+  // ─── Modal de oferta: opaco y sin blur (regla 6) ─────────
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: SPACING.md,
   },
   requestCard: {
-    width: SCREEN_WIDTH - SPACING.xl * 2,
+    width: '100%',
+    maxWidth: 420,
     alignItems: 'center',
+    padding: SPACING.lg,
+    borderRadius: SHAPES.borderRadiusLg,
+    borderWidth: 2,
+    borderColor: COLORES_OFERTA.cuenta,
+    backgroundColor: COLORES_OFERTA.fondo,
   },
   countdownContainer: {
     alignItems: 'center',
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm,
   },
   countdownText: {
-    fontSize: 48,
+    fontSize: 56,
     fontFamily: FONTS.heading,
     fontWeight: FONTS.weights.bold,
-    color: COLORS.secondary,
+    color: COLORES_OFERTA.cuenta,
+    fontVariant: ['tabular-nums'],
   },
   countdownLabel: {
-    fontSize: FONTS.sizes.xs,
+    fontSize: FONTS.sizes.sm,
     fontFamily: FONTS.body,
-    color: COLORS.glassTextMutedDark,
+    color: COLORES_OFERTA.textoSuave,
   },
   requestTitle: {
     fontSize: FONTS.sizes.xxl,
     fontFamily: FONTS.heading,
     fontWeight: FONTS.weights.bold,
-    color: COLORS.glassTextDark,
+    color: COLORES_OFERTA.texto,
   },
   requestSubtitle: {
     fontSize: FONTS.sizes.base,
     fontFamily: FONTS.body,
-    color: COLORS.glassTextMutedDark,
+    color: COLORES_OFERTA.textoSuave,
     marginTop: SPACING.xs,
+    textAlign: 'center',
   },
   requestRoute: {
-    marginVertical: SPACING.lg,
+    marginVertical: SPACING.md,
     alignSelf: 'stretch',
   },
   requestRouteRow: {
@@ -428,31 +429,52 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.xs,
   },
   requestRouteLine: {
-    width: 1,
-    height: 16,
-    backgroundColor: COLORS.glassBorderDark,
+    width: 2,
+    height: 14,
+    backgroundColor: COLORES_OFERTA.textoSuave,
     marginLeft: 7,
   },
   requestRouteText: {
-    fontSize: FONTS.sizes.base,
+    flex: 1,
+    fontSize: FONTS.sizes.lg,
     fontFamily: FONTS.body,
-    color: COLORS.glassTextDark,
+    color: COLORES_OFERTA.texto,
     marginLeft: SPACING.sm,
   },
   requestPrice: {
     fontSize: FONTS.sizes.title,
     fontFamily: FONTS.heading,
     fontWeight: FONTS.weights.bold,
-    color: COLORS.secondary,
-    marginBottom: SPACING.lg,
+    color: COLORES_OFERTA.cuenta,
   },
   actionButtons: {
     flexDirection: 'row',
     gap: SPACING.md,
     alignSelf: 'stretch',
+    marginTop: SPACING.lg,
   },
   actionButton: {
     flex: 1,
+    minHeight: 64,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.xs,
+    borderRadius: SHAPES.borderRadiusFull,
+  },
+  rejectButton: {
+    backgroundColor: COLORES_OFERTA.rechazarFondo,
+  },
+  acceptButton: {
+    backgroundColor: COLORES_OFERTA.aceptarFondo,
+  },
+  actionDisabled: {
+    opacity: 0.5,
+  },
+  actionText: {
+    fontSize: FONTS.sizes.xl,
+    fontFamily: FONTS.heading,
+    fontWeight: FONTS.weights.bold,
   },
 });
 

@@ -40,6 +40,7 @@ export const API_CONFIG = {
     },
     driver: {
       verification: '/api/conductores/verificacion',
+      availability: '/api/conductores/disponibilidad',
     },
     admin: {
       drivers: '/api/admin/conductores',
