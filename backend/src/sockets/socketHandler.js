@@ -3,9 +3,7 @@ const { toWKT, isValidCoordinate } = require('../utils/geo');
 const { checkThreadMembership } = require('../utils/supabaseHelpers');
 const { isUuid, isSectorId, MAX_MENSAJE } = require('../utils/validation');
 const { conexiones: conexionesProceso } = require('../despacho/conexiones');
-
-/** Sala personal de cada usuario: ahí le llegan ofertas y avisos del despacho (plan R12). */
-const salaUsuario = (userId) => `usuario:${userId}`;
+const { salaUsuario } = require('../despacho/salas');
 
 /**
  * Registra y maneja los eventos de Socket.io para geolocalización y chat en tiempo real.
@@ -206,4 +204,3 @@ const initSocketHandler = (io, { conexiones = conexionesProceso } = {}) => {
 };
 
 module.exports = initSocketHandler;
-module.exports.salaUsuario = salaUsuario;

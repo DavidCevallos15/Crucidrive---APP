@@ -156,3 +156,181 @@ describe('T7 · update_location solo cambia ubicación y sector (R10)', () => {
     expect(db.from).not.toHaveBeenCalled();
   });
 });
+
+// ─── T8 · despachador ────────────────────────────────────────────────────────
+const { crearDespachador } = require('../src/despacho/despachador');
+const { crearBdDespachoFalsa } = require('./helpers/bdDespachoFalsa');
+
+const PASAJERO = '11111111-1111-1111-1111-111111111111';
+const VIAJE = 'a0000000-0000-0000-0000-000000000001';
+const [A, B, C, D] = ['c-a', 'c-b', 'c-c', 'c-d'];
+const CONFIG = { secuenciales: 3, ofertaSeg: 15, maxSeg: 120, ubicacionMaxSeg: 60, barridoSeg: 15 };
+
+const montar = ({ candidatos = [A, B, C, D], conectados = candidatos } = {}) => {
+  const bd = crearBdDespachoFalsa();
+  bd.agregarViaje({
+    id: VIAJE, pasajero_id: PASAJERO, pasajeros: 2, tarifa: '1.00',
+    sector_origen_id: 'malecon', sector_destino_id: 'los_arenales',
+    origen_descripcion: null, destino_descripcion: 'Muelle de Crucita',
+  });
+  bd.fijarCandidatos(VIAJE, candidatos.map((id, i) => ({ conductor_id: id, distancia_m: (i + 1) * 100 })));
+  const io = crearIoFalso();
+  const conectadosSet = new Set(conectados);
+  const despachador = crearDespachador({
+    obtenerDb: () => bd.db,
+    io,
+    conexiones: { estaConectado: (id) => conectadosSet.has(id) },
+    config: CONFIG,
+  });
+  const eventos = (evento) => io.emitidos.filter((e) => e.evento === evento);
+  const ofertasA = (conductor) => eventos('oferta_viaje').filter((e) => e.sala === `usuario:${conductor}`);
+  return { bd, io, despachador, eventos, ofertasA };
+};
+
+describe('T8 · despachador (D-11)', () => {
+  beforeEach(() => jest.useFakeTimers({ now: new Date('2026-10-09T12:00:00Z') }));
+  afterEach(() => jest.useRealTimers());
+
+  test('criterio 4: ofrece primero al más cercano, solo a él y con 15 s', async () => {
+    const { despachador, ofertasA, eventos } = montar();
+    await despachador.iniciar(VIAJE);
+    expect(eventos('oferta_viaje')).toHaveLength(1);
+    const [oferta] = ofertasA(A);
+    expect(oferta.datos).toMatchObject({ viajeId: VIAJE, fase: 'secuencial', distanciaM: 100, pasajeros: 2, tarifa: 1 });
+    expect(oferta.datos.venceEn).toBe(Date.now() + 15000);
+    despachador.detener();
+  });
+
+  test('criterio 6: a los 15 s sin respuesta retira la oferta y pasa al siguiente', async () => {
+    const { despachador, ofertasA, eventos } = montar();
+    await despachador.iniciar(VIAJE);
+    await jest.advanceTimersByTimeAsync(15100);
+    expect(eventos('oferta_retirada').map((e) => e.sala)).toEqual([`usuario:${A}`]);
+    expect(ofertasA(B)).toHaveLength(1);
+    despachador.detener();
+  });
+
+  test('criterio 6: un rechazo pasa al siguiente al instante, sin esperar el vencimiento', async () => {
+    const { bd, despachador, ofertasA } = montar();
+    await despachador.iniciar(VIAJE);
+    bd.rechazar(VIAJE, A);
+    await despachador.alResponder(VIAJE);
+    expect(ofertasA(B)).toHaveLength(1);
+    despachador.detener();
+  });
+
+  test('D-11: tras 3 ofertas secuenciales, aviso abierto a los demás hasta los 2 minutos; nadie repite', async () => {
+    const { despachador, ofertasA } = montar();
+    await despachador.iniciar(VIAJE);
+    await jest.advanceTimersByTimeAsync(15100); // vence A, pasa a B
+    await jest.advanceTimersByTimeAsync(15100); // vence B, pasa a C
+    await jest.advanceTimersByTimeAsync(15100); // vence C, aviso abierto
+    expect(ofertasA(D)).toHaveLength(1);
+    expect(ofertasA(D)[0].datos.fase).toBe('abierta');
+    expect(ofertasA(D)[0].datos.venceEn).toBe(new Date('2026-10-09T12:02:00Z').getTime());
+    for (const c of [A, B, C]) expect(ofertasA(c)).toHaveLength(1);
+    despachador.detener();
+  });
+
+  test('criterio 11: a los 2 minutos sin aceptación, "sin conductor" al pasajero y se retira el aviso abierto', async () => {
+    const { despachador, eventos, bd } = montar({ candidatos: [A], conectados: [A, B] });
+    await despachador.iniciar(VIAJE);
+    // B se conecta más tarde y entra en el aviso abierto.
+    bd.fijarCandidatos(VIAJE, [{ conductor_id: A, distancia_m: 100 }, { conductor_id: B, distancia_m: 900 }]);
+    await jest.advanceTimersByTimeAsync(15100);
+    expect(eventos('oferta_viaje').map((e) => e.sala)).toEqual([`usuario:${A}`, `usuario:${B}`]);
+    await jest.advanceTimersByTimeAsync(120000);
+    expect(eventos('viaje_sin_conductor')).toEqual([{ sala: `usuario:${PASAJERO}`, evento: 'viaje_sin_conductor', datos: { viajeId: VIAJE } }]);
+    expect(eventos('oferta_retirada').map((e) => e.sala)).toContain(`usuario:${B}`);
+    expect(bd.viajes.get(VIAJE).estado).toBe('sin_conductor');
+    expect(despachador.estaBuscando(VIAJE)).toBe(false);
+  });
+
+  test('criterio 11: sin candidatos se cierra al instante', async () => {
+    const { despachador, eventos } = montar({ candidatos: [] });
+    await despachador.iniciar(VIAJE);
+    expect(eventos('viaje_sin_conductor')).toHaveLength(1);
+    expect(eventos('oferta_viaje')).toHaveLength(0);
+  });
+
+  test('criterio 11: si todos rechazan antes de tiempo, también se cierra al instante', async () => {
+    const { bd, despachador, eventos } = montar({ candidatos: [A] });
+    await despachador.iniciar(VIAJE);
+    bd.rechazar(VIAJE, A);
+    await despachador.alResponder(VIAJE);
+    expect(eventos('viaje_sin_conductor')).toHaveLength(1);
+  });
+
+  test('R6: no ofrece a un conductor sin la app abierta', async () => {
+    const { despachador, ofertasA } = montar({ conectados: [B, C, D] });
+    await despachador.iniciar(VIAJE);
+    expect(ofertasA(A)).toHaveLength(0);
+    expect(ofertasA(B)).toHaveLength(1);
+    despachador.detener();
+  });
+
+  test('criterio 7: si el más cercano acaba de recibir otra oferta, pasa al siguiente', async () => {
+    const { bd, despachador, ofertasA } = montar();
+    bd.ocupadoEnOtraOferta(A);
+    await despachador.iniciar(VIAJE);
+    expect(ofertasA(A)).toHaveLength(0);
+    expect(ofertasA(B)).toHaveLength(1);
+    despachador.detener();
+  });
+
+  test('criterio 12: al cancelar el pasajero, la oferta desaparece y no se envían más', async () => {
+    const { bd, despachador, eventos } = montar();
+    await despachador.iniciar(VIAJE);
+    bd.cancelarViaje(VIAJE);
+    await despachador.cancelar(VIAJE);
+    expect(eventos('oferta_retirada').map((e) => e.sala)).toEqual([`usuario:${A}`]);
+    await jest.advanceTimersByTimeAsync(60000);
+    expect(eventos('oferta_viaje')).toHaveLength(1);
+  });
+
+  test('criterio 10: al aceptar, el pasajero recibe los datos del conductor y los demás pierden la oferta', async () => {
+    const { bd, despachador, eventos } = montar({ candidatos: [A, B, C, D, 'c-e'] });
+    await despachador.iniciar(VIAJE);
+    await jest.advanceTimersByTimeAsync(45300); // aviso abierto: D y E pendientes
+    bd.aceptar(VIAJE, D);
+    const conductor = { nombre: 'Diego', placa: 'DEF-456', telefono: '0994444444' };
+    await despachador.aceptado({ id: VIAJE, pasajero_id: PASAJERO }, { conductor });
+    expect(eventos('viaje_aceptado')).toEqual([{ sala: `usuario:${PASAJERO}`, evento: 'viaje_aceptado', datos: { viajeId: VIAJE, conductor } }]);
+    expect(eventos('oferta_retirada').map((e) => e.sala)).toContain('usuario:c-e');
+    expect(despachador.estaBuscando(VIAJE)).toBe(false);
+    await jest.advanceTimersByTimeAsync(120000);
+    expect(eventos('viaje_sin_conductor')).toHaveLength(0);
+  });
+
+  test('criterio 14: al arrancar retoma lo pendiente y cierra lo que pasó de los 2 minutos', async () => {
+    const bd = crearBdDespachoFalsa();
+    const hace = (seg) => new Date(Date.now() - seg * 1000).toISOString();
+    bd.agregarViaje({ id: VIAJE, pasajero_id: PASAJERO, pasajeros: 1, tarifa: '0.50', creado_en: hace(30) });
+    bd.agregarViaje({ id: 'viejo', pasajero_id: 'p-viejo', pasajeros: 1, tarifa: '0.50', creado_en: hace(300) });
+    bd.fijarCandidatos(VIAJE, [{ conductor_id: A, distancia_m: 100 }, { conductor_id: B, distancia_m: 200 }]);
+    // Antes de caer, el servidor había ofrecido el viaje a A y esa oferta ya venció.
+    bd.ofertas.push({ viaje_id: VIAJE, conductor_id: A, fase: 'secuencial', vence_en: hace(10), resultado: 'pendiente', distancia_m: 100 });
+    const io = crearIoFalso();
+    const despachador = crearDespachador({ obtenerDb: () => bd.db, io, conexiones: { estaConectado: () => true }, config: CONFIG });
+    await despachador.recuperar();
+    const salas = (evento) => io.emitidos.filter((e) => e.evento === evento).map((e) => e.sala);
+    expect(salas('viaje_sin_conductor')).toEqual(['usuario:p-viejo']);
+    expect(salas('oferta_retirada')).toEqual([`usuario:${A}`]);
+    expect(salas('oferta_viaje')).toEqual([`usuario:${B}`]);
+    expect(bd.viajes.get('viejo').estado).toBe('sin_conductor');
+    despachador.detener();
+  });
+
+  test('un error de la BD no tumba el proceso', async () => {
+    const io = crearIoFalso();
+    const db = { rpc: jest.fn(async () => ({ data: null, error: { message: 'caída' } })), from: jest.fn() };
+    const errores = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const despachador = crearDespachador({ obtenerDb: () => db, io, conexiones: { estaConectado: () => true }, config: CONFIG });
+    const viaje = { id: VIAJE, estado: 'solicitado', creado_en: new Date().toISOString(), pasajero_id: PASAJERO };
+    await expect(despachador.iniciar(viaje)).resolves.toBeUndefined();
+    await expect(despachador.barrer()).resolves.toBeUndefined();
+    expect(errores).toHaveBeenCalled();
+    errores.mockRestore();
+    despachador.detener();
+  });
+});
