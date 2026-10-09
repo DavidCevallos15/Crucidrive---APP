@@ -2,6 +2,23 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.42.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · T5, avisos de Expo en el backend
+- `src/avisos/expo.js`: cliente de la API de Expo con `fetch`, sin SDK (regla 8).
+  - Lotes de 100, límite de 5 s y sin reintentos.
+  - `EXPO_ACCESS_TOKEN` opcional (seguridad reforzada).
+  - Devuelve los tokens con `DeviceNotRegistered` para borrarlos.
+- `src/avisos/mensajes.js`: oferta (personas, total, origen y destino, sin datos del pasajero; caduca con la oferta), retirada (aviso de datos, sin texto), aceptado y sin conductor.
+- `src/avisos/index.js`: lee los tokens con la clave de servicio, envía sin que el despacho espere (criterio 12) y borra los tokens muertos (11).
+- `POST /api/dispositivos` y `DELETE /api/dispositivos/:token`, con el JWT del usuario.
+- `.env.example`: `EXPO_ACCESS_TOKEN` y `AVISOS_ACTIVOS`.
+
+### Pruebas
+- `tests/avisos.test.js`: 25 nuevas. Backend 260/260.
+
+---
+
 ## [1.41.0] - 2026-10-09 (Hora Local)
 
 ### Paso 004 · T4, el pasajero ve a su conductor
