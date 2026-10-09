@@ -18,6 +18,7 @@ import {
 import { useSupabaseAuth } from '../src/hooks/useSupabaseAuth';
 import { COLORS } from '../src/constants/theme';
 import { rutaInicial, rutaPermitida } from '../src/utils/routing';
+import { useRespuestaAvisos } from '../src/hooks/useRespuestaAvisos';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -36,6 +37,10 @@ export default function RootLayout() {
   } = useSupabaseAuth({ bootstrap: true });
   const segments = useSegments() as string[];
   const router = useRouter();
+
+  // Tocar un aviso (paso 004): con la cuenta lista, para que la guardia no deshaga la navegación.
+  const cuentaLista = Boolean(session && profile && (profile.rol !== 'conductor' || verificationChecked));
+  useRespuestaAvisos(cuentaLista ? profile?.rol ?? null : null);
 
   const [fontsLoaded, fontError] = useFonts({
     // Alias con el nombre que usan los estilos (FONTS.heading / FONTS.body). Sin ellos,

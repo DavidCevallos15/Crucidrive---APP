@@ -24,6 +24,10 @@ import { useSocket } from '../hooks/useSocket';
 import { useTariff } from '../hooks/useTariff';
 import { useMapRegion } from '../hooks/useMapRegion';
 import { useViajePasajero } from '../hooks/useViajePasajero';
+import { useConductorDelViaje } from '../hooks/useConductorDelViaje';
+import { puntoDeOrigen } from '../utils/conductorDelViaje';
+import { distanciaMetros } from '../utils/geo';
+import { textoDistancia } from '../utils/oferta';
 import { useLocationStore, type NearbyDriver } from '../store/useLocationStore';
 import { useRideStore, type ActiveRide } from '../store/useRideStore';
 import { SECTORS, MAX_PASSENGERS } from '../constants/sectors';
@@ -76,6 +80,8 @@ export const MapScreen: React.FC = () => {
   const updateNearbyDriver = useLocationStore((s) => s.updateNearbyDriver);
   const activeRide = useRideStore((s) => s.activeRide);
   const isRequesting = useRideStore((s) => s.isRequesting);
+  const ultimaSolicitud = useRideStore((s) => s.ultimaSolicitud);
+  const conductorDelViaje = useConductorDelViaje(socket);
 
   const [panel, setPanel] = useState<Panel>('destino');
   const [destino, setDestino] = useState<Destino | null>(null);
@@ -94,6 +100,13 @@ export const MapScreen: React.FC = () => {
     [userCoords, currentSectorId]
   );
   const origen = resolverOrigen(origenElegido, gps);
+
+  // Distancia en línea recta del conductor al punto de partida (004, criterio 13; P17).
+  const posicionConductor = conductorDelViaje.posicion;
+  const distanciaConductor = useMemo(() => {
+    const partida = puntoDeOrigen(ultimaSolicitud?.origen, gps);
+    return posicionConductor && partida ? distanciaMetros(posicionConductor, partida) : null;
+  }, [posicionConductor, ultimaSolicitud, gps]);
 
   const statusText = currentSectorId
     ? `Estás en ${nombreSector(currentSectorId)}`
@@ -276,6 +289,19 @@ export const MapScreen: React.FC = () => {
             </View>
           </Marker>
         ))}
+
+        {/* Tu conductor durante el viaje (004, criterio 13): solo tú lo ves */}
+        {posicionConductor && (
+          <Marker
+            coordinate={{ latitude: posicionConductor.lat, longitude: posicionConductor.lng }}
+            title={activeRide?.driver?.nombre ?? 'Tu conductor'}
+            description={activeRide?.driver?.placa ? `Placa ${activeRide.driver.placa}` : undefined}
+          >
+            <View style={[styles.driverMarker, styles.myDriverMarker]}>
+              <Ionicons name="car" size={20} color={COLORS.darkBg} />
+            </View>
+          </Marker>
+        )}
       </MapView>
 
       {/* ─── ESTADO DE UBICACIÓN ───────────────────────────── */}
@@ -535,6 +561,8 @@ export const MapScreen: React.FC = () => {
             >
               <EstadoViaje
                 ride={activeRide}
+                distanciaConductor={distanciaConductor}
+                antiguedad={conductorDelViaje.antiguedad}
                 isRequesting={isRequesting}
                 cancelando={cancelando}
                 onCancelar={handleCancelRequest}
@@ -568,6 +596,10 @@ const Ruta: React.FC<{ ride: ActiveRide }> = ({ ride }) => (
 
 interface EstadoViajeProps {
   ride: ActiveRide;
+  /** Metros en línea recta del conductor al punto de partida; null si aún no hay posición. */
+  distanciaConductor: number | null;
+  /** "Última posición hace X s" si los datos no son frescos (criterio 17). */
+  antiguedad: string;
   isRequesting: boolean;
   cancelando: boolean;
   onCancelar: () => void;
@@ -581,7 +613,7 @@ interface EstadoViajeProps {
  * sin conductor con "Volver a pedir" (11) y aceptado con nombre, placa y teléfono (10).
  */
 const EstadoViaje: React.FC<EstadoViajeProps> = ({
-  ride, isRequesting, cancelando, onCancelar, onVolverAPedir, onCambiar, onChat,
+  ride, distanciaConductor, antiguedad, isRequesting, cancelando, onCancelar, onVolverAPedir, onCambiar, onChat,
 }) => {
   if (ride.status === 'solicitado') {
     return (
@@ -649,6 +681,15 @@ const EstadoViaje: React.FC<EstadoViajeProps> = ({
           <Ionicons name="card" size={16} color={COLORS.primaryLight} />
           <Text style={styles.routeText}>Placa {conductor.placa}</Text>
         </View>
+      )}
+      {distanciaConductor !== null && ride.status === 'aceptado' && (
+        <View style={styles.routeRow}>
+          <Ionicons name="navigate" size={16} color={COLORS.secondaryLight} />
+          <Text style={styles.routeText}>Tu conductor está {textoDistancia(distanciaConductor)}</Text>
+        </View>
+      )}
+      {antiguedad !== '' && (
+        <Text style={styles.staleText} accessibilityLiveRegion="polite">{antiguedad}</Text>
       )}
       <Ruta ride={ride} />
       {conductor?.telefono && (
@@ -941,6 +982,20 @@ const styles = StyleSheet.create({
   },
 
   // ─── Marcadores de conductores ──────────────────────────
+  myDriverMarker: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.secondaryLight,
+    borderWidth: 2,
+    borderColor: COLORS.white,
+  },
+  staleText: {
+    color: COLORS.secondaryLight,
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONTS.body,
+    marginBottom: SPACING.xs,
+  },
   driverMarker: {
     width: 36,
     height: 36,

@@ -47,6 +47,8 @@ interface ServerEvents {
   oferta_viaje: (data: OfertaViaje) => void;
   oferta_retirada: (data: { viajeId: string }) => void;
   hora_servidor: (data: { ahora: number }) => void;
+  // Paso 004 (P14): posición del conductor, solo a la sala del pasajero de su viaje.
+  conductor_ubicacion: (data: { viajeId: string; lat: number; lng: number; en: string }) => void;
 }
 
 type Handler = (...args: any[]) => void;

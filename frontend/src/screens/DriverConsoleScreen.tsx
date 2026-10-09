@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -14,6 +14,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { BlurContainer } from '../components/BlurContainer';
 import { PressableScale } from '../components/PressableScale';
 import { useLocation } from '../hooks/useLocation';
@@ -22,7 +23,11 @@ import { useMapRegion } from '../hooks/useMapRegion';
 import { useConsolaConductor } from '../hooks/useConsolaConductor';
 import { useSeguimientoFondo } from '../hooks/useSeguimientoFondo';
 import { PermisoUbicacionScreen } from './PermisoUbicacionScreen';
+import { ConsentimientoVigenteScreen } from './ConsentimientoVigenteScreen';
+import { useFueraDelDespacho } from '../hooks/useFueraDelDespacho';
 import { canalUbicacion } from '../servicios/ubicacion';
+import { marcarConsola } from '../servicios/avisos';
+import { OFERTA_NO_DISPONIBLE } from '../utils/avisoOferta';
 import { debeSeguir } from '../utils/seguimiento';
 import { AVISO_SEGUIMIENTO } from '../constants/permisoUbicacion';
 import { useAuthStore } from '../store/useAuthStore';
@@ -85,11 +90,78 @@ export const DriverConsoleScreen: React.FC = () => {
     return () => clearInterval(interval);
   }, [seguir, parametros.abiertaSeg]);
 
+  // ─── Avisos de oferta (004, criterios 7 y 9) ──────────────
+  // Con la consola en pantalla y conectada, el aviso de oferta no se muestra: ya está el modal.
+  useFocusEffect(useCallback(() => {
+    marcarConsola({ abierta: true });
+    return () => marcarConsola({ abierta: false });
+  }, []));
+  useEffect(() => {
+    marcarConsola({ conectada: isConnected });
+  }, [isConnected]);
+
+  // Al tocar el aviso: la oferta se abre solo si sigue viva en la BD.
+  const { oferta: ofertaDeAviso } = useLocalSearchParams<{ oferta?: string }>();
+  const router = useRouter();
+  const { abrirOfertaDeAviso } = consola;
+  useEffect(() => {
+    if (!ofertaDeAviso) return;
+    router.setParams({ oferta: undefined });
+    void abrirOfertaDeAviso(ofertaDeAviso).then((abierta) => {
+      if (!abierta) Alert.alert(OFERTA_NO_DISPONIBLE, 'Venció, la tomó otro conductor o el pasajero la canceló.');
+    });
+  }, [ofertaDeAviso, abrirOfertaDeAviso, router]);
+
   // ─── Interruptor de disponibilidad ────────────────────────
+  // Con 428, antes de ponerse disponible acepta la versión vigente del aviso de privacidad (004, 5).
+  const [pidiendoConsentimiento, setPidiendoConsentimiento] = useState(false);
+  const [enviandoConsentimiento, setEnviandoConsentimiento] = useState(false);
+  const [errorConsentimiento, setErrorConsentimiento] = useState<string | null>(null);
+
   const handleToggleAvailability = useCallback(async (value: boolean) => {
     const resultado = await consola.cambiarDisponibilidad(value);
-    if (!resultado.ok) Alert.alert('No se pudo cambiar', resultado.mensaje);
+    if (resultado.ok) return;
+    if (resultado.consentimiento) {
+      setErrorConsentimiento(null);
+      setPidiendoConsentimiento(true);
+      return;
+    }
+    Alert.alert('No se pudo cambiar', resultado.mensaje);
   }, [consola]);
+
+  const handleAceptarConsentimiento = useCallback(async () => {
+    setEnviandoConsentimiento(true);
+    const registrado = await consola.aceptarConsentimiento();
+    if (!registrado.ok) {
+      setEnviandoConsentimiento(false);
+      setErrorConsentimiento(registrado.mensaje);
+      return;
+    }
+    const disponible = await consola.cambiarDisponibilidad(true);
+    setEnviandoConsentimiento(false);
+    setPidiendoConsentimiento(false);
+    if (!disponible.ok) Alert.alert('No se pudo cambiar', disponible.mensaje);
+  }, [consola]);
+
+  // ─── "Estuviste fuera del despacho" (004, criterio 20) ────
+  const fuera = useFueraDelDespacho(estado);
+  useEffect(() => {
+    // Sin permiso en segundo plano ya ve el aviso "solo con la app abierta" (criterio 4).
+    if (!fuera.visible || seguimiento.aviso) {
+      if (fuera.visible) fuera.cerrar();
+      return;
+    }
+    Alert.alert(
+      'Estuviste fuera del despacho',
+      'Tu teléfono detuvo CruciDrive en segundo plano y no recibiste ofertas por un rato. '
+        + 'En los ajustes de la app, quita el ahorro de batería para CruciDrive.',
+      [
+        { text: 'Entendido', style: 'cancel', onPress: fuera.cerrar },
+        { text: 'Abrir ajustes', onPress: fuera.abrirAjustes },
+      ],
+      { onDismiss: fuera.cerrar },
+    );
+  }, [fuera.visible, fuera.cerrar, fuera.abrirAjustes, seguimiento.aviso]);
 
   // ─── Aceptar y rechazar ───────────────────────────────────
   const handleAcceptRide = useCallback(async () => {
@@ -201,6 +273,15 @@ export const DriverConsoleScreen: React.FC = () => {
           </View>
         )}
       </Animated.View>
+
+      {/* Aviso de privacidad vigente antes de ponerse disponible (004, criterio 5) */}
+      <ConsentimientoVigenteScreen
+        visible={pidiendoConsentimiento}
+        enviando={enviandoConsentimiento}
+        error={errorConsentimiento}
+        onAceptar={handleAceptarConsentimiento}
+        onAhoraNo={() => setPidiendoConsentimiento(false)}
+      />
 
       {/* Explicación antes del permiso del sistema (004, criterio 5) */}
       <PermisoUbicacionScreen

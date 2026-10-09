@@ -7,14 +7,34 @@ import {
   leerParametros,
   PARAMETROS_POR_DEFECTO,
   DISTANCIA_MINIMA_M,
+  fueraDelDespacho,
+  UMBRAL_FUERA_SEG,
 } from '../src/utils/seguimiento';
+import { CONSENTIMIENTO, CONSENT_VERSION } from '../src/constants/consentimiento';
 import { distanciaMetros } from '../src/utils/geo';
 import { crearCanalUbicacion, type SocketUbicacion } from '../src/servicios/canalUbicacion';
 import { PERMISO_UBICACION, AVISO_SEGUIMIENTO } from '../src/constants/permisoUbicacion';
+import {
+  destinoDeAviso,
+  leerDatosAviso,
+  mostrarEnPrimerPlano,
+  ofertaDesdeFila,
+  type FilaOferta,
+} from '../src/utils/avisoOferta';
+import {
+  alRecibirPosicion,
+  debeVerConductor,
+  leerPosicion,
+  puntoDeOrigen,
+  textoUltimaPosicion,
+} from '../src/utils/conductorDelViaje';
 
 /**
  * Paso 004 · avisos y ubicación en la app. T9: registro y borrado del token (criterio 11).
  * T10: ubicación en segundo plano (criterios 2, 4, 5 y 19; P11 y P13).
+ * T11: aviso de oferta (criterios 7, 8 y 9; P6 a P8).
+ * T12: el pasajero ve a su conductor (criterios 10, 13, 15 y 17; P9 y P17).
+ * T13: fuera del despacho y consentimiento 0.2 (criterios 5 y 20; P18 y P20).
  */
 
 const TOKEN = 'ExponentPushToken[telefonoDePrueba01]';
@@ -302,5 +322,240 @@ describe('T10 · envío por socket o REST (P11, P13)', () => {
     await canal.enviar(PARADA);
     canal.reiniciar();
     expect(canal.ultimoEnvio()).toBeNull();
+  });
+});
+
+// ─── T11 · aviso de oferta ──────────────────────────────────────────────────
+const VIAJE = 'b0000000-0000-4000-8000-000000000001';
+
+describe('T11 · datos del aviso', () => {
+  test('lee la oferta como objeto (primer plano y toque)', () => {
+    expect(leerDatosAviso({ tipo: 'oferta', viajeId: VIAJE, venceEn: 123 }))
+      .toEqual({ tipo: 'oferta', viajeId: VIAJE, venceEn: 123 });
+  });
+
+  test('lee la retirada como texto JSON (tarea de segundo plano)', () => {
+    const carga = { dataString: JSON.stringify({ tipo: 'oferta_retirada', viajeId: VIAJE }) };
+    expect(leerDatosAviso(carga)).toEqual({ tipo: 'oferta_retirada', viajeId: VIAJE });
+    expect(leerDatosAviso({ body: JSON.stringify({ tipo: 'oferta_retirada', viajeId: VIAJE }) }))
+      .toEqual({ tipo: 'oferta_retirada', viajeId: VIAJE });
+  });
+
+  test.each([
+    [null],
+    ['no es json'],
+    [{ tipo: 'otro', viajeId: VIAJE }],
+    [{ tipo: 'oferta', viajeId: 'no-es-uuid' }],
+    [{ tipo: 'oferta' }],
+  ])('ignora datos inesperados (%p)', (crudo) => {
+    expect(leerDatosAviso(crudo)).toBeNull();
+  });
+});
+
+describe('T11 · con la app abierta (criterio 9)', () => {
+  const oferta = leerDatosAviso({ tipo: 'oferta', viajeId: VIAJE, venceEn: 1 });
+
+  test('con la consola abierta y conectada, el aviso de oferta no se muestra: ya está el modal', () => {
+    expect(mostrarEnPrimerPlano(oferta, { abierta: true, conectada: true })).toBe(false);
+  });
+
+  test('sin conexión o en otra pantalla, el aviso de oferta sí se muestra', () => {
+    expect(mostrarEnPrimerPlano(oferta, { abierta: true, conectada: false })).toBe(true);
+    expect(mostrarEnPrimerPlano(oferta, { abierta: false, conectada: true })).toBe(true);
+  });
+
+  test('la retirada nunca se muestra y los avisos del viaje sí', () => {
+    const consola = { abierta: false, conectada: false };
+    expect(mostrarEnPrimerPlano(leerDatosAviso({ tipo: 'oferta_retirada', viajeId: VIAJE }), consola)).toBe(false);
+    expect(mostrarEnPrimerPlano(leerDatosAviso({ tipo: 'viaje_aceptado', viajeId: VIAJE }), consola)).toBe(true);
+  });
+});
+
+describe('T11 · al tocar el aviso (criterios 7 y 8)', () => {
+  const ahora = Date.parse('2026-10-09T12:00:00Z');
+  const fila = (cambios: Partial<FilaOferta> = {}, viaje: Partial<NonNullable<FilaOferta['viaje']>> = {}): FilaOferta => ({
+    fase: 'secuencial',
+    vence_en: '2026-10-09T12:00:09Z',
+    distancia_m: 240,
+    resultado: 'pendiente',
+    viaje: {
+      id: VIAJE,
+      estado: 'solicitado',
+      pasajeros: 2,
+      tarifa: '1.00',
+      sector_origen_id: 'malecon',
+      sector_destino_id: 'la-loma',
+      origen_descripcion: 'Muelle',
+      destino_descripcion: null,
+      ...viaje,
+    },
+    ...cambios,
+  });
+
+  test('una oferta pendiente y vigente se abre con lo que le queda según el servidor', () => {
+    const oferta = ofertaDesdeFila(fila(), ahora);
+    expect(oferta).toEqual({
+      viajeId: VIAJE,
+      pasajeros: 2,
+      tarifa: 1,
+      origen: { sectorId: 'malecon', descripcion: 'Muelle' },
+      destino: { sectorId: 'la-loma', descripcion: null },
+      distanciaM: 240,
+      fase: 'secuencial',
+      venceEn: Date.parse('2026-10-09T12:00:09Z'),
+    });
+  });
+
+  test.each([
+    ['vencida por la hora', fila({ vence_en: '2026-10-09T11:59:59Z' }), ahora],
+    ['vence justo ahora', fila({ vence_en: '2026-10-09T12:00:00Z' }), ahora],
+    ['la tomó otro', fila({ resultado: 'tomada' }), ahora],
+    ['el pasajero canceló', fila({ resultado: 'cancelada' }), ahora],
+    ['ya la rechazó', fila({ resultado: 'rechazada' }), ahora],
+    ['el viaje ya no está solicitado', fila({}, { estado: 'cancelado' }), ahora],
+    ['la BD no devuelve el viaje (RLS)', fila({ viaje: null }), ahora],
+    ['no hay oferta para este conductor', null, ahora],
+  ])('no se abre una oferta muerta: %s', (_caso, f, t) => {
+    expect(ofertaDesdeFila(f as FilaOferta | null, t as number)).toBeNull();
+  });
+
+  test('el aviso de oferta lleva a la consola con su viaje; los del viaje, al mapa del pasajero', () => {
+    expect(destinoDeAviso(leerDatosAviso({ tipo: 'oferta', viajeId: VIAJE }), 'conductor'))
+      .toEqual({ pathname: '/(app)/(driver)', params: { oferta: VIAJE } });
+    expect(destinoDeAviso(leerDatosAviso({ tipo: 'viaje_sin_conductor', viajeId: VIAJE }), 'pasajero'))
+      .toEqual({ pathname: '/(app)/(passenger)' });
+  });
+
+  test('un aviso que no es para el rol de la cuenta no lleva a ninguna parte', () => {
+    expect(destinoDeAviso(leerDatosAviso({ tipo: 'oferta', viajeId: VIAJE }), 'pasajero')).toBeNull();
+    expect(destinoDeAviso(leerDatosAviso({ tipo: 'viaje_aceptado', viajeId: VIAJE }), 'conductor')).toBeNull();
+    expect(destinoDeAviso(leerDatosAviso({ tipo: 'oferta_retirada', viajeId: VIAJE }), 'conductor')).toBeNull();
+  });
+});
+
+// ─── T12 · el pasajero ve a su conductor ────────────────────────────────────
+describe('T12 · posición del conductor del viaje (criterios 13, 15 y 17)', () => {
+  const OTRO_VIAJE = 'b0000000-0000-4000-8000-000000000002';
+  const evento = { viajeId: VIAJE, lat: -0.87, lng: -80.54, en: '2026-10-09T12:00:00.000Z' };
+
+  test('solo con el viaje aceptado o en curso; al terminar deja de verse', () => {
+    expect(debeVerConductor('aceptado')).toBe(true);
+    expect(debeVerConductor('en_curso')).toBe(true);
+    for (const estado of ['solicitado', 'sin_conductor', 'finalizado', 'cancelado', null, undefined] as const) {
+      expect(debeVerConductor(estado as never)).toBe(false);
+    }
+  });
+
+  test('lee el evento del socket de su viaje', () => {
+    expect(leerPosicion(evento, VIAJE)).toEqual({ viajeId: VIAJE, lat: -0.87, lng: -80.54, en: Date.parse(evento.en) });
+  });
+
+  test('lee la fila de la RPC al abrir o reconectar', () => {
+    const fila = { lat: -0.87, lng: -80.54, actualizado_en: '2026-10-09T11:59:30+00:00' };
+    expect(leerPosicion(fila, VIAJE)?.en).toBe(Date.parse('2026-10-09T11:59:30Z'));
+  });
+
+  test.each([
+    ['de otro viaje', { ...evento, viajeId: OTRO_VIAJE }],
+    ['sin coordenadas', { viajeId: VIAJE, en: evento.en }],
+    ['coordenadas imposibles', { ...evento, lat: 120 }],
+    ['sin hora', { viajeId: VIAJE, lat: -0.87, lng: -80.54 }],
+    ['vacío', null],
+  ])('ignora una posición %s', (_caso, datos) => {
+    expect(leerPosicion(datos, VIAJE)).toBeNull();
+  });
+
+  test('un evento atrasado no hace retroceder al conductor', () => {
+    const nueva = leerPosicion(evento, VIAJE);
+    const vieja = leerPosicion({ ...evento, lat: -0.8, en: '2026-10-09T11:59:00.000Z' }, VIAJE);
+    expect(alRecibirPosicion(nueva, vieja)).toBe(nueva);
+    expect(alRecibirPosicion(vieja, nueva)).toBe(nueva);
+    expect(alRecibirPosicion(nueva, null)).toBe(nueva);
+  });
+
+  test('"Última posición hace X s" solo si pasaron más de 15 s (criterio 17)', () => {
+    const en = Date.parse(evento.en);
+    expect(textoUltimaPosicion(en, en + 15_000)).toBe('');
+    expect(textoUltimaPosicion(en, en + 40_000)).toBe('Última posición hace 40 s');
+    expect(textoUltimaPosicion(en, en + 200_000)).toBe('Última posición hace 3 min');
+    // Reloj del teléfono atrasado: no muestra tiempos negativos.
+    expect(textoUltimaPosicion(en, en - 5_000)).toBe('');
+  });
+
+  test('la distancia se mide al punto de partida elegido o, si no, al GPS', () => {
+    const gps = { coords: { lat: -0.86, lng: -80.53 }, sectorId: 'malecon' };
+    const lugar = { id: 'x', nombre: 'Muelle', categoria: 'otro', sector_id: null, lat: -0.85, lng: -80.52 };
+    expect(puntoDeOrigen({ tipo: 'lugar', lugar } as never, gps)).toEqual({ lat: -0.85, lng: -80.52 });
+    expect(puntoDeOrigen({ tipo: 'gps', coords: { lat: -0.84, lng: -80.51 }, sectorId: 'malecon' }, gps))
+      .toEqual({ lat: -0.84, lng: -80.51 });
+    expect(puntoDeOrigen(null, gps)).toEqual({ lat: -0.86, lng: -80.53 });
+    expect(puntoDeOrigen(null, null)).toBeNull();
+  });
+});
+
+describe('T12 · avisos al pasajero (criterio 10)', () => {
+  test('aceptado y sin conductor llevan al mapa, que lee el viaje de la BD', () => {
+    expect(destinoDeAviso(leerDatosAviso({ tipo: 'viaje_aceptado', viajeId: VIAJE }), 'pasajero'))
+      .toEqual({ pathname: '/(app)/(passenger)' });
+    expect(destinoDeAviso(leerDatosAviso({ tipo: 'viaje_sin_conductor', viajeId: VIAJE }), 'pasajero'))
+      .toEqual({ pathname: '/(app)/(passenger)' });
+  });
+
+  test('con la app abierta se muestran: el pasajero puede estar en otra app o pantalla', () => {
+    const consola = { abierta: false, conectada: true };
+    expect(mostrarEnPrimerPlano(leerDatosAviso({ tipo: 'viaje_sin_conductor', viajeId: VIAJE }), consola)).toBe(true);
+  });
+});
+
+// ─── T13 · fuera del despacho y consentimiento 0.2 ──────────────────────────
+describe('T13 · "Estuviste fuera del despacho" (criterio 20)', () => {
+  const ahora = 1_000_000_000;
+
+  test('disponible y sin envíos en más de 60 s: estuvo fuera del despacho', () => {
+    expect(UMBRAL_FUERA_SEG).toBe(60);
+    expect(fueraDelDespacho('disponible', ahora - 61_000, ahora)).toBe(true);
+  });
+
+  test('con un envío reciente no estuvo fuera', () => {
+    expect(fueraDelDespacho('disponible', ahora - 60_000, ahora)).toBe(false);
+    expect(fueraDelDespacho('disponible', ahora - 5_000, ahora)).toBe(false);
+  });
+
+  test('no disponible, en un viaje o sin envíos previos: no hay nada que avisar', () => {
+    expect(fueraDelDespacho('inactivo', ahora - 600_000, ahora)).toBe(false);
+    expect(fueraDelDespacho('ocupado', ahora - 600_000, ahora)).toBe(false);
+    expect(fueraDelDespacho(null, ahora - 600_000, ahora)).toBe(false);
+    expect(fueraDelDespacho('disponible', null, ahora)).toBe(false);
+  });
+
+  test('cada envío correcto se anota para comprobarlo al volver; los fallidos no', async () => {
+    const anotados: number[] = [];
+    const canal = (status: number) => crearCanalUbicacion({
+      obtenerSocket: () => null,
+      obtenerJwt: async () => 'jwt',
+      fetchImpl: (async () => ({ ok: status < 300, status })) as unknown as typeof fetch,
+      url: 'http://api',
+      sectorDe: () => 'malecon',
+      ahora: () => 77,
+      alEnviar: ({ en }) => anotados.push(en),
+    });
+    await canal(204).enviar(PARADA);
+    await canal(500).enviar(PARADA);
+    expect(anotados).toEqual([77]);
+  });
+});
+
+describe('T13 · consentimiento 0.2 antes de ponerse disponible (criterio 5)', () => {
+  const texto = CONSENTIMIENTO.map((s) => s.texto).join(' ');
+
+  test('la versión que acepta la app es la que exige el servidor', () => {
+    expect(CONSENT_VERSION).toBe('0.2');
+  });
+
+  test('el texto cuenta la ubicación en segundo plano, cuándo se detiene y los avisos', () => {
+    expect(texto).toMatch(/aunque la app esté en segundo plano o la pantalla bloqueada/);
+    expect(texto).toMatch(/se detiene al ponerte no disponible o cerrar sesión/);
+    expect(texto).toMatch(/identificador de tu teléfono para avisarte/);
+    expect(texto).toMatch(/solo guardamos su última posición/);
   });
 });

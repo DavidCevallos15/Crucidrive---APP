@@ -2,6 +2,74 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.50.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · T13, consentimiento 0.2 en la app y "Estuviste fuera del despacho"
+- Consentimiento 0.2 (criterio 5):
+  - Si ponerse disponible responde 428, la consola muestra `ConsentimientoVigenteScreen` con el texto 0.2 completo y la casilla de aceptación.
+  - Al aceptar registra la versión con `POST /api/auth/consentimiento` y vuelve a pedir la disponibilidad.
+  - **Así se cierra el pendiente de la T7**: un conductor con la 0.1 ya puede ponerse disponible desde la app.
+- "Estuviste fuera del despacho" (criterio 20):
+  - Cada envío correcto de ubicación se guarda en el teléfono.
+  - Al abrir la app y al volver a primer plano, si sigue disponible y el último envío tiene más de 60 s, lo avisa con un botón a los ajustes de la app para quitar el ahorro de batería.
+  - No se muestra si ya está el aviso de "solo con la app abierta".
+
+### Paso 004 · T14, tipos
+- 0 errores en `src/`, `app/` e `index.ts`. Los errores restantes son los tipos de Jest en `tests/` (T18).
+
+### Pruebas
+- 6 nuevas en `tests/avisos.test.ts`. Frontend 258/258. Los bundles de Android y web compilan.
+
+---
+
+## [1.49.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · T12, el pasajero ve a su conductor
+- `useConductorDelViaje` (lógica pura en `src/utils/conductorDelViaje.ts`):
+  - Escucha `conductor_ubicacion`, que solo llega a la sala del pasajero.
+  - Al abrir el viaje y al reconectar, lee la RPC `ubicacion_conductor_viaje` (criterio 17).
+  - Si los datos pasan de 15 s, relee cada 30 s como respaldo.
+  - Un evento atrasado no hace retroceder al conductor.
+  - Al terminar el viaje, el marcador desaparece en ese momento (criterio 15).
+- Mapa del pasajero: marcador propio del conductor, "Tu conductor está a 240 m" (en línea recta al punto de partida) y "Última posición hace X s" cuando los datos no son frescos.
+- Los avisos de aceptado y sin conductor llevan al mapa al tocarlos, que ya sincroniza el viaje con la BD (T11, R23 del 003).
+
+### Pruebas
+- 13 nuevas en `tests/avisos.test.ts`. Frontend 252/252. Sin errores de tipos en `src/` ni `app/`.
+
+---
+
+## [1.48.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · T11, aviso de oferta en la app
+- `src/utils/avisoOferta.ts` (lógica pura): lee el `data` del aviso (objeto o texto JSON, según cómo lo entregue Expo), decide qué se muestra con la app abierta, valida la oferta leída de la BD y elige adónde lleva tocar el aviso.
+- Con la app abierta (criterio 9): el aviso de oferta no se muestra si la consola está en pantalla y conectada, porque ya está el modal. Sin socket sí se muestra.
+- Al tocar el aviso (criterio 7): la consola lee su oferta en `ofertas_viaje` con el viaje. Si ya no está pendiente, venció o el viaje no sigue solicitado, muestra "Esta oferta ya no está disponible".
+- Retirada (criterio 8): `src/tareas/avisosFondo.ts` recibe el aviso de datos `oferta_retirada` y quita el aviso de la barra. También se quita al llegar la retirada por socket, al vencer, al aceptar y al rechazar.
+- `useRespuestaAvisos` en el layout raíz navega solo cuando la cuenta está lista, para que la guardia de rutas no deshaga la navegación. Los avisos del pasajero llevan al mapa, que ya sincroniza el viaje (R23 del 003).
+
+### Pruebas
+- 21 nuevas en `tests/avisos.test.ts`. Frontend 239/239. Sin errores de tipos en `src/` ni `app/`. Los bundles de Android y web compilan.
+
+### Pendiente
+- Comprobar en el APK el aviso y su retirada (T17, con la T8).
+
+---
+
+## [1.47.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · T15, migración 0014 en producción
+- David aplicó `0014_avisos_y_privacidad.sql` desde el SQL Editor. El `apply_migration` del MCP se cortó dos veces a los 60 s sin dejar nada a medias.
+- Verificado en producción:
+  - `dispositivos_push` con RLS y una política de lectura propia. Sin escritura directa ni lectura anónima.
+  - `registrar_dispositivo`, `olvidar_dispositivo` y `ubicacion_conductor_viaje` solo para `authenticated`. Las funciones de `private` son `security definer` con `search_path` vacío.
+  - **`tricimotos.ubicacion_actual` ya no se lee por REST** (ni `authenticated` ni `anon`). El conductor la sigue actualizando.
+- Linter de seguridad: solo D-10 (protección de contraseñas filtradas), igual que antes.
+- Linter de rendimiento: el índice nuevo aún sin uso, más hallazgos previos al 004.
+- Al ir por el SQL Editor, la 0014 no figura en el historial de migraciones del proyecto.
+
+---
+
 ## [1.46.0] - 2026-10-09 (Hora Local)
 
 ### Paso 004 · T10, ubicación del conductor en segundo plano

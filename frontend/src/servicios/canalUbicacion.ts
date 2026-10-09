@@ -21,6 +21,8 @@ export interface DependenciasCanal {
   url: string;
   sectorDe: (punto: Punto) => string;
   ahora?: () => number;
+  /** Tras cada envío correcto; la app lo guarda para el criterio 20. */
+  alEnviar?: (envio: UltimoEnvio) => void;
 }
 
 /**
@@ -45,10 +47,12 @@ export const crearCanalUbicacion = ({
   url,
   sectorDe,
   ahora = Date.now,
+  alEnviar,
 }: DependenciasCanal): CanalUbicacion => {
   let ultimo: UltimoEnvio | null = null;
   const anotar = (punto: Punto): ResultadoEnvio => {
     ultimo = { lat: punto.lat, lng: punto.lng, en: ahora() };
+    alEnviar?.(ultimo);
     return 'ok';
   };
 

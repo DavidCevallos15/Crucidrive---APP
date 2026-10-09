@@ -96,3 +96,17 @@ export const decidirPermiso = (p: EstadoPermisos): DecisionPermiso => {
   if (p.puedePreguntar && !p.yaExplicado) return 'explicar';
   return 'solo_abierta';
 };
+
+/** Igual que DESPACHO_UBICACION_MAX_SEG del backend: sin ubicación más reciente no hay ofertas. */
+export const UMBRAL_FUERA_SEG = 60;
+
+/**
+ * "Estuviste fuera del despacho" (criterio 20, P20): sigue disponible, pero el último envío
+ * correcto es más viejo que la ventana del despacho. Pasa cuando el sistema detuvo la app en
+ * segundo plano (ahorro de batería). Sin envíos previos no hay nada que avisar.
+ */
+export const fueraDelDespacho = (
+  estado: EstadoTricimoto | null,
+  ultimoEnvio: number | null,
+  ahora: number
+): boolean => estado === 'disponible' && ultimoEnvio !== null && ahora - ultimoEnvio > UMBRAL_FUERA_SEG * 1000;
