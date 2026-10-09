@@ -89,4 +89,22 @@ const registerProfile = asyncHandler(async (req, res) => {
   successResponse(res, { perfil: perfilData, tricimoto: tricimotoData }, 'Perfil registrado correctamente.', 201);
 });
 
-module.exports = { registerProfile };
+/**
+ * Vuelve a aceptar el consentimiento cuando cambia su versión (paso 004, criterio 5; plan P18).
+ * La versión la fija el servidor, no el cliente: así queda registrado el texto exacto aceptado.
+ * Con el JWT del usuario (la RLS solo deja anexar consentimientos propios).
+ */
+const aceptarConsentimiento = asyncHandler(async (req, res) => {
+  if (req.body?.consentimiento !== true) {
+    return errorResponse(res, 400, 'Debes aceptar el aviso de privacidad para continuar.');
+  }
+  const { error } = await req.supabase
+    .from('consentimientos')
+    .insert([{ user_id: req.user.id, version: CONSENT_VERSION }]);
+  if (error) {
+    return errorResponse(res, 400, 'No se pudo registrar tu consentimiento.', error.message);
+  }
+  successResponse(res, { version: CONSENT_VERSION }, 'Consentimiento registrado.', 201);
+});
+
+module.exports = { registerProfile, aceptarConsentimiento };

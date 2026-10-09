@@ -189,6 +189,7 @@ const crearDbSecuencial = (respuestas) => {
       const q = {
         select: () => q,
         eq: () => q,
+        limit: () => q,
         update: (valores) => { updates.push(valores); return q; },
         maybeSingle: siguiente,
         single: siguiente,
@@ -214,9 +215,13 @@ describe('T10 · PATCH /api/conductores/disponibilidad (criterio 1)', () => {
     expect(db.from).not.toHaveBeenCalled();
   });
 
+  // Desde el 004, ponerse disponible exige el consentimiento vigente (criterio 5): un acuse más.
+  const CONSENTIDO = { data: { id: 1 }, error: null };
+
   test('un conductor disponible pasa a "disponible" en la BD', async () => {
     const { r, updates } = await pedir({ disponible: true }, [
       { data: { estado: 'inactivo' }, error: null },
+      CONSENTIDO,
       { data: [{ estado: 'disponible', disponible_desde: '2026-10-09T12:00:00Z' }], error: null },
     ]);
     expect(updates).toEqual([{ estado: 'disponible' }]);
@@ -238,6 +243,7 @@ describe('T10 · PATCH /api/conductores/disponibilidad (criterio 1)', () => {
   test('un conductor sin aprobar recibe 403 (la RLS no actualiza ninguna fila)', async () => {
     const { r } = await pedir({ disponible: true }, [
       { data: { estado: 'inactivo' }, error: null },
+      CONSENTIDO,
       { data: [], error: null },
     ]);
     expect(r.status).toHaveBeenCalledWith(403);

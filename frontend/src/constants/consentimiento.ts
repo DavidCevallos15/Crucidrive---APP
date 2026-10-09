@@ -1,9 +1,9 @@
 /**
  * Texto de consentimiento y aviso de privacidad (LOPDP).
- * Versión 0.1, BORRADOR pendiente de revisión legal: debe coincidir con
+ * Versión 0.2, BORRADOR pendiente de revisión legal: debe coincidir con
  * specs/002-identidad/consentimiento-lopdp.md y con CONSENT_VERSION del backend.
  */
-export const CONSENT_VERSION = '0.1';
+export const CONSENT_VERSION = '0.2';
 
 export interface SeccionConsentimiento {
   titulo: string;
@@ -14,12 +14,12 @@ export const CONSENTIMIENTO: SeccionConsentimiento[] = [
   {
     titulo: 'Qué datos recogemos y para qué',
     texto:
-      'Tu nombre, teléfono y correo para crear tu cuenta y comunicarte con el conductor o el pasajero. Tu ubicación mientras pides o das un viaje, para mostrar tricimotos cercanas, asignar el viaje y atender una emergencia. Los mensajes del chat del viaje. Si eres conductor, también tu cédula y fotos tuyas, de tu cédula y de tu tricimoto, para verificar tu identidad y aprobarte.',
+      'Tu nombre, teléfono y correo para crear tu cuenta y comunicarte con el conductor o el pasajero. Tu ubicación mientras pides o das un viaje, para mostrar tricimotos cercanas, asignar el viaje y atender una emergencia. Si eres conductor, tu ubicación también mientras estás disponible, aunque la app esté en segundo plano o la pantalla bloqueada (un aviso permanente en el teléfono lo indica); se detiene al ponerte no disponible o cerrar sesión. El identificador de tu teléfono para avisarte de viajes con la app cerrada; se borra al cerrar sesión. Los mensajes del chat del viaje. Si eres conductor, también tu cédula y fotos tuyas, de tu cédula y de tu tricimoto, para verificar tu identidad y aprobarte.',
   },
   {
     titulo: 'Quién puede verlos',
     texto:
-      'El conductor o pasajero de tu viaje ve solo tu nombre y teléfono (y la placa del conductor). Los administradores de CruciDrive ven lo necesario para operar. La cédula y las fotos solo las ven el propio conductor y los administradores. Usamos Supabase para guardar los datos y Google Maps para el mapa. No vendemos tus datos ni los usamos para publicidad.',
+      'El conductor o pasajero de tu viaje ve solo tu nombre y teléfono (y la placa del conductor). Durante el viaje, el pasajero ve en el mapa dónde viene su conductor; nadie más lo ve. Los administradores de CruciDrive ven lo necesario para operar. La cédula y las fotos solo las ven el propio conductor y los administradores. Usamos Supabase para guardar los datos, Google Maps para el mapa, y Expo y Google (Firebase) para los avisos al teléfono, que no llevan el nombre, el teléfono ni la ubicación del pasajero. Del conductor solo guardamos su última posición, no un historial de recorridos. No vendemos tus datos ni los usamos para publicidad.',
   },
   {
     titulo: 'Cuánto tiempo los guardamos',

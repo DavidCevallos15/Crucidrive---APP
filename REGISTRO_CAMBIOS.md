@@ -2,6 +2,27 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.44.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · T7, consentimiento 0.2
+- Texto 0.2 en `consentimiento-lopdp.md`, `consent.js` y `consentimiento.ts`:
+  - Ubicación del conductor en segundo plano mientras está disponible, con un aviso permanente en el teléfono.
+  - Identificador del teléfono para avisos, que se borra al cerrar sesión.
+  - Durante el viaje, el pasajero ve a su conductor y nadie más.
+  - Expo y Google entregan los avisos, sin datos del pasajero.
+  - **Corrección:** la 0.1 decía que se guardaba un historial de ubicaciones con un identificador anónimo. En realidad solo se guarda la última posición.
+- `PATCH /api/conductores/disponibilidad` con `disponible: true` responde 428 si el conductor no aceptó la versión vigente. Dejar de estar disponible no lo exige.
+- `POST /api/auth/consentimiento { consentimiento: true }` registra la versión que fija el servidor.
+- `npm run smoke` acepta la 0.2 antes de probar la disponibilidad.
+
+### Pruebas
+- 6 nuevas en `spec004.test.js`. Las pruebas de disponibilidad del 003 incluyen la consulta de consentimiento. Backend 275/275 y frontend 180/180.
+
+### Pendiente
+- La pantalla de la app que pide la 0.2 es la T13. Hasta entonces, un conductor con la 0.1 recibe 428 al ponerse disponible desde la app.
+
+---
+
 ## [1.43.0] - 2026-10-09 (Hora Local)
 
 ### Paso 004 · T6, el despacho envía avisos

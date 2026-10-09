@@ -4,6 +4,7 @@ const { isCedulaValida, normalizarCedula } = require('../utils/validation');
 const { obtenerDespachador } = require('../despacho');
 const { guardarUbicacion } = require('../ubicacion/servicio');
 const { leerConfigUbicacion } = require('../ubicacion/config');
+const { CONSENT_VERSION } = require('../config/consent');
 
 const BUCKET = 'verificacion';
 const TIPOS_FOTO = ['conductor', 'cedula', 'vehiculo'];
@@ -117,6 +118,24 @@ const cambiarDisponibilidad = asyncHandler(async (req, res) => {
   }
   if (actual.estado === 'ocupado') {
     return errorResponse(res, 409, 'Tienes un viaje en curso. Tu disponibilidad vuelve sola al terminarlo.');
+  }
+
+  // Estar disponible ahora implica ubicación en segundo plano y avisos: hace falta haber aceptado
+  // el consentimiento vigente (paso 004, criterio 5; plan P18). Dejar de estarlo no lo exige.
+  if (disponible) {
+    const { data: aceptado, error: consentError } = await db
+      .from('consentimientos')
+      .select('id')
+      .eq('user_id', conductorId)
+      .eq('version', CONSENT_VERSION)
+      .limit(1)
+      .maybeSingle();
+    if (consentError) {
+      return errorResponse(res, 500, 'No se pudo comprobar tu consentimiento.', consentError.message);
+    }
+    if (!aceptado) {
+      return errorResponse(res, 428, `Acepta el aviso de privacidad actualizado (versión ${CONSENT_VERSION}) para ponerte disponible.`);
+    }
   }
 
   // Oferta abierta antes del cambio: si deja de estar disponible, hay que pasar al siguiente.
