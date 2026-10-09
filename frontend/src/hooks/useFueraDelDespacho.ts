@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Linking } from 'react-native';
 import { canalUbicacion, ultimoEnvioAlAbrir } from '../servicios/ubicacion';
-import { fueraDelDespacho } from '../utils/seguimiento';
+import { fueraDelDespacho, UMBRAL_FUERA_SEG } from '../utils/seguimiento';
 import type { EstadoTricimoto } from '../utils/oferta';
 
 /**
@@ -13,6 +13,13 @@ export const useFueraDelDespacho = (estado: EstadoTricimoto | null) => {
   const [visible, setVisible] = useState(false);
   const estadoRef = useRef(estado);
   estadoRef.current = estado;
+  // Al volver de los ajustes la consola aún no envió: no repetir el aviso enseguida.
+  const avisadoEn = useRef(0);
+  const avisar = useCallback(() => {
+    if (Date.now() - avisadoEn.current < UMBRAL_FUERA_SEG * 1000) return;
+    avisadoEn.current = Date.now();
+    setVisible(true);
+  }, []);
 
   // Al abrir: en cuanto se conoce el estado de la BD, una sola vez.
   const comprobadoAlAbrir = useRef(false);
@@ -21,19 +28,19 @@ export const useFueraDelDespacho = (estado: EstadoTricimoto | null) => {
     comprobadoAlAbrir.current = true;
     const ahora = Date.now();
     void ultimoEnvioAlAbrir().then((previo) => {
-      if (fueraDelDespacho(estado, previo, ahora)) setVisible(true);
+      if (fueraDelDespacho(estado, previo, ahora)) avisar();
     });
-  }, [estado]);
+  }, [estado, avisar]);
 
   // Al volver a primer plano: con el último envío en memoria (la tarea y la consola lo anotan).
   useEffect(() => {
     const suscripcion = AppState.addEventListener('change', (siguiente) => {
       if (siguiente !== 'active') return;
       const ultimo = canalUbicacion.ultimoEnvio()?.en ?? null;
-      if (fueraDelDespacho(estadoRef.current, ultimo, Date.now())) setVisible(true);
+      if (fueraDelDespacho(estadoRef.current, ultimo, Date.now())) avisar();
     });
     return () => suscripcion.remove();
-  }, []);
+  }, [avisar]);
 
   const cerrar = useCallback(() => setVisible(false), []);
   /** Desde los ajustes de la app se quita la optimización de batería. */
