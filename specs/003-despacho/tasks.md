@@ -1,0 +1,22 @@
+# 003 · Tareas
+
+Cada tarea indica su prueba. Se tilda al cumplirse. Orden sugerido de PR: BD (T2 a T4), backend (T5 a T11), app (T12 a T16), cierre (T17 y T18).
+
+- [x] T1 · Spec con D-11 (asignación mixta) → PR #18
+- [ ] T2 · Migración `0011_lugares.sql`: `pg_trgm` y `unaccent` en `extensions`, `lugares`, `normalizar`, `sector_mas_cercano`, trigger `preparar_lugar`, RLS, `buscar_lugares` y semilla de David → prueba: `rls_003.sql` (18 con tildes y un error leve, 23, 24 con pasajero y conductor rechazados, 26 con `anon` que busca pero no escribe)
+- [ ] T3 · Migración `0012_despacho.sql`: `sin_conductor`, `lugar_*_id`, viaje activo único, `completar_viaje`, `controlar_transicion_viaje`, revocar `conductor_id` y `aceptado_en`, columnas y triggers de `tricimotos`, `ofertas_viaje` y las funciones del sistema y de usuario → prueba: `rls_003.sql` (2, 3, 5, 7, 9, 13, 17, 19, transiciones R4, un pasajero no escribe `conductor_id`, `ofertas_viaje` ajenas invisibles)
+- [ ] T4 · Concurrencia de la aceptación → prueba: `concurrencia_003.sh` con dos `psql` en paralelo, solo uno gana (8); `run-docker.sh` lo ejecuta junto a las suites `rls_*`
+- [ ] T5 · Guion `importar-lugares.js` (Overpass con `User-Agent`, polígono de la parroquia, genéricos, duplicados a menos de 150 m, categoría) que genera `0013_lugares_osm.sql` → prueba: `tests/importarLugares.test.js` con una respuesta de Overpass guardada; aplicar la migración dos veces no duplica ni pisa lo editado por el admin (22)
+- [ ] T6 · **David:** revisar la lista generada (nombres, lugares que faltan o sobran) antes de fusionar `0013` → comprobación: visto bueno en el PR
+- [ ] T7 · Backend: `src/despacho/config.js` y `conexiones.js`, unión a `usuario:{id}`, `hora_servidor`, `update_location` sin `estado` → prueba: `tests/despachador.test.js` (parámetros inválidos fallan al arrancar; R10)
+- [ ] T8 · Backend: `despachador.js` (fases secuencial y abierta, vencimiento a 15 s, cierre a 2 min, cancelación, `recuperar` y `barrer`) → prueba: `tests/despachador.test.js` con temporizadores falsos (4, 6, 7, 11, 12, 14)
+- [ ] T9 · Backend: `solicitarViaje` con lugares, 409 por viaje activo y arranque del despacho; `aceptarViaje` con la RPC; cancelación de solicitud → prueba: `tests/spec003.test.js` (10, 12, 13) y `viajeController.test.js` actualizado
+- [ ] T10 · Backend: `PATCH /api/conductores/disponibilidad` y `rechazar_oferta` por socket → prueba: `tests/spec003.test.js` (1; al quedar no disponible, la oferta pendiente pasa al siguiente)
+- [ ] T11 · Backend: payload de la oferta y endpoints `/api/admin/lugares` → prueba: `tests/spec003.test.js` (15 y 27: menos de 2 KB y sin teléfono ni coordenadas; 24: 403 a quien no es admin)
+- [ ] T12 · Frontend: `normalizar`, `useBuscarLugares` y buscador en la ficha de destino con respaldo por sector y atribución OSM → prueba: `tests/despacho.test.ts` (18, 20, 25) y revisión en el navegador integrado
+- [ ] T13 · Frontend: origen por GPS, lugar o sector; estados "Buscando…", "sin conductor" con "Volver a pedir" y "aceptado" → prueba: `tests/despacho.test.ts` (11, 16, 21) y revisión en el navegador
+- [ ] T14 · Frontend: consola del conductor con interruptor real, oferta por socket, cuenta regresiva desde `venceEn`, rechazo, retirada y regla 6 → prueba: `tests/despacho.test.ts` (R14) y revisión en el navegador a tamaño de teléfono (28)
+- [ ] T15 · Frontend: pantallas de lugares del administrador → prueba: tests de validación del formulario y revisión en el navegador (24)
+- [ ] T16 · Sin errores de tipos nuevos en `src/` ni `app/` → prueba: `npx tsc --noEmit` filtrado a `^(src|app)/`
+- [ ] T17 · Aplicar 0011 a 0013 al proyecto real (integración al fusionar) y `get_advisors(security)` sin hallazgos nuevos → comprobación: salida del linter (solo D-10)
+- [ ] T18 · Prueba de humo ampliada (`npm run smoke`): oferta al conductor conectado, rechazo y `sin_conductor`, nueva solicitud aceptada con chat, medición de bytes por oferta y por ubicación (27) → prueba: salida OK completa; registro en `REGISTRO_CAMBIOS.md` y `specs/README.md`

@@ -2,6 +2,16 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.21.0] - 2026-10-08 (Hora Local)
+
+### Paso 003 · plan y tareas (en revisión)
+- Spec aprobada al fusionar el PR #18.
+- `plan.md`: despachador en el backend con la BD como fuente de verdad (`ofertas_viaje`), aceptación atómica por RPC, catálogo `lugares` con búsqueda por trigramas sin tildes y semilla de OSM como migración generada y revisable.
+- **Hueco que se cierra en 0012:** hoy un conductor aprobado puede tomar un viaje libre por la API REST de Supabase sin oferta, y un pasajero puede escribir `conductor_id` en su propio viaje. Se revoca la columna y un trigger valida las transiciones.
+- `tasks.md`: 18 tareas, cada una con su prueba.
+
+---
+
 ## [1.20.0] - 2026-10-08 (Hora Local)
 
 ### Paso 003 · spec de despacho y catálogo de lugares (en revisión)
