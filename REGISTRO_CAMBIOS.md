@@ -11,6 +11,7 @@
   - D-12: servicio de avisos (Expo, Firebase directo o un tercero).
   - D-13: frecuencia de ubicación (fija o adaptativa).
 - Sin código hasta que la spec esté aprobada.
+- David resolvió D-12 (A: servicio de avisos de Expo) y D-13 (B: frecuencia adaptativa), anotadas en la constitución.
 
 ---
 

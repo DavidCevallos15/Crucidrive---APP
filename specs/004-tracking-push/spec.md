@@ -1,6 +1,6 @@
 # 004 · Avisos con la app cerrada y seguimiento del conductor
 
-Estado: **borrador del 9 oct 2026. Pendiente de que David resuelva D-12 y D-13 y dé su "aprobada" para pasar a `plan.md`**
+Estado: **D-12 y D-13 resueltas por David el 9 oct 2026 (A y B). Pendiente de su "aprobada" (fusionar el PR) para pasar a `plan.md`**
 
 ## Por qué
 El 003 funciona de punta a punta (prueba de humo 29/29), pero solo mientras el conductor tiene la consola abierta en pantalla. En el piloto eso no se cumple: el conductor guarda el teléfono en el bolsillo, contesta una llamada o abre WhatsApp, y desde ese momento deja de recibir ofertas. Peor aún, deja de enviar su ubicación y a los 60 s ya no es candidato (criterio 2 del 003). Con 3 o 4 tricimotos conectadas, casi todas las solicitudes terminarían "sin conductor".
@@ -64,7 +64,7 @@ El 003 dejó ambas cosas fuera de alcance de forma explícita y anotó que el 00
 
 ## Decisiones de David
 
-### D-12 · Servicio para los avisos con la app cerrada
+### D-12 · Servicio para los avisos con la app cerrada: **A, servicio de avisos de Expo** (David, 9 oct 2026)
 Las tres opciones son gratis para el volumen del piloto. Ninguna exige un servicio propio nuevo en nuestro servidor.
 
 - **A. Servicio de avisos de Expo** (recomendada). El backend llama a una API de Expo con el identificador del teléfono, y Expo entrega por el canal de Google (FCM).
@@ -77,7 +77,7 @@ Las tres opciones son gratis para el volumen del piloto. Ninguna exige un servic
   - A favor: panel y estadísticas.
   - En contra: otro proveedor con acceso a los identificadores de teléfono, más datos personales fuera (LOPDP) y cuotas que pueden cambiar. No se recomienda.
 
-### D-13 · Frecuencia de ubicación
+### D-13 · Frecuencia de ubicación: **B, adaptativa** (David, 9 oct 2026)
 - **A. Fija** (5 s abierta, 15 s en segundo plano).
 - **B. Adaptativa** (recomendada): cada 5 s con la app abierta. En segundo plano, cada 10 s en movimiento y cada 30 s detenido. Así cumple la ventana de 60 s del 003 (criterio 19) y gasta menos batería.
 
