@@ -2,6 +2,34 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.35.1] - 2026-10-08 (Hora Local)
+
+### Paso 003 · T18, sincronización y limpieza de la prueba de humo
+- La conexión espera `connect` y `hora_servidor`, con listeners registrados antes de conectar y un límite de espera; el desfase se mide al recibir la hora.
+- Se comprueba en la BD que el GPS se guardó antes de solicitar el viaje; una oferta ausente o de otro viaje detiene el guion antes de aceptar.
+- La limpieza comprueba las respuestas y solo cierra viajes de las cuentas de prueba con referencia "Prueba de humo". Un viaje ajeno bloquea la corrida sin modificarlo.
+- Tras un fallo intermedio se cierran los viajes de prueba, se desactiva la disponibilidad y se desconectan los sockets. Las peticiones HTTP tienen límite de tiempo.
+- `.env.example` documenta las seis credenciales del guion y aclara que la clave de servicio es obligatoria desde el 003.
+- Validación local: sintaxis válida y **211/211 pruebas de backend**, incluidas 16 de sincronización, vencimientos y limpieza. **T18 permanece pendiente:** faltan las credenciales SMOKE locales para ejecutar contra Supabase. La medición de datos se identifica como proyección de ubicación y ofertas.
+
+## [1.35.0] - 2026-10-09 (Hora Local)
+
+### Paso 003 · T18, prueba de humo ampliada (guion listo, falta correrlo)
+- `npm run smoke` fallaba con 409 en la aceptación: aceptaba el viaje directo, como en el 002, y desde la 0012 la BD exige una oferta vigente (criterio 9).
+- El guion ahora recorre el despacho:
+  - Limpia los viajes activos que dejaron corridas anteriores.
+  - Verifica `hora_servidor` y el cambio de disponibilidad (criterio 1).
+  - Oferta al conductor conectado: menos de 2 KB, sin datos del pasajero y unos 15 s según el servidor (criterios 4, 15 y 27; R14).
+  - Una segunda solicitud responde 409 (criterio 13).
+  - Rechazo y luego "sin conductor" (criterios 6 y 11).
+  - "Volver a pedir", aceptación con chat y aviso al pasajero con nombre, placa y teléfono (criterios 10 y 16).
+  - Aceptar dos veces responde 409 (criterio 8) y con un viaje en curso no puede cambiar la disponibilidad (criterio 3).
+  - Chat, `en_curso`, `finalizado` y la tricimoto vuelve a disponible (R11).
+  - Proyección de datos de una jornada de 10 h con margen x2 (criterio 27).
+- En la rama del conductor sin aprobar, el viaje de prueba puede quedar como `sin_conductor` antes de que el pasajero lo cancele; ambos estados se aceptan.
+
+---
+
 ## [1.34.0] - 2026-10-09 (Hora Local)
 
 ### Paso 003 · T16 y T17, verificación
