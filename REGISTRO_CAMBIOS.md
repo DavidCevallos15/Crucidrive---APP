@@ -2,6 +2,16 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.35.1] - 2026-10-08 (Hora Local)
+
+### Paso 003 · T18, sincronización y limpieza de la prueba de humo
+- La conexión espera `connect` y `hora_servidor`, con listeners registrados antes de conectar y un límite de espera; el desfase se mide al recibir la hora.
+- Se comprueba en la BD que el GPS se guardó antes de solicitar el viaje; una oferta ausente o de otro viaje detiene el guion antes de aceptar.
+- La limpieza comprueba las respuestas y solo cierra viajes de las cuentas de prueba con referencia "Prueba de humo". Un viaje ajeno bloquea la corrida sin modificarlo.
+- Tras un fallo intermedio se cierran los viajes de prueba, se desactiva la disponibilidad y se desconectan los sockets. Las peticiones HTTP tienen límite de tiempo.
+- `.env.example` documenta las seis credenciales del guion y aclara que la clave de servicio es obligatoria desde el 003.
+- Validación local: sintaxis válida y **211/211 pruebas de backend**, incluidas 16 de sincronización, vencimientos y limpieza. **T18 permanece pendiente:** faltan las credenciales SMOKE locales para ejecutar contra Supabase. La medición de datos se identifica como proyección de ubicación y ofertas.
+
 ## [1.35.0] - 2026-10-09 (Hora Local)
 
 ### Paso 003 · T18, prueba de humo ampliada (guion listo, falta correrlo)

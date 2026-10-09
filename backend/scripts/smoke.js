@@ -22,11 +22,14 @@
  *
  * Deja en la BD un viaje sin_conductor, uno finalizado, un conductor aprobado (y no disponible al
  * terminar) y 3 fotos de prueba en Storage. Los viajes activos de corridas anteriores se cancelan
- * al empezar.
+ * al empezar, solo si pertenecen a estas cuentas y tienen la referencia "Prueba de humo".
  */
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 const { io } = require('socket.io-client');
+const {
+  conectarSocket: conectar, esperar, esperarCondicion, cerrarViajesDePrueba, dormir, bytesEvento,
+} = require('./smokeHelpers');
 
 const API = process.env.SMOKE_API || 'http://localhost:3000';
 const CEDULA = process.env.SMOKE_CEDULA || '1710034065';
@@ -49,6 +52,9 @@ const JPEG_MINIMO = Buffer.from(
 );
 
 let fallos = 0;
+let pas;
+let con;
+const sockets = [];
 const paso = (nombre, ok, detalle = '') => {
   if (!ok) fallos += 1;
   console.log(`${ok ? 'OK   ' : 'FALLO'} ${nombre}${detalle ? ` - ${detalle}` : ''}`);
@@ -71,6 +77,7 @@ const http = async (token, method, ruta, cuerpo) => {
       method,
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+      signal: AbortSignal.timeout(10000),
     });
   } catch (e) {
     throw new Error(`No se pudo conectar con ${API} (${e.cause?.code || e.message}). ¿Está corriendo "npm run dev" en otra terminal?`);
@@ -79,36 +86,27 @@ const http = async (token, method, ruta, cuerpo) => {
   return { status: res.status, json };
 };
 
-// El servidor envía hora_servidor al conectar: se escucha desde antes para no perderla y
-// se guarda el desfase de reloj medido en ese momento (plan R14).
-const conectarSocket = (token) =>
-  new Promise((resolve, reject) => {
-    const s = io(API, { auth: { token }, transports: ['websocket'] });
-    s.once('hora_servidor', ({ ahora }) => { s.desfaseMs = ahora - Date.now(); });
-    s.once('connect', () => resolve(s));
-    s.once('connect_error', (e) => reject(new Error(`Socket: ${e.message}`)));
-  });
+const conectarSocket = async (token) => {
+  const socket = await conectar(io, API, token);
+  sockets.push(socket);
+  socket.on('error_message', (mensaje) => console.error(`[Socket del guion] ${mensaje}`));
+  return socket;
+};
 
-/** Espera un evento del socket que cumpla `filtro`; null si no llega a tiempo. */
-const esperar = (socket, evento, filtro = () => true, ms = 8000) =>
-  new Promise((resolve) => {
-    const alRecibir = (datos) => {
-      if (!filtro(datos)) return;
-      clearTimeout(t);
-      socket.off(evento, alRecibir);
-      resolve(datos);
-    };
-    const t = setTimeout(() => {
-      socket.off(evento, alRecibir);
-      resolve(null);
-    }, ms);
-    socket.on(evento, alRecibir);
-  });
-
-const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
-
-/** Bytes de un evento como viaja por Socket.io: `42["evento",{...}]`. */
-const bytesEvento = (evento, datos) => Buffer.byteLength(`42${JSON.stringify([evento, datos])}`);
+/** Espera la escritura real del GPS; un retardo fijo no garantiza que el conductor sea candidato. */
+const guardarUbicacion = async (socket, usuario, ubicacion) => {
+  const { data: anterior, error } = await usuario.sb.from('tricimotos')
+    .select('ubicacion_en').eq('conductor_id', usuario.id).single();
+  if (error) throw new Error('No se pudo leer la ubicación anterior del conductor.');
+  socket.emit('update_location', ubicacion);
+  await esperarCondicion(async () => {
+    const { data, error: lecturaError } = await usuario.sb.from('tricimotos')
+      .select('ubicacion_en, sector_id').eq('conductor_id', usuario.id).single();
+    if (lecturaError) throw new Error('No se pudo comprobar la ubicación del conductor.');
+    return data?.ubicacion_en && data.ubicacion_en !== anterior?.ubicacion_en
+      && data.sector_id === ubicacion.sectorId;
+  }, 'El backend no guardó una nueva ubicación GPS del conductor.');
+};
 
 const MALECON = { lat: -0.8699838, lng: -80.53995042 };
 const LA_BOCA = { lat: -0.80147852, lng: -80.52098189 };
@@ -123,27 +121,20 @@ const SOLICITUD = {
 };
 
 (async () => {
-  const pas = await login(process.env.SMOKE_PASAJERO_EMAIL, process.env.SMOKE_PASAJERO_PASSWORD);
-  const con = await login(process.env.SMOKE_CONDUCTOR_EMAIL, process.env.SMOKE_CONDUCTOR_PASSWORD);
+  pas = await login(process.env.SMOKE_PASAJERO_EMAIL, process.env.SMOKE_PASAJERO_PASSWORD);
+  con = await login(process.env.SMOKE_CONDUCTOR_EMAIL, process.env.SMOKE_CONDUCTOR_PASSWORD);
   const adm = await login(process.env.SMOKE_ADMIN_EMAIL, process.env.SMOKE_ADMIN_PASSWORD);
+  if (new Set([pas.id, con.id, adm.id]).size !== 3) throw new Error('Usa tres cuentas distintas para los roles del guion.');
   paso('Login de pasajero, conductor y administrador', true);
 
-  // 0. Limpieza: viajes activos de corridas anteriores (un viaje activo por pasajero, criterio 13).
-  for (const u of [pas, con]) {
-    const { data: activos } = await u.sb.from('viajes').select('id, estado')
-      .or(`pasajero_id.eq.${u.id},conductor_id.eq.${u.id}`).in('estado', ['solicitado', 'aceptado', 'en_curso']);
-    for (const v of activos || []) {
-      if (v.estado === 'en_curso') {
-        await http(u.token, 'PATCH', `/api/viajes/${v.id}/estado`, { estado: 'finalizado' });
-      } else {
-        await http(u.token, 'PATCH', `/api/viajes/${v.id}/estado`, { estado: 'cancelado' });
-      }
-    }
-    if (activos?.length) paso(`Se cerraron ${activos.length} viaje(s) activo(s) de corridas anteriores`, true);
+  const { data: perfilAdmin } = await adm.sb.from('perfiles').select('rol').eq('id', adm.id).maybeSingle();
+  if (!paso('La cuenta de administrador tiene rol admin', perfilAdmin?.rol === 'admin', `rol=${perfilAdmin?.rol}`)) {
+    throw new Error('La cuenta SMOKE_ADMIN debe tener el rol admin antes de ejecutar el guion.');
   }
 
-  const { data: perfilAdmin } = await adm.sb.from('perfiles').select('rol').eq('id', adm.id).maybeSingle();
-  paso('La cuenta de administrador tiene rol admin', perfilAdmin?.rol === 'admin', `rol=${perfilAdmin?.rol}`);
+  // 0. Solo rastros identificados de este guion, comprobando cada respuesta.
+  const cerrados = await cerrarViajesDePrueba(pas, con, http);
+  paso('Limpieza de viajes de prueba de corridas anteriores', true, `${cerrados} cerrados`);
 
   // 1. Registro con consentimiento (se omite si el perfil ya existe)
   const asegurarPerfil = async (u, cuerpo, etiqueta) => {
@@ -154,8 +145,10 @@ const SOLICITUD = {
     const r = await http(u.token, 'POST', '/api/auth/registro', { ...cuerpo, consentimiento: true });
     return paso(`Registro de ${etiqueta} con consentimiento`, r.status === 201, `HTTP ${r.status}`);
   };
-  await asegurarPerfil(pas, { rol: 'pasajero', nombre: 'Pasajero Prueba', telefono: '0990000001' }, 'pasajero');
-  await asegurarPerfil(con, { rol: 'conductor', nombre: 'Conductor Prueba', telefono: '0990000003', placa: 'SMK-001' }, 'conductor');
+  if (!await asegurarPerfil(pas, { rol: 'pasajero', nombre: 'Pasajero Prueba', telefono: '0990000001' }, 'pasajero')
+      || !await asegurarPerfil(con, { rol: 'conductor', nombre: 'Conductor Prueba', telefono: '0990000003', placa: 'SMK-001' }, 'conductor')) {
+    throw new Error('No se pudieron preparar los perfiles de prueba.');
+  }
 
   // 2. Verificación del conductor: fotos a Storage privado + cédula
   const estadoInicial = await http(con.token, 'GET', '/api/conductores/verificacion');
@@ -187,10 +180,12 @@ const SOLICITUD = {
   if (!yaAprobado) {
     const sol0 = await http(pas.token, 'POST', '/api/viajes/solicitar', {
       origen: { lat: -0.8699838, lng: -80.53995042 }, destino: { lat: -0.80147852, lng: -80.52098189 }, pasajeros: 1,
+      destinoDescripcion: 'Prueba de humo',
     });
     viajeId = sol0.json.data?.id;
+    if (!viajeId) throw new Error(`No se pudo crear el viaje del conductor sin aprobar (HTTP ${sol0.status}).`);
     const intento = await http(con.token, 'POST', '/api/viajes/aceptar', { viajeId });
-    paso('Un conductor sin aprobar NO puede aceptar un viaje', intento.status >= 400, `HTTP ${intento.status}`);
+    paso('Un conductor sin aprobar NO puede aceptar un viaje', intento.status === 403, `HTTP ${intento.status}`);
     // Sin candidatos, el despachador puede cerrarlo como sin_conductor antes de que el pasajero cancele.
     await http(pas.token, 'PATCH', `/api/viajes/${viajeId}/estado`, { estado: 'cancelado' });
     const { data: fila0 } = await pas.sb.from('viajes').select('estado').eq('id', viajeId).single();
@@ -207,7 +202,7 @@ const SOLICITUD = {
     const urlFoto = detalle.json.data?.fotos?.cedula;
     paso('El administrador recibe enlaces firmados de las fotos', !!urlFoto, `HTTP ${detalle.status}`);
     if (urlFoto) {
-      const foto = await fetch(urlFoto);
+      const foto = await fetch(urlFoto, { signal: AbortSignal.timeout(10000) });
       paso('El enlace firmado descarga la foto de la cédula', foto.ok, `HTTP ${foto.status}`);
     }
     const aprobada = await http(adm.token, 'POST', `/api/admin/conductores/${con.id}/aprobar`);
@@ -217,20 +212,20 @@ const SOLICITUD = {
   // 5. Despacho (paso 003)
   const sCon = await conectarSocket(con.token);
   const sPas = await conectarSocket(pas.token);
-  await dormir(500);
   paso('Sockets autenticados; el servidor envía su hora (R14)', Number.isFinite(sCon.desfaseMs),
     Number.isFinite(sCon.desfaseMs) ? `desfase=${sCon.desfaseMs} ms` : 'sin hora_servidor');
 
   const noDisp = await http(con.token, 'PATCH', '/api/conductores/disponibilidad', { disponible: false });
   const disp = await http(con.token, 'PATCH', '/api/conductores/disponibilidad', { disponible: true });
-  paso('El conductor cambia su disponibilidad en el servidor (criterio 1)',
+  if (!paso('El conductor cambia su disponibilidad en el servidor (criterio 1)',
     noDisp.status === 200 && disp.status === 200 && disp.json.data?.estado === 'disponible',
-    `HTTP ${noDisp.status}/${disp.status}, estado=${disp.json.data?.estado}`);
+    `HTTP ${noDisp.status}/${disp.status}, estado=${disp.json.data?.estado}`)) {
+    throw new Error('El conductor no está disponible: no se puede probar el despacho.');
+  }
 
   // Ubicación reciente: sin ella no es candidato (criterio 2).
   const ubicacion = { sectorId: 'malecon', coords: MALECON };
-  sCon.emit('update_location', ubicacion);
-  await dormir(1000);
+  await guardarUbicacion(sCon, con, ubicacion);
 
   // 5.1 Oferta, rechazo y "sin conductor"
   const ofertaA = esperar(sCon, 'oferta_viaje');
@@ -246,14 +241,14 @@ const SOLICITUD = {
   const oferta1 = await ofertaA;
   paso('La oferta llega al conductor conectado (criterio 4)', oferta1?.viajeId === viaje1.id,
     oferta1 ? `fase=${oferta1.fase}, distancia=${oferta1.distanciaM} m` : 'no llegó en 8 s (¿hay otro conductor disponible?)');
-  if (!oferta1) throw new Error('Sin oferta, no se puede continuar.');
+  if (oferta1?.viajeId !== viaje1.id) throw new Error('No llegó una oferta para el viaje solicitado; no se continúa.');
 
   const bytesOferta = bytesEvento('oferta_viaje', oferta1);
   const prohibidas = ['telefono', 'nombre', 'pasajeroNombre', 'pasajero_id', 'lat', 'lng', 'coords'];
   const conDatosPersonales = JSON.stringify(oferta1).match(new RegExp(`"(${prohibidas.join('|')})"`, 'g'));
   paso('La oferta pesa menos de 2 KB y no trae datos del pasajero (criterios 15 y 27)',
     bytesOferta < 2048 && !conDatosPersonales, `${bytesOferta} B${conDatosPersonales ? `, trae ${conDatosPersonales}` : ''}`);
-  const quedan = Math.round((oferta1.venceEn - (Date.now() + (sCon.desfaseMs || 0))) / 1000);
+  const quedan = Math.round((oferta1.venceEn - (Date.now() + sCon.desfaseMs)) / 1000);
   paso('La oferta vence en unos 15 s según el servidor (R14)', quedan >= 10 && quedan <= 16, `quedan ${quedan} s`);
 
   const sinConductor = esperar(sPas, 'viaje_sin_conductor', (d) => d.viajeId === viaje1.id, 10000);
@@ -264,8 +259,7 @@ const SOLICITUD = {
   paso('El viaje queda como sin_conductor en la BD', fila1?.estado === 'sin_conductor', `estado=${fila1?.estado}`);
 
   // 5.2 Nueva solicitud ("Volver a pedir") aceptada
-  sCon.emit('update_location', ubicacion);
-  await dormir(1000);
+  await guardarUbicacion(sCon, con, ubicacion);
   const ofertaB = esperar(sCon, 'oferta_viaje');
   const sol2 = await http(pas.token, 'POST', '/api/viajes/solicitar', SOLICITUD);
   const viaje = sol2.json.data;
@@ -273,6 +267,7 @@ const SOLICITUD = {
   if (!viaje?.id) throw new Error('Sin viaje, no se puede continuar.');
   const oferta2 = await ofertaB;
   paso('El mismo conductor recibe la nueva oferta', oferta2?.viajeId === viaje.id);
+  if (oferta2?.viajeId !== viaje.id) throw new Error('No llegó la nueva oferta; aceptar sin ella daría un 409 esperado.');
 
   const avisoAceptado = esperar(sPas, 'viaje_aceptado', (d) => d.viajeId === viaje.id);
   const ace = await http(con.token, 'POST', '/api/viajes/aceptar', { viajeId: viaje.id });
@@ -314,17 +309,27 @@ const SOLICITUD = {
   const OFERTAS = 40;
   // Margen x2 para cabeceras de WebSocket, TCP/TLS, pings de Socket.io y reintentos.
   const mb = ((bytesUbicacion * ENVIOS + bytesOferta * OFERTAS) * 2) / (1024 * 1024);
-  paso('Jornada de 10 h por debajo de 15 MB (criterio 27)', mb < 15,
+  paso('Proyección de ubicación y ofertas en 10 h por debajo de 15 MB (criterio 27)', mb < 15,
     `ubicación ${bytesUbicacion} B x ${ENVIOS} + oferta ${bytesOferta} B x ${OFERTAS}, x2 de margen = ${mb.toFixed(2)} MB`);
 
   // Deja al conductor fuera del despacho.
-  await http(con.token, 'PATCH', '/api/conductores/disponibilidad', { disponible: false });
-  sPas.close();
-  sCon.close();
-
-  console.log(fallos === 0 ? '\nPRUEBA DE HUMO: TODO OK' : `\nPRUEBA DE HUMO: ${fallos} fallo(s)`);
-  process.exit(fallos === 0 ? 0 : 1);
+  const fuera = await http(con.token, 'PATCH', '/api/conductores/disponibilidad', { disponible: false });
+  paso('El conductor queda fuera del despacho al terminar', fuera.status === 200 && fuera.json.data?.estado === 'inactivo');
 })().catch((e) => {
   console.error(`\nERROR: ${e.message}`);
-  process.exit(1);
+  fallos += 1;
+}).finally(async () => {
+  // No dejar una oferta activa y al conductor disponible tras un fallo intermedio.
+  if (pas && con && sockets.length) {
+    try {
+      await cerrarViajesDePrueba(pas, con, http);
+      const fuera = await http(con.token, 'PATCH', '/api/conductores/disponibilidad', { disponible: false });
+      if (fuera.status !== 200) throw new Error(`Disponibilidad HTTP ${fuera.status}`);
+    } catch (error) {
+      paso('Limpieza final', false, error.message);
+    }
+  }
+  for (const socket of sockets) socket.close();
+  console.log(fallos === 0 ? '\nPRUEBA DE HUMO: TODO OK' : `\nPRUEBA DE HUMO: ${fallos} fallo(s)`);
+  process.exitCode = fallos === 0 ? 0 : 1;
 });
