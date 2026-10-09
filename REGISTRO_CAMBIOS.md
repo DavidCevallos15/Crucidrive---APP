@@ -2,6 +2,22 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.40.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · T3, ubicación del conductor por socket y por REST
+- `src/ubicacion/servicio.js`: un solo camino para guardar la última posición y reenviarla al sector. Lo usan el socket (`update_location`, la vía normal) y el nuevo `POST /api/conductores/ubicacion` (respaldo cuando la app está en segundo plano y el socket se cayó).
+  - Este respaldo responde 204 sin cuerpo.
+  - Tiene un límite de 2 envíos cada 5 s por conductor (no por IP, por el CGNAT).
+- `src/ubicacion/config.js`: `UBICACION_ABIERTA_SEG=5`, `UBICACION_FONDO_MOV_SEG=10` y `UBICACION_FONDO_QUIETO_SEG=30` (D-13).
+  - La app los recibe en la respuesta de `PATCH /api/conductores/disponibilidad`.
+  - El servidor no arranca si el valor de detenido no cabe en la ventana de 60 s del despacho.
+- `app.set('io', io)`: los controladores REST pueden reenviar por socket.
+
+### Pruebas
+- `tests/spec004.test.js`: 18 nuevas, entre ellas que el socket y el REST dan el mismo resultado y que el tercer envío en 5 s recibe 429. Backend 229/229.
+
+---
+
 ## [1.39.0] - 2026-10-09 (Hora Local)
 
 ### Paso 004 · T2, migración 0014 (avisos y privacidad de la ubicación)

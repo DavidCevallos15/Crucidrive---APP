@@ -2,6 +2,8 @@ const asyncHandler = require('../utils/asyncHandler');
 const { errorResponse, successResponse } = require('../utils/response');
 const { isCedulaValida, normalizarCedula } = require('../utils/validation');
 const { obtenerDespachador } = require('../despacho');
+const { guardarUbicacion } = require('../ubicacion/servicio');
+const { leerConfigUbicacion } = require('../ubicacion/config');
 
 const BUCKET = 'verificacion';
 const TIPOS_FOTO = ['conductor', 'cedula', 'vehiculo'];
@@ -140,7 +142,32 @@ const cambiarDisponibilidad = asyncHandler(async (req, res) => {
     obtenerDespachador()?.alResponder(viajeId);
   }
 
-  successResponse(res, filas[0], disponible ? 'Ahora estás disponible.' : 'Ya no estás disponible.');
+  // Frecuencia de envío de la ubicación que debe usar la app (paso 004, D-13; plan P12).
+  successResponse(
+    res,
+    { ...filas[0], ubicacion: leerConfigUbicacion() },
+    disponible ? 'Ahora estás disponible.' : 'Ya no estás disponible.'
+  );
 });
 
-module.exports = { enviarVerificacion, obtenerMiVerificacion, cambiarDisponibilidad, BUCKET, TIPOS_FOTO, rutaFoto };
+/**
+ * Respaldo REST de update_location (paso 004, plan P11): la tarea de ubicación en segundo plano
+ * lo usa cuando el socket se cayó. La vía normal sigue siendo el socket, que gasta muchos menos
+ * bytes por envío (criterio 18). Responde 204 sin cuerpo para no gastar datos.
+ */
+const actualizarUbicacion = asyncHandler(async (req, res) => {
+  const io = req.app.get('io');
+  const resultado = await guardarUbicacion({
+    db: req.supabase,
+    usuario: { id: req.user.id, rol: req.user.rol, nombre: req.user.nombre },
+    sectorId: req.body?.sectorId,
+    coords: req.body?.coords,
+    emitir: (sala, evento, datos) => io?.to(sala).emit(evento, datos),
+  });
+  if (!resultado.ok) {
+    return errorResponse(res, resultado.status, resultado.mensaje);
+  }
+  res.status(204).end();
+});
+
+module.exports = { enviarVerificacion, obtenerMiVerificacion, cambiarDisponibilidad, actualizarUbicacion, BUCKET, TIPOS_FOTO, rutaFoto };

@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const { createApp, getAllowedOrigins } = require('./app');
 const initSocketHandler = require('./sockets/socketHandler');
 const { leerConfigDespacho } = require('./despacho/config');
+const { leerConfigUbicacion, validarConDespacho } = require('./ubicacion/config');
 const { iniciarDespacho } = require('./despacho');
 
 dotenv.config();
@@ -12,6 +13,8 @@ dotenv.config();
 let configDespacho;
 try {
   configDespacho = leerConfigDespacho();
+  // Frecuencia de ubicación (paso 004, D-13): debe caber en la ventana de frescura del despacho.
+  validarConDespacho(leerConfigUbicacion(), configDespacho);
 } catch (err) {
   console.error(`[CruciDrive] Configuración del despacho inválida: ${err.message}`);
   process.exit(1);
@@ -30,6 +33,8 @@ const io = new Server(server, {
 });
 
 initSocketHandler(io);
+// Para que los controladores REST reenvíen por socket (paso 004: ubicación por REST, P11).
+app.set('io', io);
 
 // El despacho usa la clave de servicio: sin ella el servidor no arranca (nadie recibiría viajes).
 iniciarDespacho(io, configDespacho)
