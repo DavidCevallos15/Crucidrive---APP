@@ -1,6 +1,6 @@
 # 004 · Avisos con la app cerrada y seguimiento del conductor
 
-Estado: **D-12 y D-13 resueltas por David el 9 oct 2026 (A y B). Pendiente de su "aprobada" (fusionar el PR) para pasar a `plan.md`**
+Estado: **Aprobada** al fusionar el PR #35 (9 oct 2026), con D-12 = A y D-13 = B
 
 ## Por qué
 El 003 funciona de punta a punta (prueba de humo 29/29), pero solo mientras el conductor tiene la consola abierta en pantalla. En el piloto eso no se cumple: el conductor guarda el teléfono en el bolsillo, contesta una llamada o abre WhatsApp, y desde ese momento deja de recibir ofertas. Peor aún, deja de enviar su ubicación y a los 60 s ya no es candidato (criterio 2 del 003). Con 3 o 4 tricimotos conectadas, casi todas las solicitudes terminarían "sin conductor".

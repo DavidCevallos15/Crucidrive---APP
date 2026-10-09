@@ -2,6 +2,21 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.38.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · plan y tareas
+- `specs/004-tracking-push/plan.md`: 21 decisiones (P1 a P21), cada una con la alternativa descartada.
+  - Avisos por la API HTTP de Expo, sin SDK nuevo en el backend.
+  - El token del teléfono se reasigna si el teléfono cambia de cuenta.
+  - Un conductor es candidato con socket **o** token de avisos, siempre con ubicación de menos de 60 s.
+  - La ubicación en segundo plano se envía por socket, con REST como respaldo, para cuidar los 15 MB.
+- Hallazgo de privacidad que el plan corrige (criterio 14): hoy cualquier usuario autenticado puede leer `tricimotos.ubicacion_actual` por la API REST de Supabase, y el servidor reenvía la posición de un conductor **ocupado** a todo su sector.
+  - La 0014 cierra la columna con permisos por columna.
+  - Durante un viaje, la posición va solo al pasajero.
+- `tasks.md`: T1 a T17. T8 (Firebase, EAS y Expo) y T17 (prueba en campo) le tocan a David.
+
+---
+
 ## [1.37.0] - 2026-10-09 (Hora Local)
 
 ### Paso 004 · borrador de la spec
