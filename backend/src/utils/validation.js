@@ -15,6 +15,11 @@ const MAX_MENSAJE = 1000;
 const MOTIVO_MIN = 3;
 const MOTIVO_MAX = 300;
 const MAX_DESCRIPCION = 200;
+// Igual que el CHECK de lugares.categoria (0011).
+const CATEGORIAS_LUGAR = ['comida', 'hospedaje', 'tienda', 'salud', 'educacion', 'religion',
+  'gobierno', 'turismo', 'transporte', 'poblado', 'otro'];
+const NOMBRE_LUGAR_MIN = 2;
+const NOMBRE_LUGAR_MAX = 120;
 // Barrera técnica anti-abuso; la regla de negocio no fija capacidad (D-08).
 const MAX_PASAJEROS = 20;
 
@@ -39,6 +44,8 @@ const isCedulaValida = (v) => {
   }
   return (10 - (suma % 10)) % 10 === Number(v[9]);
 };
+const isCategoriaLugar = (v) => CATEGORIAS_LUGAR.includes(v);
+const isNombreLugarValido = (v) => typeof v === 'string' && v.length >= NOMBRE_LUGAR_MIN && v.length <= NOMBRE_LUGAR_MAX;
 const isMotivoValido = (v) => typeof v === 'string' && v.length >= MOTIVO_MIN && v.length <= MOTIVO_MAX;
 
 const normalizarCedula = (v) => (typeof v === 'string' ? v.replace(/[\s-]/g, '') : '');
@@ -49,6 +56,10 @@ const normalizarDescripcion = (v) => (typeof v === 'string' ? v.trim().replace(/
 const normalizarPlaca = (v) => (typeof v === 'string' ? v.trim().toUpperCase() : '');
 
 module.exports = {
+  CATEGORIAS_LUGAR,
+  NOMBRE_LUGAR_MAX,
+  isCategoriaLugar,
+  isNombreLugarValido,
   MAX_MENSAJE,
   MOTIVO_MIN,
   MOTIVO_MAX,

@@ -2,6 +2,25 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.29.0] - 2026-10-09 (Hora Local)
+
+### Paso 003 · T11, oferta y lugares del administrador
+- `/api/admin/lugares` (solo admin, con el JWT del usuario):
+  - `GET ?q=&visible=`: busca sin tildes y devuelve `lat` y `lng`.
+  - `POST`: crea un lugar con nombre, categoría y ubicación; la BD fija fuente, sector y la marca del admin.
+  - `PATCH /:id`: corrige, mueve u oculta con `visible: false`. No hay borrado.
+- `utils/geo.js`: `puntoDesdeEwkb` lee la ubicación tal como la devuelve Supabase; probada con un punto real de producción.
+- `utils/texto.js`: `normalizar`, compartida con el importador de OSM.
+- `utils/validation.js`: categorías y largo del nombre, iguales a los CHECK de 0011.
+
+### Pruebas
+- 10 nuevas en `spec003.test.js`. La oferta del peor caso pesa menos de 2 KB y no lleva teléfono, identidad ni coordenadas del pasajero. Backend 195/195.
+
+### Estado del backend del 003
+- T7 a T11 completas. Siguen las pantallas de la app (T12 a T16), el linter (T17) y la prueba de humo (T18).
+
+---
+
 ## [1.28.0] - 2026-10-09 (Hora Local)
 
 ### Producción
