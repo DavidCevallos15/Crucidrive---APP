@@ -72,7 +72,8 @@ const registerProfile = asyncHandler(async (req, res) => {
     const { data: motoData, error: motoError } = await db
       .from('tricimotos')
       .insert([{ conductor_id: userId, placa, estado: 'inactivo' }])
-      .select()
+      // Columnas explícitas: desde la 0014 nadie lee ubicacion_actual (paso 004, criterio 14).
+      .select('id, conductor_id, placa, estado')
       .single();
 
     if (motoError) {

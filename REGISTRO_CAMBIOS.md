@@ -2,6 +2,25 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.39.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · T2, migración 0014 (avisos y privacidad de la ubicación)
+- `dispositivos_push`: los tokens de avisos solo se escriben con `registrar_dispositivo` y `olvidar_dispositivo`.
+  - Si el teléfono cambia de cuenta, el token pasa a la nueva (criterio 11).
+  - Como mucho 3 teléfonos por cuenta.
+  - El sistema los lee con la clave de servicio.
+- **Privacidad (criterio 14):** se cerró la lectura de `tricimotos.ubicacion_actual` con permisos por columna. Antes cualquier usuario autenticado podía seguir por la API REST a un conductor durante un viaje ajeno.
+- `ubicacion_conductor_viaje(viaje)`: el pasajero de un viaje `aceptado` o `en_curso` ve a su conductor; nadie más, y al terminar el viaje deja de verse (13, 15, 17). No se guarda historial (16).
+- Ajustes necesarios por el cierre de la columna:
+  - `authController.registerProfile` insertaba la tricimoto con `.select()` (todas las columnas). Ahora pide columnas explícitas; sin el cambio, el registro de conductores habría fallado.
+  - `rls_003` refrescaba la ubicación leyendo la misma columna; ahora usa un valor literal.
+
+### Pruebas
+- `rls_004.sql`: 21 en verde. `rls_001` (20), `rls_002` (18) y `rls_003` (60) siguen en verde, en Postgres 16 + PostGIS 3 local.
+- Backend 211/211; la prueba del registro falla con el código anterior.
+
+---
+
 ## [1.38.0] - 2026-10-09 (Hora Local)
 
 ### Paso 004 · plan y tareas

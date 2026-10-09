@@ -134,6 +134,9 @@ describe('authController - registerProfile', () => {
     req.body = { consentimiento: true, rol: 'conductor', nombre: 'Carlos', telefono: '0977777777', placa: 'ABC-123' };
     const mockPerfil = { id: 'user-123', rol: 'conductor', nombre: 'Carlos', telefono: '0977777777', activo: true };
     const mockTricimoto = { conductor_id: 'user-123', placa: 'ABC-123', estado: 'inactivo' };
+    const selectTricimoto = jest.fn(() => ({
+      single: jest.fn().mockResolvedValue({ data: mockTricimoto, error: null }),
+    }));
 
     __mockFrom.mockImplementation((table) => {
       if (table === 'consentimientos') {
@@ -150,19 +153,17 @@ describe('authController - registerProfile', () => {
         };
       }
       if (table === 'tricimotos') {
-        return {
-          insert: jest.fn(() => ({
-            select: jest.fn(() => ({
-              single: jest.fn().mockResolvedValue({ data: mockTricimoto, error: null }),
-            })),
-          })),
-        };
+        return { insert: jest.fn(() => ({ select: selectTricimoto })) };
       }
     });
 
     await registerProfile(req, res);
 
     expect(res.status).toHaveBeenCalledWith(201);
+    // Paso 004 (0014): select * fallaría porque nadie puede leer ubicacion_actual.
+    const columnas = selectTricimoto.mock.calls[0][0];
+    expect(columnas).toEqual(expect.stringContaining('placa'));
+    expect(columnas).not.toMatch(/\*|ubicacion_actual/);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
         status: 'success',

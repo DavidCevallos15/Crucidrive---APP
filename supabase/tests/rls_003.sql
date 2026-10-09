@@ -141,7 +141,9 @@ update tricimotos set ubicacion_en = now() - interval '5 minutes' where conducto
 set role authenticated;
 select pg_temp.como('22222222-2222-2222-2222-222222222222');
 -- Carla parada: envía el mismo punto y vuelve a contar como ubicada (criterio 2).
-update tricimotos set ubicacion_actual = ubicacion_actual where conductor_id = '22222222-2222-2222-2222-222222222222';
+-- Con un valor literal, como lo envía la app (desde la 0014 nadie puede leer ubicacion_actual).
+update tricimotos set ubicacion_actual = extensions.st_geogfromtext('SRID=4326;POINT(-80.5401 -0.8700)')
+ where conductor_id = '22222222-2222-2222-2222-222222222222';
 select ubicacion_en > now() - interval '5 seconds' as mismo_punto_refresca_ubicacion
   from tricimotos where conductor_id = '22222222-2222-2222-2222-222222222222';
 
