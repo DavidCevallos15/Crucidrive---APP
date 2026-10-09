@@ -2,6 +2,20 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.36.0] - 2026-10-09 (Hora Local)
+
+### Paso 003 completo · T18, prueba de humo real
+- `npm run smoke` contra la BD y el backend reales: **TODO OK, 29 de 29**.
+- Recorrido:
+  - Disponibilidad del conductor y una oferta de 270 B, sin datos del pasajero, que vence en 15 s según el servidor (desfase de -1 ms).
+  - Una segunda solicitud responde 409; tras el rechazo, el viaje queda "sin conductor".
+  - "Volver a pedir", aceptación con chat y aviso al pasajero con placa `SMK-001`; una segunda aceptación responde 409.
+  - Con un viaje en curso no puede cambiar su disponibilidad (409); la tricimoto vuelve sola a disponible al terminar.
+- Datos (criterio 27): ubicación de 91 B cada 5 s y 40 ofertas en 10 h → 1,27 MB con margen x2 (límite: 15 MB).
+- Paso 003 cerrado (T1 a T18). Sigue el 004: avisos push y tracking.
+
+---
+
 ## [1.35.1] - 2026-10-08 (Hora Local)
 
 ### Paso 003 · T18, sincronización y limpieza de la prueba de humo
