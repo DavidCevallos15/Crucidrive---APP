@@ -7,7 +7,10 @@ import {
   leerParametros,
   PARAMETROS_POR_DEFECTO,
   DISTANCIA_MINIMA_M,
+  fueraDelDespacho,
+  UMBRAL_FUERA_SEG,
 } from '../src/utils/seguimiento';
+import { CONSENTIMIENTO, CONSENT_VERSION } from '../src/constants/consentimiento';
 import { distanciaMetros } from '../src/utils/geo';
 import { crearCanalUbicacion, type SocketUbicacion } from '../src/servicios/canalUbicacion';
 import { PERMISO_UBICACION, AVISO_SEGUIMIENTO } from '../src/constants/permisoUbicacion';
@@ -31,6 +34,7 @@ import {
  * T10: ubicación en segundo plano (criterios 2, 4, 5 y 19; P11 y P13).
  * T11: aviso de oferta (criterios 7, 8 y 9; P6 a P8).
  * T12: el pasajero ve a su conductor (criterios 10, 13, 15 y 17; P9 y P17).
+ * T13: fuera del despacho y consentimiento 0.2 (criterios 5 y 20; P18 y P20).
  */
 
 const TOKEN = 'ExponentPushToken[telefonoDePrueba01]';
@@ -500,5 +504,58 @@ describe('T12 · avisos al pasajero (criterio 10)', () => {
   test('con la app abierta se muestran: el pasajero puede estar en otra app o pantalla', () => {
     const consola = { abierta: false, conectada: true };
     expect(mostrarEnPrimerPlano(leerDatosAviso({ tipo: 'viaje_sin_conductor', viajeId: VIAJE }), consola)).toBe(true);
+  });
+});
+
+// ─── T13 · fuera del despacho y consentimiento 0.2 ──────────────────────────
+describe('T13 · "Estuviste fuera del despacho" (criterio 20)', () => {
+  const ahora = 1_000_000_000;
+
+  test('disponible y sin envíos en más de 60 s: estuvo fuera del despacho', () => {
+    expect(UMBRAL_FUERA_SEG).toBe(60);
+    expect(fueraDelDespacho('disponible', ahora - 61_000, ahora)).toBe(true);
+  });
+
+  test('con un envío reciente no estuvo fuera', () => {
+    expect(fueraDelDespacho('disponible', ahora - 60_000, ahora)).toBe(false);
+    expect(fueraDelDespacho('disponible', ahora - 5_000, ahora)).toBe(false);
+  });
+
+  test('no disponible, en un viaje o sin envíos previos: no hay nada que avisar', () => {
+    expect(fueraDelDespacho('inactivo', ahora - 600_000, ahora)).toBe(false);
+    expect(fueraDelDespacho('ocupado', ahora - 600_000, ahora)).toBe(false);
+    expect(fueraDelDespacho(null, ahora - 600_000, ahora)).toBe(false);
+    expect(fueraDelDespacho('disponible', null, ahora)).toBe(false);
+  });
+
+  test('cada envío correcto se anota para comprobarlo al volver; los fallidos no', async () => {
+    const anotados: number[] = [];
+    const canal = (status: number) => crearCanalUbicacion({
+      obtenerSocket: () => null,
+      obtenerJwt: async () => 'jwt',
+      fetchImpl: (async () => ({ ok: status < 300, status })) as unknown as typeof fetch,
+      url: 'http://api',
+      sectorDe: () => 'malecon',
+      ahora: () => 77,
+      alEnviar: ({ en }) => anotados.push(en),
+    });
+    await canal(204).enviar(PARADA);
+    await canal(500).enviar(PARADA);
+    expect(anotados).toEqual([77]);
+  });
+});
+
+describe('T13 · consentimiento 0.2 antes de ponerse disponible (criterio 5)', () => {
+  const texto = CONSENTIMIENTO.map((s) => s.texto).join(' ');
+
+  test('la versión que acepta la app es la que exige el servidor', () => {
+    expect(CONSENT_VERSION).toBe('0.2');
+  });
+
+  test('el texto cuenta la ubicación en segundo plano, cuándo se detiene y los avisos', () => {
+    expect(texto).toMatch(/aunque la app esté en segundo plano o la pantalla bloqueada/);
+    expect(texto).toMatch(/se detiene al ponerte no disponible o cerrar sesión/);
+    expect(texto).toMatch(/identificador de tu teléfono para avisarte/);
+    expect(texto).toMatch(/solo guardamos su última posición/);
   });
 });

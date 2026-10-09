@@ -37,6 +37,8 @@ export const API_CONFIG = {
   endpoints: {
     auth: {
       register: '/api/auth/registro',
+      // Nueva versión del aviso de privacidad (paso 004, P18).
+      consent: '/api/auth/consentimiento',
     },
     driver: {
       verification: '/api/conductores/verificacion',

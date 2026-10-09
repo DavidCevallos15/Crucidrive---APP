@@ -19,7 +19,7 @@ import { ofertaDesdeFila, type FilaOferta } from '../utils/avisoOferta';
 import { descartarAvisosDeOferta } from '../servicios/avisos';
 import type { useSocket } from './useSocket';
 
-type Resultado = { ok: true } | { ok: false; mensaje: string };
+type Resultado = { ok: true } | { ok: false; mensaje: string; consentimiento?: boolean };
 
 const SIN_CONEXION = 'Sin conexión con el servidor. Revisa tus datos móviles.';
 
@@ -109,7 +109,12 @@ export const useConsolaConductor = (
       const body = await response.json().catch(() => null);
       if (!response.ok) {
         setEstado((actual) => estadoTrasError(response.status, actual));
-        return { ok: false, mensaje: body?.message ?? 'No se pudo cambiar tu disponibilidad.' };
+        return {
+          ok: false,
+          mensaje: body?.message ?? 'No se pudo cambiar tu disponibilidad.',
+          // 428: falta aceptar la versión vigente del aviso de privacidad (004, criterio 5).
+          consentimiento: response.status === 428,
+        };
       }
       setEstado((body?.data?.estado as EstadoTricimoto | undefined) ?? (disponible ? 'disponible' : 'inactivo'));
       if (body?.data?.ubicacion) setParametros(leerParametros(body.data.ubicacion));
@@ -165,6 +170,22 @@ export const useConsolaConductor = (
     }
   }, [oferta]);
 
+  /** Registra la versión vigente del aviso de privacidad (004, P18). La fija el servidor. */
+  const aceptarConsentimiento = useCallback(async (): Promise<Resultado> => {
+    try {
+      const response = await authFetch(API_CONFIG.endpoints.auth.consent, {
+        method: 'POST',
+        body: JSON.stringify({ consentimiento: true }),
+      });
+      if (response.ok) return { ok: true };
+      const body = await response.json().catch(() => null);
+      return { ok: false, mensaje: body?.message ?? 'No se pudo registrar tu consentimiento.' };
+    } catch (error) {
+      console.error('[Consola] Error al registrar el consentimiento:', error);
+      return { ok: false, mensaje: SIN_CONEXION };
+    }
+  }, []);
+
   /**
    * Oferta abierta desde un aviso (004, criterio 7): se lee de la BD (RLS: la propia) y solo se
    * muestra si sigue pendiente y vigente. Devuelve false para "Esta oferta ya no está disponible".
@@ -198,6 +219,6 @@ export const useConsolaConductor = (
 
   return {
     estado, cambiando, oferta, segundos, aceptando, parametros,
-    cambiarDisponibilidad, aceptar, rechazar, abrirOfertaDeAviso,
+    cambiarDisponibilidad, aceptar, rechazar, abrirOfertaDeAviso, aceptarConsentimiento,
   };
 };

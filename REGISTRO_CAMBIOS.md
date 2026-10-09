@@ -2,6 +2,26 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.50.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · T13, consentimiento 0.2 en la app y "Estuviste fuera del despacho"
+- Consentimiento 0.2 (criterio 5):
+  - Si ponerse disponible responde 428, la consola muestra `ConsentimientoVigenteScreen` con el texto 0.2 completo y la casilla de aceptación.
+  - Al aceptar registra la versión con `POST /api/auth/consentimiento` y vuelve a pedir la disponibilidad.
+  - **Así se cierra el pendiente de la T7**: un conductor con la 0.1 ya puede ponerse disponible desde la app.
+- "Estuviste fuera del despacho" (criterio 20):
+  - Cada envío correcto de ubicación se guarda en el teléfono.
+  - Al abrir la app y al volver a primer plano, si sigue disponible y el último envío tiene más de 60 s, lo avisa con un botón a los ajustes de la app para quitar el ahorro de batería.
+  - No se muestra si ya está el aviso de "solo con la app abierta".
+
+### Paso 004 · T14, tipos
+- 0 errores en `src/`, `app/` e `index.ts`. Los errores restantes son los tipos de Jest en `tests/` (T18).
+
+### Pruebas
+- 6 nuevas en `tests/avisos.test.ts`. Frontend 258/258. Los bundles de Android y web compilan.
+
+---
+
 ## [1.49.0] - 2026-10-09 (Hora Local)
 
 ### Paso 004 · T12, el pasajero ve a su conductor
