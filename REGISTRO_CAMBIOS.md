@@ -2,6 +2,29 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.51.0] - 2026-10-09 (Hora Local)
+
+### Corrección: el APK preview se cerraba al abrirse
+Se juntaban tres causas:
+1. **Las variables `EXPO_PUBLIC_*` no llegaban al APK.** El `.env` del frontend está en `.gitignore`, así que EAS no lo sube, y el log del build solo mostraba `GOOGLE_SERVICES_JSON`. Además `config.ts` leía las variables con `process.env[nombre]`, y Expo solo incrusta en el bundle los accesos literales (`process.env.EXPO_PUBLIC_...`). Con la URL vacía, `createClient('')` lanzaba "supabaseUrl is required." al importar y la app se cerraba.
+2. **Sin clave de Google Maps para Android**, `react-native-maps` cierra la app al pintar el mapa, que es la pantalla inicial.
+3. **El APK se compiló desde `9e546bb`**, 23 commits detrás de `main`: no llevaba nada del 004.
+
+Cambios:
+- `config.ts`: acceso literal a las 4 variables. Comprobado con un bundle de prueba: antes el valor no aparecía, ahora sí.
+- `supabaseClient.ts` ya no lanza si falta la URL. El layout raíz muestra "Falta configurar esta versión de la app" con los **nombres** de las variables que faltan (nunca valores).
+- `app.config.js`: con la variable de EAS `GOOGLE_MAPS_API_KEY` agrega la clave al manifiesto (plugin de `react-native-maps`). Sin ella, el mapa muestra "Mapa no disponible en esta versión" en vez de cerrar la app; en Expo Go se usa la clave de Expo Go.
+- `eas.json`: `environment` por perfil (development, preview, production), para que cada build cargue las variables de su entorno en EAS.
+- `.env.example`: cómo cargar las variables en EAS.
+
+### Paso 004 · T8 (en curso)
+- Registrado lo que hizo David y lo que falta, en `tasks.md`.
+
+### Pruebas
+- `tests/configuracion.test.ts`: 6 pruebas. La de acceso literal falla con el código anterior. Frontend 264/264. Sin errores de tipos en `src/` ni `app/`. Los bundles de Android y web compilan.
+
+---
+
 ## [1.50.0] - 2026-10-09 (Hora Local)
 
 ### Paso 004 · T13, consentimiento 0.2 en la app y "Estuviste fuera del despacho"
