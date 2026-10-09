@@ -2,6 +2,8 @@
  * Paso 003 · app.
  * T12: búsqueda de lugares (criterios 18, 20 y 25): normalización igual a la BD, mínimo de
  * 2 letras, espera entre teclas, respuestas viejas descartadas y atribución de OSM.
+ * T13: origen por GPS, lugar o sector (21) y estados de la solicitud del pasajero:
+ * buscando (16), sin conductor con "Volver a pedir" (11) y aceptado (10).
  */
 import { normalizar, puedeBuscar } from '../src/utils/texto';
 import {
@@ -13,6 +15,25 @@ import {
   type EstadoBusqueda,
   type Lugar,
 } from '../src/utils/lugares';
+import {
+  armarCuerpoSolicitud,
+  nombreOrigen,
+  refrescarOrigen,
+  resolverOrigen,
+  type Gps,
+  type Solicitud,
+} from '../src/utils/solicitud';
+import {
+  alAceptarViaje,
+  alQuedarSinConductor,
+  crearBuzonEventos,
+  sincronizarViaje,
+  type EventoViajeAceptado,
+  type FilaViaje,
+  type LectorViaje,
+} from '../src/utils/viaje';
+import { useRideStore, type ActiveRide } from '../src/store/useRideStore';
+import { SECTORS } from '../src/constants/sectors';
 
 const lugar = (nombre: string, extra: Partial<Lugar> = {}): Lugar => ({
   id: `id-${nombre}`, nombre, categoria: 'comida', sector_id: 'malecon', lat: -0.87, lng: -80.54, ...extra,
@@ -126,5 +147,229 @@ describe('T12 · presentación', () => {
   test('cada categoría del catálogo (CHECK de 0011) tiene ícono', () => {
     const categorias = ['comida', 'hospedaje', 'tienda', 'salud', 'educacion', 'religion', 'gobierno', 'turismo', 'transporte', 'poblado', 'otro'];
     expect(Object.keys(ICONO_CATEGORIA).sort()).toEqual([...categorias].sort());
+  });
+});
+
+// ─── T13 ─────────────────────────────────────────────────────
+
+const centro = (id: string) => SECTORS.find((x) => x.id === id)!.center;
+const gps: Gps = { coords: { lat: -0.85, lng: -80.53 }, sectorId: SECTORS[2].id };
+const muelle = lugar('Muelle de Crucita', { id: 'lugar-muelle', categoria: 'turismo', sector_id: SECTORS[3].id });
+
+const solicitud = (extra: Partial<Solicitud> = {}): Solicitud => ({
+  origen: { tipo: 'gps', coords: gps!.coords, sectorId: gps!.sectorId },
+  destino: { tipo: 'lugar', lugar: muelle },
+  pasajeros: 2,
+  origenNota: '',
+  destinoNota: '',
+  ...extra,
+});
+
+const viajeLocal = (extra: Partial<ActiveRide> = {}): ActiveRide => ({
+  id: 'viaje-1',
+  status: 'solicitado',
+  originSectorId: SECTORS[2].id,
+  originName: 'Tu ubicación',
+  destinationSectorId: SECTORS[3].id,
+  destinationName: 'Muelle de Crucita',
+  passengers: 2,
+  price: 1,
+  destinationNote: '',
+  driver: null,
+  chatThreadId: null,
+  createdAt: '2026-10-09T15:00:00Z',
+  ...extra,
+});
+
+const aceptado: EventoViajeAceptado = {
+  viajeId: 'viaje-1',
+  conductor: { id: 'cond-1', nombre: 'Luis Pin', telefono: '0991234567', placa: 'MB-123A' },
+  chat: { threadId: 'hilo-1' },
+};
+
+describe('T13 · origen del viaje (criterio 21)', () => {
+  test('con GPS y sin elegir nada, el origen es la ubicación del pasajero', () => {
+    expect(resolverOrigen(null, gps)).toEqual({ tipo: 'gps', coords: gps!.coords, sectorId: gps!.sectorId });
+    expect(nombreOrigen(resolverOrigen(null, gps))).toBe(`Tu ubicación · ${SECTORS[2].name}`);
+  });
+
+  test('sin GPS y sin elegir, no hay origen: la app pide un lugar o un sector', () => {
+    expect(resolverOrigen(null, null)).toBeNull();
+  });
+
+  test('un lugar o un sector elegidos ganan al GPS', () => {
+    expect(resolverOrigen({ tipo: 'lugar', lugar: muelle }, gps)).toEqual({ tipo: 'lugar', lugar: muelle });
+    expect(resolverOrigen({ tipo: 'sector', sectorId: SECTORS[0].id }, null)).toEqual({ tipo: 'sector', sectorId: SECTORS[0].id });
+  });
+});
+
+describe('T13 · cuerpo de la solicitud', () => {
+  test('origen por GPS: envía sus coordenadas y su sector; destino lugar: solo el id (criterio 19)', () => {
+    expect(armarCuerpoSolicitud(solicitud())).toEqual({
+      pasajeros: 2,
+      origen: gps!.coords,
+      sectorOrigenId: gps!.sectorId,
+      lugarDestinoId: 'lugar-muelle',
+    });
+  });
+
+  test('origen lugar: solo el id; la BD pone coordenadas, nombre y sector', () => {
+    const cuerpo = armarCuerpoSolicitud(solicitud({ origen: { tipo: 'lugar', lugar: muelle }, destino: { tipo: 'sector', sectorId: SECTORS[0].id } }));
+    expect(cuerpo).toEqual({
+      pasajeros: 2,
+      lugarOrigenId: 'lugar-muelle',
+      destino: centro(SECTORS[0].id),
+      sectorDestinoId: SECTORS[0].id,
+    });
+  });
+
+  test('origen sector sin GPS: centro del sector y la referencia escrita (recortada)', () => {
+    const cuerpo = armarCuerpoSolicitud(solicitud({
+      origen: { tipo: 'sector', sectorId: SECTORS[1].id },
+      origenNota: '  casa azul junto a la cancha ',
+      destinoNota: '   ',
+    }));
+    expect(cuerpo.origen).toEqual(centro(SECTORS[1].id));
+    expect(cuerpo.sectorOrigenId).toBe(SECTORS[1].id);
+    expect(cuerpo.origenDescripcion).toBe('casa azul junto a la cancha');
+    expect(cuerpo).not.toHaveProperty('destinoDescripcion');
+  });
+
+  test('nunca envía precio: lo fija la BD (D-08)', () => {
+    const cuerpo = armarCuerpoSolicitud(solicitud());
+    expect(cuerpo).not.toHaveProperty('tarifa');
+    expect(cuerpo).not.toHaveProperty('precio');
+  });
+
+  test('un sector inexistente no se envía', () => {
+    expect(() => armarCuerpoSolicitud(solicitud({ destino: { tipo: 'sector', sectorId: 'no-existe' } }))).toThrow();
+  });
+});
+
+describe('T13 · "No hay tricimotos disponibles ahora" (criterio 11)', () => {
+  beforeEach(() => useRideStore.setState({ activeRide: null, isRequesting: false, ultimaSolicitud: null }));
+
+  test('viaje_sin_conductor cierra la búsqueda del viaje propio', () => {
+    expect(alQuedarSinConductor(viajeLocal(), { viajeId: 'viaje-1' })?.status).toBe('sin_conductor');
+  });
+
+  test('un aviso de otro viaje o de un viaje ya aceptado no cambia nada', () => {
+    const ride = viajeLocal();
+    expect(alQuedarSinConductor(ride, { viajeId: 'otro' })).toBe(ride);
+    const ya = viajeLocal({ status: 'aceptado' });
+    expect(alQuedarSinConductor(ya, { viajeId: 'viaje-1' })).toBe(ya);
+  });
+
+  test('"Volver a pedir" reusa la solicitud guardada aunque se limpie el viaje', () => {
+    const s = solicitud({ pasajeros: 4, destinoNota: 'frente a las letras' });
+    useRideStore.getState().setUltimaSolicitud(s);
+    useRideStore.getState().setActiveRide(viajeLocal({ status: 'sin_conductor' }));
+    useRideStore.getState().clearRide();
+    expect(useRideStore.getState().ultimaSolicitud).toEqual(s);
+  });
+
+  test('al volver a pedir, el origen por GPS toma la posición actual; un lugar no cambia', () => {
+    const movido: Gps = { coords: { lat: -0.86, lng: -80.535 }, sectorId: SECTORS[3].id };
+    expect(refrescarOrigen(solicitud(), movido).origen).toEqual({ tipo: 'gps', ...movido });
+    const conLugar = solicitud({ origen: { tipo: 'lugar', lugar: muelle } });
+    expect(refrescarOrigen(conLugar, movido)).toBe(conLugar);
+    expect(refrescarOrigen(solicitud(), null)).toEqual(solicitud());
+  });
+});
+
+describe('T13 · aceptado sin recargar (criterios 10 y 16)', () => {
+  test('viaje_aceptado pasa a "aceptado" con nombre, placa, teléfono y chat', () => {
+    const ride = alAceptarViaje(viajeLocal(), aceptado)!;
+    expect(ride.status).toBe('aceptado');
+    expect(ride.driver).toEqual(aceptado.conductor);
+    expect(ride.chatThreadId).toBe('hilo-1');
+  });
+
+  test('un aceptado de otro viaje se ignora', () => {
+    const ride = viajeLocal();
+    expect(alAceptarViaje(ride, { ...aceptado, viajeId: 'otro' })).toBe(ride);
+  });
+
+  test('un aviso que llega antes que la respuesta de /solicitar se aplica al crear el viaje', () => {
+    const buzon = crearBuzonEventos();
+    expect(buzon.recibir(null, { tipo: 'viaje_sin_conductor', datos: { viajeId: 'viaje-1' } })).toBeNull();
+    expect(buzon.aplicarGuardados(viajeLocal())?.status).toBe('sin_conductor');
+    // Ya se aplicó: no se repite en el siguiente viaje con el mismo id.
+    expect(buzon.aplicarGuardados(viajeLocal())?.status).toBe('solicitado');
+  });
+
+  test('el buzón no mezcla avisos de otros viajes', () => {
+    const buzon = crearBuzonEventos();
+    buzon.recibir(null, { tipo: 'viaje_aceptado', datos: { ...aceptado, viajeId: 'viejo' } });
+    expect(buzon.aplicarGuardados(viajeLocal())?.status).toBe('solicitado');
+  });
+});
+
+describe('T13 · lectura del viaje al reconectar (criterio 16)', () => {
+  const fila = (extra: Partial<FilaViaje> = {}): FilaViaje => ({
+    id: 'viaje-1',
+    estado: 'solicitado',
+    conductor_id: null,
+    pasajeros: 2,
+    tarifa: '1.00',
+    sector_origen_id: SECTORS[2].id,
+    sector_destino_id: SECTORS[3].id,
+    origen_descripcion: null,
+    destino_descripcion: 'Muelle de Crucita',
+    creado_en: '2026-10-09T15:00:00Z',
+    ...extra,
+  });
+
+  const lector = (f: FilaViaje | null): LectorViaje & { conductor: jest.Mock } => ({
+    viaje: jest.fn().mockResolvedValue(f),
+    viajeActivo: jest.fn().mockResolvedValue(f),
+    conductor: jest.fn().mockResolvedValue({
+      driver: { id: 'cond-1', nombre: 'Luis Pin', telefono: '0991234567', placa: 'MB-123A' },
+      threadId: 'hilo-1',
+    }),
+  });
+
+  test('aceptado mientras no había señal: lee al conductor y el chat', async () => {
+    const l = lector(fila({ estado: 'aceptado', conductor_id: 'cond-1' }));
+    const ride = await sincronizarViaje(l, viajeLocal(), 'pas-1');
+    expect(l.viaje).toHaveBeenCalledWith('viaje-1');
+    expect(ride?.status).toBe('aceptado');
+    expect(ride?.driver?.placa).toBe('MB-123A');
+    expect(ride?.chatThreadId).toBe('hilo-1');
+  });
+
+  test('con el conductor ya conocido no vuelve a leerlo', async () => {
+    const l = lector(fila({ estado: 'en_curso', conductor_id: 'cond-1' }));
+    const ride = await sincronizarViaje(l, alAceptarViaje(viajeLocal(), aceptado), 'pas-1');
+    expect(ride?.status).toBe('en_curso');
+    expect(l.conductor).not.toHaveBeenCalled();
+  });
+
+  test('cerrado como sin_conductor mientras esperaba: muestra el aviso (criterio 11)', async () => {
+    expect((await sincronizarViaje(lector(fila({ estado: 'sin_conductor' })), viajeLocal(), 'pas-1'))?.status)
+      .toBe('sin_conductor');
+  });
+
+  test('un viaje finalizado o cancelado limpia el estado', async () => {
+    expect(await sincronizarViaje(lector(fila({ estado: 'cancelado' })), viajeLocal(), 'pas-1')).toBeNull();
+    expect(await sincronizarViaje(lector(fila({ estado: 'finalizado' })), viajeLocal(), 'pas-1')).toBeNull();
+  });
+
+  test('al abrir la app con una solicitud viva, vuelve a "Buscando tricimoto…"', async () => {
+    const l = lector(fila());
+    const ride = await sincronizarViaje(l, null, 'pas-1');
+    expect(l.viajeActivo).toHaveBeenCalledWith('pas-1');
+    expect(ride).toMatchObject({ id: 'viaje-1', status: 'solicitado', price: 1, destinationName: 'Muelle de Crucita' });
+    expect(ride?.originName).toBe(SECTORS[2].name);
+  });
+
+  test('sin viaje activo no hay nada que mostrar', async () => {
+    expect(await sincronizarViaje(lector(null), null, 'pas-1')).toBeNull();
+  });
+
+  test('si la lectura falla, el error sube y quien llama conserva lo local', async () => {
+    const l = lector(null);
+    l.viaje = jest.fn().mockRejectedValue(new Error('sin red'));
+    await expect(sincronizarViaje(l, viajeLocal(), 'pas-1')).rejects.toThrow('sin red');
   });
 });
