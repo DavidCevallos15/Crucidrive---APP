@@ -2,6 +2,24 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.35.0] - 2026-10-09 (Hora Local)
+
+### Paso 003 · T18, prueba de humo ampliada (guion listo, falta correrlo)
+- `npm run smoke` fallaba con 409 en la aceptación: aceptaba el viaje directo, como en el 002, y desde la 0012 la BD exige una oferta vigente (criterio 9).
+- El guion ahora recorre el despacho:
+  - Limpia los viajes activos que dejaron corridas anteriores.
+  - Verifica `hora_servidor` y el cambio de disponibilidad (criterio 1).
+  - Oferta al conductor conectado: menos de 2 KB, sin datos del pasajero y unos 15 s según el servidor (criterios 4, 15 y 27; R14).
+  - Una segunda solicitud responde 409 (criterio 13).
+  - Rechazo y luego "sin conductor" (criterios 6 y 11).
+  - "Volver a pedir", aceptación con chat y aviso al pasajero con nombre, placa y teléfono (criterios 10 y 16).
+  - Aceptar dos veces responde 409 (criterio 8) y con un viaje en curso no puede cambiar la disponibilidad (criterio 3).
+  - Chat, `en_curso`, `finalizado` y la tricimoto vuelve a disponible (R11).
+  - Proyección de datos de una jornada de 10 h con margen x2 (criterio 27).
+- En la rama del conductor sin aprobar, el viaje de prueba puede quedar como `sin_conductor` antes de que el pasajero lo cancele; ambos estados se aceptan.
+
+---
+
 ## [1.34.0] - 2026-10-09 (Hora Local)
 
 ### Paso 003 · T16 y T17, verificación
