@@ -69,6 +69,14 @@ export const AdminDriversScreen: React.FC = () => {
           </Text>
           <Text style={styles.subtitulo}>{profile ? `Administrador: ${profile.nombre}` : 'Administrador'}</Text>
         </View>
+        <GlassButton
+          label="Lugares"
+          onPress={() => router.push('/(app)/(admin)/lugares' as never)}
+          variant="ghost"
+          size="sm"
+          leftIcon={<Ionicons name="location" size={16} color={COLORS.white} />}
+          style={styles.botonLugares}
+        />
         <GlassButton label="Salir" onPress={signOut} variant="ghost" size="sm" />
       </View>
 
@@ -135,6 +143,7 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.glassBorderDark,
   },
   cabeceraTexto: { flex: 1, marginRight: SPACING.md },
+  botonLugares: { marginRight: SPACING.sm },
   titulo: {
     fontSize: FONTS.sizes.xl,
     fontFamily: FONTS.heading,

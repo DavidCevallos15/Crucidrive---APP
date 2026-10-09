@@ -2,6 +2,26 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.33.0] - 2026-10-09 (Hora Local)
+
+### Paso 003 · T15, lugares del administrador
+- Botón "Lugares" en el panel del administrador.
+- Lista (`GET /api/admin/lugares`):
+  - Búsqueda por nombre con espera de 300 ms y sin respuestas viejas; filtro Todos / Visibles / Ocultos.
+  - Cada lugar con su categoría, sector y fuente, e insignias "Oculto" y "Editado".
+- Formulario de nuevo lugar y de corrección (`POST` y `PATCH /api/admin/lugares`):
+  - Nombre, categoría y ubicación. La ubicación se marca tocando el mapa en Android, con "Usar mi ubicación" o escribiendo latitud y longitud (también con coma decimal).
+  - "Visible en la búsqueda" para ocultar un lugar; no hay borrado.
+  - `PATCH` envía solo lo que cambió; la BD fija el sector y marca el lugar como editado, así OSM no lo pisa (criterio 22).
+  - Validación igual a la BD (nombre de 2 a 120, categorías del CHECK). Además, un punto a más de ~11 km de los sectores se rechaza, porque casi siempre es latitud y longitud cruzadas.
+- `src/utils/lugaresAdmin.ts`: lógica sin React, para probarla.
+
+### Pruebas
+- `tests/despacho.test.ts`: 12 nuevas (frontend 180/180, sin errores de tipos nuevos).
+- Navegador a 390 px con lugares de ejemplo: lista con filtros, edición sin cambios ("No hay cambios que guardar") y un punto fuera de Crucita rechazado. Falta con sesión de admin y backend reales (T18).
+
+---
+
 ## [1.32.0] - 2026-10-09 (Hora Local)
 
 ### Paso 003 · T14, consola del conductor

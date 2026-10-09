@@ -47,6 +47,8 @@ export const API_CONFIG = {
       driver: (id: string) => `/api/admin/conductores/${id}`,
       approve: (id: string) => `/api/admin/conductores/${id}/aprobar`,
       reject: (id: string) => `/api/admin/conductores/${id}/rechazar`,
+      places: '/api/admin/lugares',
+      place: (id: string) => `/api/admin/lugares/${id}`,
     },
     rides: {
       request: '/api/viajes/solicitar',

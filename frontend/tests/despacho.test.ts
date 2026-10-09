@@ -6,6 +6,7 @@
  * buscando (16), sin conductor con "Volver a pedir" (11) y aceptado (10).
  * T14: consola del conductor: cuenta regresiva desde venceEn con el desfase del reloj (R14),
  * una oferta a la vez (7), retirada (6, 12), lo que muestra la oferta (15) y contraste (28).
+ * T15: formulario de lugares del administrador (24): mismas reglas que la BD y el backend.
  */
 import { normalizar, puedeBuscar } from '../src/utils/texto';
 import {
@@ -48,6 +49,17 @@ import {
   type OfertaViaje,
 } from '../src/utils/oferta';
 import { SECTORS } from '../src/constants/sectors';
+import {
+  CATEGORIAS,
+  NOMBRE_LUGAR_MAX,
+  cambiosLugar,
+  enZonaDeCrucita,
+  formularioDesde,
+  limpiarNombre,
+  validarLugar,
+  type FormularioLugar,
+  type LugarAdmin,
+} from '../src/utils/lugaresAdmin';
 
 const lugar = (nombre: string, extra: Partial<Lugar> = {}): Lugar => ({
   id: `id-${nombre}`, nombre, categoria: 'comida', sector_id: 'malecon', lat: -0.87, lng: -80.54, ...extra,
@@ -489,5 +501,110 @@ describe('T14 · regla 6: contraste del modal de oferta (criterio 28)', () => {
 
   test('el cálculo de contraste coincide con WCAG (blanco/negro = 21)', () => {
     expect(contraste('#FFFFFF', '#000000')).toBeCloseTo(21, 5);
+  });
+});
+
+// ─── T15 ─────────────────────────────────────────────────────
+
+const formulario = (extra: Partial<FormularioLugar> = {}): FormularioLugar => ({
+  nombre: 'Farmacia Santa Martha',
+  categoria: 'salud',
+  lat: '-0.8714',
+  lng: '-80.5401',
+  visible: true,
+  ...extra,
+});
+
+const lugarAdmin = (extra: Partial<LugarAdmin> = {}): LugarAdmin => ({
+  id: 'l-1',
+  nombre: 'Farmacia Santa Martha',
+  categoria: 'salud',
+  sector_id: SECTORS[3].id,
+  fuente: 'osm',
+  visible: true,
+  editado_por_admin: false,
+  actualizado_en: '2026-10-09T00:00:00Z',
+  lat: -0.8714,
+  lng: -80.5401,
+  ...extra,
+});
+
+describe('T15 · formulario de lugares (criterio 24)', () => {
+  test('un formulario completo es válido y limpia el nombre como el backend', () => {
+    const r = validarLugar(formulario({ nombre: '  Farmacia   Santa  Martha ' }));
+    expect(r).toEqual({
+      ok: true,
+      cuerpo: { nombre: 'Farmacia Santa Martha', categoria: 'salud', lat: -0.8714, lng: -80.5401, visible: true },
+    });
+    expect(limpiarNombre(' a  b ')).toBe('a b');
+  });
+
+  test('nombre entre 2 y 120 caracteres (CHECK de 0011)', () => {
+    expect(validarLugar(formulario({ nombre: ' x ' })).ok).toBe(false);
+    expect(validarLugar(formulario({ nombre: 'x'.repeat(NOMBRE_LUGAR_MAX + 1) })).ok).toBe(false);
+    expect(validarLugar(formulario({ nombre: 'x'.repeat(NOMBRE_LUGAR_MAX) })).ok).toBe(true);
+  });
+
+  test('las categorías son las del CHECK de la BD', () => {
+    expect(CATEGORIAS.map((c) => c.value).sort()).toEqual(Object.keys(ICONO_CATEGORIA).sort());
+    const r = validarLugar(formulario({ categoria: '' }));
+    expect(r.ok === false && r.errores.categoria).toBeTruthy();
+  });
+
+  test('acepta coma decimal en latitud y longitud', () => {
+    const r = validarLugar(formulario({ lat: '-0,8714', lng: '-80,5401' }));
+    expect(r.ok && r.cuerpo.lat).toBe(-0.8714);
+  });
+
+  test('sin ubicación o con texto que no es número, pide marcarla', () => {
+    for (const f of [formulario({ lat: '', lng: '' }), formulario({ lat: 'abc' }), formulario({ lng: '1e5' })]) {
+      const r = validarLugar(f);
+      expect(r.ok === false && r.errores.ubicacion).toContain('mapa');
+    }
+  });
+
+  test('un punto lejos de Crucita (latitud y longitud cruzadas) se rechaza', () => {
+    const r = validarLugar(formulario({ lat: '-80.5401', lng: '-0.8714' }));
+    expect(r.ok === false && r.errores.ubicacion).toContain('lejos');
+    expect(enZonaDeCrucita(-0.2, -78.5)).toBe(false); // Quito
+    for (const s of SECTORS) expect(enZonaDeCrucita(s.center.lat, s.center.lng)).toBe(true);
+  });
+
+  test('junta todos los errores a la vez', () => {
+    const r = validarLugar({ nombre: '', categoria: '', lat: '', lng: '', visible: true });
+    expect(r.ok === false && Object.keys(r.errores).sort()).toEqual(['categoria', 'nombre', 'ubicacion']);
+  });
+});
+
+describe('T15 · corregir un lugar existente', () => {
+  test('el formulario parte de los datos del lugar; uno nuevo arranca visible y vacío', () => {
+    expect(formularioDesde(lugarAdmin())).toEqual({
+      nombre: 'Farmacia Santa Martha', categoria: 'salud', lat: '-0.871400', lng: '-80.540100', visible: true,
+    });
+    expect(formularioDesde(null)).toEqual({ nombre: '', categoria: '', lat: '', lng: '', visible: true });
+  });
+
+  test('PATCH lleva solo lo que cambió', () => {
+    const original = lugarAdmin();
+    const r = validarLugar({ ...formularioDesde(original), nombre: 'Farmacia Sta. Martha' });
+    expect(r.ok && cambiosLugar(original, r.cuerpo)).toEqual({ nombre: 'Farmacia Sta. Martha' });
+  });
+
+  test('ocultar envía solo visible: false (no hay borrado)', () => {
+    const original = lugarAdmin();
+    const r = validarLugar({ ...formularioDesde(original), visible: false });
+    expect(r.ok && cambiosLugar(original, r.cuerpo)).toEqual({ visible: false });
+  });
+
+  test('mover el punto envía lat y lng juntos, como pide el backend', () => {
+    const original = lugarAdmin();
+    const r = validarLugar({ ...formularioDesde(original), lat: '-0.8720' });
+    expect(r.ok && cambiosLugar(original, r.cuerpo)).toEqual({ lat: -0.872, lng: -80.5401 });
+  });
+
+  test('sin cambios no hay nada que guardar', () => {
+    const original = lugarAdmin();
+    const r = validarLugar(formularioDesde(original));
+    expect(r.ok && cambiosLugar(original, r.cuerpo)).toEqual({});
   });
 });
