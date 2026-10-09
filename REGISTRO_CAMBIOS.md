@@ -2,6 +2,20 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.47.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · T15, migración 0014 en producción
+- David aplicó `0014_avisos_y_privacidad.sql` desde el SQL Editor. El `apply_migration` del MCP se cortó dos veces a los 60 s sin dejar nada a medias.
+- Verificado en producción:
+  - `dispositivos_push` con RLS y una política de lectura propia. Sin escritura directa ni lectura anónima.
+  - `registrar_dispositivo`, `olvidar_dispositivo` y `ubicacion_conductor_viaje` solo para `authenticated`. Las funciones de `private` son `security definer` con `search_path` vacío.
+  - **`tricimotos.ubicacion_actual` ya no se lee por REST** (ni `authenticated` ni `anon`). El conductor la sigue actualizando.
+- Linter de seguridad: solo D-10 (protección de contraseñas filtradas), igual que antes.
+- Linter de rendimiento: el índice nuevo aún sin uso, más hallazgos previos al 004.
+- Al ir por el SQL Editor, la 0014 no figura en el historial de migraciones del proyecto.
+
+---
+
 ## [1.46.0] - 2026-10-09 (Hora Local)
 
 ### Paso 004 · T10, ubicación del conductor en segundo plano
