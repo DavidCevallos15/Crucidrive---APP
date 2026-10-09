@@ -122,7 +122,8 @@ export const useConsolaConductor = (
         body: JSON.stringify({ viajeId: oferta.viajeId }),
       });
       const body = await response.json().catch(() => null);
-      setOferta(null);
+      // Solo la oferta aceptada: si otro ganó (409), pudo llegar una nueva mientras se esperaba.
+      setOferta((actual) => alRetirarOferta(actual, oferta.viajeId));
       if (!response.ok) {
         // 409: ya fue tomado o la oferta venció (criterios 8 y 9).
         return { ok: false, mensaje: body?.message ?? 'No se pudo aceptar el viaje.' };
