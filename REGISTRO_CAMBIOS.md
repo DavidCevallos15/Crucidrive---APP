@@ -2,6 +2,27 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.27.0] - 2026-10-09 (Hora Local)
+
+### Paso 003 · T9, solicitar y aceptar con el despacho
+- `POST /api/viajes/solicitar`:
+  - Acepta `lugarOrigenId` y `lugarDestinoId`; con un lugar no hace falta enviar coordenadas ni sector, porque la BD los toma del lugar.
+  - Responde 409 si el pasajero ya tiene un viaje activo, y 400 claro si el lugar ya no está disponible.
+  - Al crear la solicitud arranca el despachador, sin esperar la primera oferta.
+- `POST /api/viajes/aceptar`:
+  - Usa la RPC atómica `aceptar_viaje` en lugar de los 3 pasos con rollback manual.
+  - Responde 409 si el viaje ya fue tomado o la oferta venció, y 403 si el conductor no está aprobado.
+  - Avisa al pasajero (`viaje_aceptado`) con nombre, placa y teléfono del conductor, y retira la oferta de los demás.
+- `PATCH /api/viajes/:id/estado`: cancelar una solicitud que busca conductor avisa al despachador para retirar las ofertas; un viaje `sin_conductor` ya no se puede cancelar.
+
+### Pruebas
+- `tests/spec003.test.js` (13 nuevas). Se quitaron las pruebas del flujo viejo de aceptación en 3 pasos (`viajeController.test.js`, `spec001.test.js`). Backend 175/175.
+
+### Pendiente
+- Aplicar `0012` a producción: sin ella, la RPC `aceptar_viaje` no existe.
+
+---
+
 ## [1.26.0] - 2026-10-09 (Hora Local)
 
 ### Paso 003 · T8, despachador
