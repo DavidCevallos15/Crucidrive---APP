@@ -7,7 +7,8 @@
     "dev": "nodemon src/index.js",
     "test": "jest --coverage",
     "test:watch": "jest --watch",
-    "smoke": "node scripts/smoke.js"
+    "smoke": "node scripts/smoke.js",
+    "lugares:importar": "node scripts/importar-lugares.js"
   },
   "repository": {
     "type": "git",

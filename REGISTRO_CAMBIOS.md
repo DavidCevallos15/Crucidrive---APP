@@ -2,6 +2,27 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.24.0] - 2026-10-09 (Hora Local)
+
+### Paso 003 · T5, importación de lugares desde OpenStreetMap
+- `backend/scripts/importar-lugares.js` (`npm run lugares:importar`):
+  - Consulta Overpass con `User-Agent` propio y servidor de respaldo, o lee una respuesta guardada (`--entrada`).
+  - Toma la parroquia Crucita más 1,5 km alrededor de cada sector: el límite de OSM no llega a La Boca.
+  - Descarta calles, ríos, casas, bosques, divisiones administrativas y nombres genéricos.
+  - Asigna categoría y fusiona el mismo lugar mapeado dos veces (mismo nombre a menos de 150 m).
+  - Pasa a minúsculas los nombres escritos todo en mayúsculas.
+  - Genera una migración idempotente.
+- `0013_lugares_osm.sql`: 108 lugares (datos de OSM al 2026-10-09), todos con sector: Malecón 80, Los Arenales 13, Las Gilces 12, La Loma 3, La Boca 2.
+- Algunos lugares que existían en OSM en mayo (Cevichería El Manaba, Licorería La Bodega…) ya no están en los datos actuales; el administrador puede añadirlos.
+
+### Pruebas
+- `tests/importarLugares.test.js` 14 en verde; backend 138/138. SQL: rls_001 20, rls_002 18, rls_003 60 y concurrencia 1, todo en verde; `0013` aplicada dos veces sin duplicar y respetando una edición del admin.
+
+### Pendiente
+- T6: David revisa la lista. `0013` y `0012` no están en producción (al fusionar #20 y #21 la integración de GitHub no aplicó nada).
+
+---
+
 ## [1.23.0] - 2026-10-08 (Hora Local)
 
 ### Paso 003 · T3 y T4, despacho (BD)
