@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Prueba las migraciones y las políticas RLS en un Postgres 16 + PostGIS desechable (Docker).
 # Uso, desde la raíz del repo:   bash supabase/tests/run-docker.sh
-# Resultado: cuenta de comprobaciones en verde (t) y en rojo (f) por cada archivo rls_*.sql.
+# Resultado: cuenta de comprobaciones en verde (t) y en rojo (f) por cada archivo rls_*.sql,
+# más la prueba de concurrencia concurrencia_003.sh.
 set -euo pipefail
 
 NAME=crucidb
@@ -35,4 +36,7 @@ for test in supabase/tests/rls_*.sql; do
   [ "$bad" -ne 0 ] && status=1
   echo "$out" | tail -1
 done
+
+# Concurrencia de la aceptación (paso 003, criterio 8).
+bash supabase/tests/concurrencia_003.sh "$NAME" || status=1
 exit $status

@@ -47,8 +47,11 @@ Spec aprobada al fusionar el PR #18 (8 oct 2026). Este plan dice **cómo**; la s
 - `viajes_update` sin la rama del conductor libre; `revoke update (conductor_id, aceptado_en)`.
 - `tricimotos`: `+ ubicacion_en timestamptz`, `+ disponible_desde timestamptz` (trigger R9) y trigger de liberación R11.
 - `ofertas_viaje`: `id uuid pk`, `viaje_id → viajes on delete cascade`, `conductor_id → perfiles`, `fase text check in ('secuencial','abierta')`, `enviada_en`, `vence_en`, `respondida_en`, `resultado text check in ('pendiente','aceptada','rechazada','vencida','cancelada','tomada')`, `distancia_m integer` (17: **sin coordenadas**); `unique (viaje_id, conductor_id)`; índice único parcial R7. RLS: `select` del propio conductor y del admin; sin `insert/update/delete` para `authenticated` (todo pasa por funciones).
-- Funciones del sistema (solo `service_role`, `revoke` a `anon, authenticated`): `public.candidatos_despacho` (envoltorio de R5), `public.crear_ofertas(p_viaje, p_conductores, p_fase, p_vence_en)`, `public.vencer_oferta(p_oferta)` y `public.cerrar_vencidos(p_max_seg)`.
-- Funciones de usuario (envoltorio R3): `public.aceptar_viaje(p_viaje) returns (viaje_id, thread_id)`, `public.rechazar_oferta(p_viaje)` y `public.cancelar_solicitud(p_viaje)` (el pasajero; marca `cancelada` las ofertas pendientes).
+- Funciones del sistema (`security invoker`, ejecutables solo por `service_role`, que salta RLS): `public.candidatos_despacho(p_viaje, p_ubicacion_max_seg)` (R5), `public.crear_ofertas(p_viaje, p_conductores, p_fase, p_vence_en)`, `public.cerrar_vencidos(p_max_seg)` y `public.cerrar_sin_conductor(p_viaje)`; las dos últimas devuelven `(tipo, viaje_id, usuario_id)` para que el despachador avise a cada uno.
+- Funciones del conductor (envoltorio R3): `public.aceptar_viaje(p_viaje) returns (viaje_id, thread_id)` y `public.rechazar_oferta(p_viaje)`.
+- Triggers que reemplazan a `cancelar_solicitud` y `vencer_oferta` (enmienda de la T3): al pasar un viaje de `solicitado` a `cancelado` o `sin_conductor` se cierran sus ofertas pendientes (`cancelada` o `vencida`), y cuando la tricimoto deja de estar `disponible` la oferta pendiente de su conductor queda `rechazada`. Así el pasajero cancela con el mismo `PATCH` de siempre y nada depende de que el backend se acuerde.
+- `viajes_select`: un conductor ve un viaje `solicitado` solo si tiene una oferta pendiente de ese viaje (antes lo veía cualquier conductor aprobado, con las coordenadas del pasajero).
+- Transiciones (R4): `en_curso` y `finalizado` los puede poner cualquiera de los dos participantes, como hoy (la prueba de humo finaliza desde el pasajero); se revisa en el 005.
 
 ## Backend
 
@@ -57,7 +60,7 @@ Spec aprobada al fusionar el PR #18 (8 oct 2026). Este plan dice **cómo**; la s
 - `src/despacho/despachador.js`: `iniciar(viajeId)`, `alResponder(viajeId)`, `cancelar(viajeId)`, `recuperar()` y `barrer()`. Fase secuencial: pide candidatos, toma el primero conectado, crea su oferta (`vence_en = ahora + 15 s`), emite `oferta_viaje` y programa el vencimiento; al vencer o al rechazar pasa al siguiente. Tras 3 ofertas pasa a la fase abierta: crea ofertas para el resto de candidatos conectados con `vence_en = creado_en + 120 s`. Cada 15 s en la fase abierta vuelve a pedir candidatos para sumar a los que se conectaron después. Usa `getAdminClient()` solo para las funciones del sistema (CLAUDE.md lo permite para el despacho).
 - `solicitarViaje`: acepta `lugarOrigenId` y `lugarDestinoId` (UUID validado); responde 409 si el pasajero ya tiene un viaje activo; al crear, `despachador.iniciar`.
 - `aceptarViaje`: llama a `req.supabase.rpc('aceptar_viaje')`; responde 409 "Este viaje ya fue tomado" o "La oferta venció"; borra `revertirAceptacion`. Notifica `viaje_aceptado` al pasajero (nombre, placa y teléfono del conductor) y `oferta_retirada` a los demás.
-- `cambiarEstadoViaje`: con `cancelado` sobre un `solicitado` usa `cancelar_solicitud` y `despachador.cancelar` (12).
+- `cambiarEstadoViaje`: con `cancelado` sobre un `solicitado`, el trigger cierra las ofertas y el backend llama a `despachador.cancelar` para retirar la oferta de la pantalla del conductor (12).
 - `PATCH /api/conductores/disponibilidad` `{ disponible: boolean }` (1). Al pasar a no disponible con una oferta pendiente, la oferta se da por rechazada.
 - Sockets: unión automática a `usuario:{id}`; `rechazar_oferta` con `socket.supabase`; `update_location` sin `estado` (R10); al conectar se envía `hora_servidor` para R14.
 - `index.js`: `despachador.recuperar()` al arrancar y `setInterval(barrer)`.

@@ -101,8 +101,13 @@ select pg_temp.debe_fallar($q$update conductores_verificacion set estado='aproba
 \echo '--- aprobado: ya puede operar y no puede editar su verificación ---'
 select pg_temp.como('22222222-2222-2222-2222-222222222222');
 update tricimotos set estado='disponible', ubicacion_actual=extensions.st_geogfromtext('SRID=4326;POINT(-80.5375 -0.8706)') where conductor_id='22222222-2222-2222-2222-222222222222';
+-- Desde 0012 el conductor aprobado ve y acepta un viaje solo con una oferta del despachador.
+reset role; set role service_role;
+select count(*) = 1 as oferta_al_aprobado from crear_ofertas('aaaaaaaa-0000-0000-0000-000000000001', array['22222222-2222-2222-2222-222222222222']::uuid[], 'secuencial', now() + interval '15 seconds');
+reset role; set role authenticated;
+select pg_temp.como('22222222-2222-2222-2222-222222222222');
 select count(*) = 1 as aprobado_ve_viaje_solicitado from viajes where estado='solicitado';
-update viajes set conductor_id='22222222-2222-2222-2222-222222222222', estado='aceptado', aceptado_en=now() where id='aaaaaaaa-0000-0000-0000-000000000001';
+select count(*) = 1 as aprobado_acepta from aceptar_viaje('aaaaaaaa-0000-0000-0000-000000000001');
 select count(*) = 1 as aprobado_acepto_el_viaje from viajes where conductor_id='22222222-2222-2222-2222-222222222222';
 select pg_temp.debe_fallar($q$update conductores_verificacion set cedula='1700000077' where conductor_id='22222222-2222-2222-2222-222222222222'$q$, 'aprobado edita su cédula');
 
