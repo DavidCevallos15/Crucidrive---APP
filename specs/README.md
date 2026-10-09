@@ -9,7 +9,7 @@ Flujo por paso: spec → aprobación → plan → tareas → implementación (co
 | 1 | `001-cimientos` | **Completo** (T18, deuda de tipos del frontend, pasa a 007) |
 | 2 | `002-identidad` | **Completo** (prueba de humo 28/28). Pendiente: texto de consentimiento revisado por un abogado y ver con sesiones reales las vistas del conductor y del administrador |
 | 3 | `003-despacho` | **Completo** (prueba de humo 29/29 el 2026-10-09). Pendiente: probar en un teléfono real que la oferta llegue con la app abierta; con la app cerrada, en el paso 004 |
-| 4 | `004-tracking-push` | Sin iniciar |
+| 4 | `004-tracking-push` | **Spec en revisión**: faltan D-12 (servicio de avisos) y D-13 (frecuencia de ubicación) |
 | 5 | `005-viaje` | Sin iniciar |
 | 6 | `006-sos-admin` | Sin iniciar |
 | 7 | `007-hardening` | Sin iniciar |
