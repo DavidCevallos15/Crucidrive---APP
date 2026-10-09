@@ -2,6 +2,7 @@
  * Paso 004 · avisos con la app cerrada y seguimiento del conductor.
  * T3: servicio de ubicación compartido por el socket y POST /api/conductores/ubicacion (plan P11,
  * P14), parámetros de frecuencia (D-13, P12) y límite del respaldo REST.
+ * T4: durante un viaje la posición del conductor va solo a su pasajero (criterios 13, 14 y 15).
  */
 process.env.SUPABASE_URL = process.env.SUPABASE_URL || 'http://localhost:54321';
 process.env.SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'anon-de-prueba';
@@ -18,15 +19,25 @@ const initSocketHandler = require('../src/sockets/socketHandler');
 const CONDUCTOR = '22222222-2222-2222-2222-222222222222';
 const MALECON = { lat: -0.8699838, lng: -80.53995042 };
 
-/** BD falsa: el update de tricimotos devuelve `respuesta` y registra lo que se pidió. */
-const crearDb = (respuesta = { data: [{ conductor_id: CONDUCTOR, estado: 'disponible' }], error: null }) => {
-  const llamadas = { update: [], eq: [], select: [] };
+/**
+ * BD falsa: el update de tricimotos devuelve `respuesta` y registra lo que se pidió; la consulta
+ * del viaje activo del conductor devuelve `viaje`.
+ */
+const crearDb = (respuesta = { data: [{ conductor_id: CONDUCTOR, estado: 'disponible' }], error: null }, viaje = { data: null, error: null }) => {
+  const llamadas = { update: [], eq: [], select: [], viajes: [] };
   const q = {
     update: jest.fn((v) => { llamadas.update.push(v); return q; }),
     eq: jest.fn((...a) => { llamadas.eq.push(a); return q; }),
     select: jest.fn((c) => { llamadas.select.push(c); return Promise.resolve(respuesta); }),
   };
-  return { db: { from: jest.fn(() => q) }, llamadas };
+  const qViajes = {
+    select: (c) => { llamadas.viajes.push(['select', c]); return qViajes; },
+    eq: (...a) => { llamadas.viajes.push(['eq', ...a]); return qViajes; },
+    in: (...a) => { llamadas.viajes.push(['in', ...a]); return qViajes; },
+    limit: () => qViajes,
+    maybeSingle: () => Promise.resolve(viaje),
+  };
+  return { db: { from: jest.fn((tabla) => (tabla === 'viajes' ? qViajes : q)) }, llamadas };
 };
 
 const conductor = { id: CONDUCTOR, rol: 'conductor', nombre: 'Carla' };
@@ -228,5 +239,67 @@ describe('T3 · límite del respaldo REST por conductor', () => {
 
   test('el límite es por conductor, no por IP (CGNAT de las operadoras)', async () => {
     expect((await enviar('c2')).status).toBe(204);
+  });
+});
+
+describe('T4 · el pasajero ve a su conductor acercarse (criterios 13, 14 y 15)', () => {
+  const PASAJERO = '11111111-1111-1111-1111-111111111111';
+  const VIAJE = '0a1b2c3d-0000-4000-8000-000000000001';
+  const ocupado = { data: [{ conductor_id: CONDUCTOR, estado: 'ocupado' }], error: null };
+
+  test('con un viaje aceptado, la posición va solo a la sala del pasajero de ese viaje', async () => {
+    const { db, llamadas } = crearDb(ocupado, { data: { id: VIAJE, pasajero_id: PASAJERO }, error: null });
+    const emitir = jest.fn();
+    const r = await guardarUbicacion({ db, usuario: conductor, sectorId: 'malecon', coords: MALECON, emitir });
+    expect(r).toEqual({ ok: true, estado: 'ocupado' });
+    expect(emitir).toHaveBeenCalledTimes(1);
+    const [sala, evento, datos] = emitir.mock.calls[0];
+    expect(sala).toBe(`usuario:${PASAJERO}`);
+    expect(evento).toBe('conductor_ubicacion');
+    expect(datos).toEqual({ viajeId: VIAJE, lat: MALECON.lat, lng: MALECON.lng, en: expect.any(String) });
+    // El viaje se busca con el JWT del conductor y solo entre los activos.
+    expect(llamadas.viajes).toEqual(expect.arrayContaining([
+      ['eq', 'conductor_id', CONDUCTOR],
+      ['in', 'estado', ['aceptado', 'en_curso']],
+    ]));
+  });
+
+  test('criterio 14: un conductor ocupado ya no se reenvía al sector (nadie más lo sigue)', async () => {
+    const { db } = crearDb(ocupado, { data: { id: VIAJE, pasajero_id: PASAJERO }, error: null });
+    const emitir = jest.fn();
+    await guardarUbicacion({ db, usuario: conductor, sectorId: 'malecon', coords: MALECON, emitir });
+    expect(emitir.mock.calls.map(([sala]) => sala)).not.toContain('sector:malecon');
+  });
+
+  test('criterio 15: sin viaje activo (terminó o se canceló) no se envía a nadie', async () => {
+    const { db } = crearDb(ocupado, { data: null, error: null });
+    const emitir = jest.fn();
+    await guardarUbicacion({ db, usuario: conductor, sectorId: 'malecon', coords: MALECON, emitir });
+    expect(emitir).not.toHaveBeenCalled();
+  });
+
+  test('un conductor no disponible (inactivo) no se reenvía a nadie', async () => {
+    const { db } = crearDb({ data: [{ conductor_id: CONDUCTOR, estado: 'inactivo' }], error: null });
+    const emitir = jest.fn();
+    const r = await guardarUbicacion({ db, usuario: conductor, sectorId: 'malecon', coords: MALECON, emitir });
+    expect(r).toEqual({ ok: true, estado: 'inactivo' });
+    expect(emitir).not.toHaveBeenCalled();
+  });
+
+  test('si falla la lectura del viaje, la ubicación igual queda guardada y no se filtra a nadie', async () => {
+    const { db } = crearDb(ocupado, { data: null, error: { message: 'timeout' } });
+    const emitir = jest.fn();
+    const r = await guardarUbicacion({ db, usuario: conductor, sectorId: 'malecon', coords: MALECON, emitir });
+    expect(r.ok).toBe(true);
+    expect(emitir).not.toHaveBeenCalled();
+  });
+
+  test('por REST (segundo plano) también llega al pasajero', async () => {
+    const { db } = crearDb(ocupado, { data: { id: VIAJE, pasajero_id: PASAJERO }, error: null });
+    const salas = [];
+    const io = { to: jest.fn((sala) => { salas.push(sala); return { emit: jest.fn() }; }) };
+    const r = { status: jest.fn().mockReturnThis(), json: jest.fn().mockReturnThis(), end: jest.fn() };
+    await actualizarUbicacion({ body: { sectorId: 'malecon', coords: MALECON }, user: { id: CONDUCTOR, rol: 'conductor' }, supabase: db, app: { get: () => io } }, r);
+    expect(salas).toEqual([`usuario:${PASAJERO}`]);
   });
 });

@@ -2,6 +2,19 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.41.0] - 2026-10-09 (Hora Local)
+
+### Paso 004 · T4, el pasajero ve a su conductor
+- Con el conductor `ocupado`, cada envío de ubicación (socket o REST) va como `conductor_ubicacion { viajeId, lat, lng, en }` **solo** a la sala del pasajero de su viaje `aceptado` o `en_curso` (criterios 13 y 14).
+- **Cambio de comportamiento (criterio 14):** la posición de un conductor ocupado ya no se reenvía a todo el sector, con su nombre, como pasaba desde el 001.
+- `inactivo`: no se reenvía a nadie. Al terminar el viaje la tricimoto vuelve a `disponible` y el pasajero deja de recibirla (15).
+
+### Pruebas
+- 6 nuevas en `spec004.test.js`. Backend 235/235.
+- `despachador.test.js` (R10 del 003) ahora usa un conductor disponible, porque el caso ocupado cambió por el criterio 14.
+
+---
+
 ## [1.40.0] - 2026-10-09 (Hora Local)
 
 ### Paso 004 · T3, ubicación del conductor por socket y por REST

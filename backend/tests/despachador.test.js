@@ -128,16 +128,17 @@ describe('T7 · conexión por socket (R12, R14)', () => {
 });
 
 describe('T7 · update_location solo cambia ubicación y sector (R10)', () => {
+  // Con el conductor ocupado ya no se avisa al sector (paso 004, criterio 14): ver spec004.test.js.
   test('ignora el "estado" que envía la app y avisa al sector con el estado real de la BD', async () => {
-    const { db, llamadas } = crearDbTricimotos({ data: [{ conductor_id: CONDUCTOR.id, estado: 'ocupado' }], error: null });
+    const { db, llamadas } = crearDbTricimotos({ data: [{ conductor_id: CONDUCTOR.id, estado: 'disponible' }], error: null });
     const { socket } = conectar(CONDUCTOR, db);
-    await socket.manejadores.update_location({ sectorId: 'malecon', coords: { lat: -0.87, lng: -80.54 }, estado: 'disponible' });
+    await socket.manejadores.update_location({ sectorId: 'malecon', coords: { lat: -0.87, lng: -80.54 }, estado: 'ocupado' });
     expect(llamadas.update).toEqual({ ubicacion_actual: 'POINT(-80.54 -0.87)', sector_id: 'malecon' });
     expect(llamadas.update).not.toHaveProperty('estado');
     expect(socket.alSector).toEqual([{
       sala: 'sector:malecon',
       evento: 'location_updated',
-      datos: { conductorId: CONDUCTOR.id, nombre: 'Carla', coords: { lat: -0.87, lng: -80.54 }, estado: 'ocupado' },
+      datos: { conductorId: CONDUCTOR.id, nombre: 'Carla', coords: { lat: -0.87, lng: -80.54 }, estado: 'disponible' },
     }]);
   });
 

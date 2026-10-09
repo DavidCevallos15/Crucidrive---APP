@@ -6,6 +6,26 @@
  */
 const { toWKT, isValidCoordinate } = require('../utils/geo');
 const { isSectorId } = require('../utils/validation');
+const { salaUsuario } = require('../despacho/salas');
+
+/**
+ * Viaje aceptado o en curso del conductor (la RLS de viajes le deja ver los suyos). Solo hay uno:
+ * el despacho no ofrece viajes a quien ya tiene uno activo (criterio 3 del 003).
+ */
+const viajeActivo = async (db, conductorId) => {
+  const { data, error } = await db
+    .from('viajes')
+    .select('id, pasajero_id')
+    .eq('conductor_id', conductorId)
+    .in('estado', ['aceptado', 'en_curso'])
+    .limit(1)
+    .maybeSingle();
+  if (error) {
+    console.error(`[Ubicación] No se pudo leer el viaje activo: ${error.message}`);
+    return null;
+  }
+  return data;
+};
 
 /**
  * @param {object} p
@@ -46,12 +66,29 @@ const guardarUbicacion = async ({ db, usuario, sectorId, coords, emitir }) => {
   }
 
   const { estado } = actualizadas[0];
-  emitir(`sector:${sectorId}`, 'location_updated', {
-    conductorId: usuario.id,
-    nombre: usuario.nombre || '',
-    coords: { lat, lng },
-    estado,
-  });
+
+  // Disponible: el sector lo ve en el mapa, como en el 001.
+  if (estado === 'disponible') {
+    emitir(`sector:${sectorId}`, 'location_updated', {
+      conductorId: usuario.id,
+      nombre: usuario.nombre || '',
+      coords: { lat, lng },
+      estado,
+    });
+  } else if (estado === 'ocupado') {
+    // En un viaje solo lo ve su pasajero, en su sala personal (criterios 13 y 14 del 004).
+    // Al terminar el viaje la tricimoto vuelve a "disponible" y esto deja de enviarse (15).
+    const viaje = await viajeActivo(db, usuario.id);
+    if (viaje) {
+      emitir(salaUsuario(viaje.pasajero_id), 'conductor_ubicacion', {
+        viajeId: viaje.id,
+        lat,
+        lng,
+        en: new Date().toISOString(),
+      });
+    }
+  }
+  // Inactivo: no se reenvía a nadie.
   return { ok: true, estado };
 };
 
