@@ -60,19 +60,28 @@ select pg_temp.como('11111111-1111-1111-1111-111111111111');
 select count(*) = 1 as pasajero_ve_solo_disponibles from tricimotos;
 
 \echo '--- viajes ---'
--- El cliente intenta fijar su propia tarifa (9.99): la BD la recalcula a 0,50 x 1 pasajero.
-insert into viajes (id, pasajero_id, origen, destino, tarifa) values ('aaaaaaaa-0000-0000-0000-000000000001','11111111-1111-1111-1111-111111111111', extensions.st_geogfromtext('SRID=4326;POINT(-80.5375 -0.8706)'), extensions.st_geogfromtext('SRID=4326;POINT(-80.5428 -0.8728)'), 9.99);
-select tarifa = 0.50 and pasajeros = 1 as tarifa_un_pasajero_ok from viajes where id = 'aaaaaaaa-0000-0000-0000-000000000001';
+-- Un viaje activo por pasajero (0012): el de 3 pasajeros se prueba y se cancela antes del otro.
 insert into viajes (id, pasajero_id, origen, destino, pasajeros, destino_descripcion) values ('aaaaaaaa-0000-0000-0000-000000000002','11111111-1111-1111-1111-111111111111', extensions.st_geogfromtext('SRID=4326;POINT(-80.5375 -0.8706)'), extensions.st_geogfromtext('SRID=4326;POINT(-80.5400 -0.8350)'), 3, 'Frente al muelle');
 select tarifa = 1.50 as tarifa_tres_pasajeros_ok from viajes where id = 'aaaaaaaa-0000-0000-0000-000000000002';
 select pg_temp.debe_fallar($q$insert into viajes (pasajero_id, origen, destino, pasajeros) values ('11111111-1111-1111-1111-111111111111', extensions.st_geogfromtext('SRID=4326;POINT(0 0)'), extensions.st_geogfromtext('SRID=4326;POINT(0 0)'), 0)$q$, 'viaje con 0 pasajeros');
 select pg_temp.debe_fallar($q$update viajes set pasajeros=1 where id='aaaaaaaa-0000-0000-0000-000000000002'$q$, 'pasajero cambia el numero de pasajeros');
 update viajes set estado='cancelado', finalizado_en=now() where id='aaaaaaaa-0000-0000-0000-000000000002';
+-- El cliente intenta fijar su propia tarifa (9.99): la BD la recalcula a 0,50 x 1 pasajero.
+insert into viajes (id, pasajero_id, origen, destino, tarifa) values ('aaaaaaaa-0000-0000-0000-000000000001','11111111-1111-1111-1111-111111111111', extensions.st_geogfromtext('SRID=4326;POINT(-80.5375 -0.8706)'), extensions.st_geogfromtext('SRID=4326;POINT(-80.5428 -0.8728)'), 9.99);
+select tarifa = 0.50 and pasajeros = 1 as tarifa_un_pasajero_ok from viajes where id = 'aaaaaaaa-0000-0000-0000-000000000001';
 select pg_temp.debe_fallar($q$update viajes set tarifa=0.01 where id='aaaaaaaa-0000-0000-0000-000000000001'$q$, 'pasajero cambia la tarifa');
 select pg_temp.como('22222222-2222-2222-2222-222222222222');
 select pg_temp.debe_fallar($q$insert into viajes (pasajero_id, origen, destino) values ('22222222-2222-2222-2222-222222222222', extensions.st_geogfromtext('SRID=4326;POINT(0 0)'), extensions.st_geogfromtext('SRID=4326;POINT(0 0)'))$q$, 'conductor crea viaje');
-select count(*) = 1 as conductor_ve_solicitado from viajes where estado='solicitado';
-update viajes set conductor_id='22222222-2222-2222-2222-222222222222', estado='aceptado', aceptado_en=now() where id='aaaaaaaa-0000-0000-0000-000000000001';
+select count(*) = 0 as conductor_sin_oferta_no_ve_solicitado from viajes where estado='solicitado';
+-- Desde 0012 se acepta solo con una oferta del despachador (clave de servicio) y por aceptar_viaje().
+reset role; set role service_role;
+select count(*) = 1 as oferta_creada from crear_ofertas('aaaaaaaa-0000-0000-0000-000000000001', array['22222222-2222-2222-2222-222222222222']::uuid[], 'secuencial', now() + interval '15 seconds');
+reset role; set role authenticated;
+select pg_temp.como('22222222-2222-2222-2222-222222222222');
+select count(*) = 1 as conductor_con_oferta_ve_solicitado from viajes where estado='solicitado';
+select count(*) = 1 as conductor_acepta from aceptar_viaje('aaaaaaaa-0000-0000-0000-000000000001');
+-- aceptar_viaje ya crea el chat; se borra para probar abajo sus políticas paso a paso.
+reset role; delete from threads where viaje_id = 'aaaaaaaa-0000-0000-0000-000000000001'; set role authenticated;
 select pg_temp.como('44444444-4444-4444-4444-444444444444');
 select count(*) = 0 as otro_conductor_ya_no_lo_ve from viajes;
 select pg_temp.como('33333333-3333-3333-3333-333333333333');

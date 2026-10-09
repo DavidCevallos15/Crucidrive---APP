@@ -2,6 +2,29 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.23.0] - 2026-10-08 (Hora Local)
+
+### Paso 003 · T3 y T4, despacho (BD)
+- `0012_despacho.sql`:
+  - Estado `sin_conductor`; `lugar_origen_id` y `lugar_destino_id`, de los que el viaje toma coordenadas, nombre y sector (el cliente no puede mover el lugar).
+  - Un viaje activo por pasajero, impuesto por un índice único.
+  - Tabla `ofertas_viaje` (sin coordenadas, con distancia en metros) y una oferta pendiente por conductor.
+  - `ubicacion_en` y `disponible_desde` en `tricimotos`, mantenidos por triggers.
+  - Funciones del sistema `candidatos_despacho`, `crear_ofertas`, `cerrar_vencidos` y `cerrar_sin_conductor` (solo la clave de servicio).
+  - Funciones del conductor `aceptar_viaje` (atómica: asigna, ocupa la tricimoto, crea el chat y retira las demás ofertas) y `rechazar_oferta`.
+- **Hueco cerrado:** un conductor ya no puede tomar un viaje sin oferta ni un pasajero escribir `conductor_id`. Un trigger valida las transiciones de estado y un conductor solo ve un viaje solicitado si tiene su oferta.
+- Al cerrar un viaje, la tricimoto vuelve a `disponible`; al cancelar o quedar sin conductor se cierran sus ofertas; si el conductor deja de estar disponible, suelta su oferta.
+
+### Pruebas
+- `rls_003.sql` 60 en verde; `rls_001` (20) y `rls_002` (18) actualizadas: ahora se acepta con oferta y un pasajero no tiene dos viajes activos.
+- `concurrencia_003.sh`: dos sesiones aceptan a la vez y solo una gana. `run-docker.sh` la ejecuta.
+- La imitación de Supabase da permisos a `service_role`, como en Supabase.
+
+### Pendiente
+- `0012` **no** está aplicada al proyecto real: el `POST /api/viajes/aceptar` actual dejaría de funcionar. Se aplica junto con el backend (T9).
+
+---
+
 ## [1.22.0] - 2026-10-08 (Hora Local)
 
 ### Paso 003 · T2, catálogo de lugares (BD)
@@ -11,8 +34,8 @@
 ### Pruebas
 - `supabase/tests/rls_003.sql`: 21 en verde en Docker (Postgres 16 + PostGIS). rls_001 (17) y rls_002 (16) siguen en verde.
 
-### Pendiente
-- Aplicar `0011` al proyecto real y pasar el linter de seguridad (T17).
+### Producción
+- `0011` aplicada al proyecto real con la herramienta de Supabase (autorizado por David). Linter de seguridad: solo el aviso conocido de D-10. `buscar_lugares('muelle')` responde.
 
 ---
 
