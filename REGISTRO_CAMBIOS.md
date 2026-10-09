@@ -2,6 +2,29 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.32.0] - 2026-10-09 (Hora Local)
+
+### Paso 003 · T14, consola del conductor
+- Interruptor de disponibilidad real: llama a `PATCH /api/conductores/disponibilidad` y muestra lo que responde el servidor (criterio 1).
+  - Estado inicial leído de `tricimotos.estado` (antes se leía `perfiles.estado_operativo`, que no existe en la BD).
+  - Con un viaje en curso muestra "En un viaje" y el interruptor queda bloqueado (409).
+- Oferta por socket (`oferta_viaje`):
+  - Personas, total, origen y destino con referencia y sector, distancia al pasajero y aviso si es la fase abierta (criterio 15).
+  - Cuenta regresiva desde `venceEn` corregida con `hora_servidor`; antes era un contador local fijo de 15 s (R14).
+  - Rechazar emite `rechazar_oferta`; `oferta_retirada` y el vencimiento cierran el modal (criterios 6 y 12).
+  - Aceptar usa la RPC atómica; si otro ganó, se muestra "ya fue tomado". El hilo del chat queda listo en la pestaña Chat.
+- Regla 6 (criterio 28, enmienda R24 del plan): modal opaco y sin blur, botones de 64 px con contraste AA y aviso "Sin conexión" en la consola y en el modal. Sin conexión no se puede aceptar.
+- La ubicación se envía al ponerse disponible y luego cada 5 s, sin `estado` (R10).
+
+### Pruebas
+- `tests/despacho.test.ts`: 19 nuevas (frontend 168/168, sin errores de tipos nuevos).
+- Navegador a 360 px con la oferta inyectada en el estado local: cuenta regresiva, Rechazar, cierre al vencer y aviso sin conexión. Falta con backend y conductor reales (T18).
+
+### Pendiente
+- Un modo ligero global (sin blur en toda la app) aún no existe. Se propone para el paso 007.
+
+---
+
 ## [1.31.0] - 2026-10-09 (Hora Local)
 
 ### Paso 003 · T13, origen y estados de la solicitud del pasajero
