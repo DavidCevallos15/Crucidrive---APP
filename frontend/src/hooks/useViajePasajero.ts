@@ -139,13 +139,15 @@ export const useViajePasajero = (socket: Pick<ReturnType<typeof useSocket>, 'onE
       setUltimaSolicitud(solicitud);
       setActiveRide(buzon.aplicarGuardados({
         id: viaje?.id ?? '',
+        serviceType: solicitud.tipoServicio ?? 'viaje',
+        parcel: solicitud.encomienda ?? null,
         status: 'solicitado',
         originSectorId: viaje?.sector_origen_id ?? sectorDeOrigen(solicitud.origen) ?? '',
         originName: nombreOrigen(solicitud.origen),
         destinationSectorId: viaje?.sector_destino_id ?? '',
         destinationName: nombreDestino(solicitud.destino),
         passengers: solicitud.pasajeros,
-        price: Number(viaje?.tarifa ?? calculateFare(solicitud.pasajeros)),
+        price: solicitud.tipoServicio === 'encomienda' ? null : Number(viaje?.tarifa ?? calculateFare(solicitud.pasajeros)),
         destinationNote: solicitud.destinoNota.trim(),
         driver: null,
         chatThreadId: null,

@@ -73,6 +73,7 @@ export interface FilaOferta {
   distancia_m: number | null;
   resultado: string;
   viaje: {
+    tipo_servicio?: 'viaje' | 'encomienda';
     id: string;
     estado: string;
     pasajeros: number;
@@ -96,8 +97,9 @@ export const ofertaDesdeFila = (fila: FilaOferta | null, ahoraServidor: number):
   const { viaje } = fila;
   return {
     viajeId: viaje.id,
+    ...(viaje.tipo_servicio === 'encomienda' ? { tipoServicio: 'encomienda' as const } : {}),
     pasajeros: viaje.pasajeros,
-    tarifa: Number(viaje.tarifa ?? 0),
+    tarifa: viaje.tipo_servicio === 'encomienda' ? null : Number(viaje.tarifa ?? 0),
     origen: { sectorId: viaje.sector_origen_id, descripcion: viaje.origen_descripcion },
     destino: { sectorId: viaje.sector_destino_id, descripcion: viaje.destino_descripcion },
     distanciaM: fila.distancia_m,

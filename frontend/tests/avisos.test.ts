@@ -34,7 +34,7 @@ import {
  * T10: ubicación en segundo plano (criterios 2, 4, 5 y 19; P11 y P13).
  * T11: aviso de oferta (criterios 7, 8 y 9; P6 a P8).
  * T12: el pasajero ve a su conductor (criterios 10, 13, 15 y 17; P9 y P17).
- * T13: fuera del despacho y consentimiento 0.2 (criterios 5 y 20; P18 y P20).
+ * T13: fuera del despacho y consentimiento 0.3 (criterios 5 y 20; P18 y P20).
  */
 
 const TOKEN = 'ExponentPushToken[telefonoDePrueba01]';
@@ -507,7 +507,7 @@ describe('T12 · avisos al pasajero (criterio 10)', () => {
   });
 });
 
-// ─── T13 · fuera del despacho y consentimiento 0.2 ──────────────────────────
+// ─── T13 · fuera del despacho y consentimiento 0.3 ──────────────────────────
 describe('T13 · "Estuviste fuera del despacho" (criterio 20)', () => {
   const ahora = 1_000_000_000;
 
@@ -545,11 +545,11 @@ describe('T13 · "Estuviste fuera del despacho" (criterio 20)', () => {
   });
 });
 
-describe('T13 · consentimiento 0.2 antes de ponerse disponible (criterio 5)', () => {
+describe('T13 · consentimiento 0.3 antes de ponerse disponible (criterio 5)', () => {
   const texto = CONSENTIMIENTO.map((s) => s.texto).join(' ');
 
   test('la versión que acepta la app es la que exige el servidor', () => {
-    expect(CONSENT_VERSION).toBe('0.2');
+    expect(CONSENT_VERSION).toBe('0.3');
   });
 
   test('el texto cuenta la ubicación en segundo plano, cuándo se detiene y los avisos', () => {

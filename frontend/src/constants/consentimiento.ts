@@ -1,9 +1,9 @@
 /**
  * Texto de consentimiento y aviso de privacidad (LOPDP).
- * Versión 0.2, BORRADOR pendiente de revisión legal: debe coincidir con
+ * Versión 0.3, BORRADOR pendiente de revisión legal: debe coincidir con
  * specs/002-identidad/consentimiento-lopdp.md y con CONSENT_VERSION del backend.
  */
-export const CONSENT_VERSION = '0.2';
+export const CONSENT_VERSION = '0.3';
 
 export interface SeccionConsentimiento {
   titulo: string;
@@ -11,6 +11,10 @@ export interface SeccionConsentimiento {
 }
 
 export const CONSENTIMIENTO: SeccionConsentimiento[] = [
+  {
+    titulo: 'Encomiendas y datos de entrega',
+    texto: 'Si solicitas una encomienda, guardamos su descripción y el nombre de quien recibe. Debes tener autorización para compartir esos datos. Solo tu cuenta, el conductor asignado después de aceptar y los administradores pueden consultarlos. El precio se acuerda directamente por el chat antes de entregar el paquete; la app no lo cobra ni lo fija.',
+  },
   {
     titulo: 'Qué datos recogemos y para qué',
     texto:

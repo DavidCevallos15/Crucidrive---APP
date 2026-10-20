@@ -1,4 +1,4 @@
-# Consentimiento y aviso de privacidad — CruciDrive (v0.2, BORRADOR)
+# Consentimiento y aviso de privacidad — CruciDrive (v0.3, BORRADOR)
 
 > **Borrador técnico, no es asesoría legal.** Basado en la Ley Orgánica de Protección de Datos Personales de Ecuador (LOPDP). Debe revisarlo un abogado antes del piloto. Los textos entre `[corchetes]` están por completar. Cada cambio de fondo sube la versión (`v0.2`, …) y se vuelve a pedir el consentimiento.
 
@@ -13,6 +13,7 @@
 | Ubicación (GPS) | Pasajero: mientras pide un viaje. Conductor: mientras está disponible, **también con la app en segundo plano o la pantalla bloqueada** (un aviso permanente en el teléfono lo indica), y durante el viaje. Se detiene al ponerse no disponible o cerrar sesión | Mostrar tricimotos cercanas, asignar el viaje al conductor más cercano, que el pasajero vea llegar a su tricimoto y atender una emergencia |
 | Identificador del teléfono para avisos | Todos | Avisarte de una oferta de viaje o de que te aceptaron aunque la app esté cerrada. Se borra al cerrar sesión |
 | Mensajes del chat del viaje | Pasajero y conductor del viaje | Coordinar la recogida |
+| Descripción del paquete y nombre de quien recibe | Solicitante de una encomienda, con autorización para compartir los datos | Coordinar recogida y entrega. Solo el solicitante, el conductor asignado después de aceptar y los administradores pueden consultarlos. El precio se acuerda por chat antes de entregar el paquete |
 | Número de pasajeros y destino del viaje | Pasajero | Calcular el total (0,50 USD por persona) y asignar el viaje |
 | Cédula, foto de la cédula, foto personal y foto de la tricimoto y su placa | Solo conductores | Verificar tu identidad y aprobarte como conductor, por seguridad de los pasajeros |
 

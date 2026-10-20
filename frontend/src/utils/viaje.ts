@@ -75,9 +75,10 @@ export const ESTADOS_ACTIVOS = ['solicitado', 'aceptado', 'en_curso'] as const;
 
 /** Columnas de `viajes` que lee la app del pasajero. */
 export const COLUMNAS_VIAJE =
-  'id, estado, conductor_id, pasajeros, tarifa, sector_origen_id, sector_destino_id, origen_descripcion, destino_descripcion, creado_en';
+  'id, estado, tipo_servicio, conductor_id, pasajeros, tarifa, sector_origen_id, sector_destino_id, origen_descripcion, destino_descripcion, creado_en';
 
 export interface FilaViaje {
+  tipo_servicio?: 'viaje' | 'encomienda';
   id: string;
   estado: RideStatus;
   conductor_id: string | null;
@@ -98,6 +99,7 @@ export interface LectorViaje {
 }
 
 const desdeFila = (fila: FilaViaje): ActiveRide => ({
+  serviceType: fila.tipo_servicio ?? 'viaje',
   id: fila.id,
   status: fila.estado,
   originSectorId: fila.sector_origen_id ?? '',
@@ -105,7 +107,7 @@ const desdeFila = (fila: FilaViaje): ActiveRide => ({
   destinationSectorId: fila.sector_destino_id ?? '',
   destinationName: fila.destino_descripcion || nombreSector(fila.sector_destino_id),
   passengers: fila.pasajeros,
-  price: Number(fila.tarifa ?? 0),
+  price: fila.tipo_servicio === 'encomienda' ? null : Number(fila.tarifa ?? 0),
   destinationNote: '',
   driver: null,
   chatThreadId: null,
