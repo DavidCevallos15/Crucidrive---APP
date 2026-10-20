@@ -8,6 +8,7 @@ Sin servicios nuevos. Una migración (`0017_viaje_en_curso.sql`), endpoints REST
 - `llegado_en`: cuándo el conductor marcó «Llegué».
 - `cancelado_por` (`pasajero` | `conductor`) y `motivo_cancelacion`, con un CHECK que acepta solo los cuatro motivos del criterio 8. Lo mismo valida `utils/validation.js`.
 - `confirmacion_pasajero` (`llego` | `no_llego`) y `confirmado_en`.
+- `finalizado_por` (`conductor` | `pasajero`): registra la finalización del pasajero que lleva sanción (criterio 5b).
 
 Sin coordenadas nuevas: la cancelación queda registrada sin ubicación (criterio 10).
 
@@ -19,7 +20,7 @@ Sin coordenadas nuevas: la cancelación queda registrada sin ubicación (criteri
 | --- | --- | --- | --- |
 | `marcar_llegada` | conductor asignado | aceptado | fija `llegado_en` (no cambia el estado) |
 | `iniciar_viaje` | conductor asignado | aceptado | → en curso |
-| `terminar_viaje` | conductor asignado | en curso | → finalizado; el trigger del 003 lo deja disponible |
+| `terminar_viaje` | conductor asignado o pasajero (con sanción) | en curso | → finalizado con `finalizado_por`; el trigger del 003 deja al conductor disponible |
 | `cancelar_viaje(motivo)` | pasajero (solicitado o aceptado) o conductor (aceptado) | | → cancelado, con `cancelado_por` y motivo. En «solicitado» el motivo es opcional (cancelación del 003) |
 | `confirmar_llegada(llego)` | pasajero | finalizado, sin confirmar | fija la confirmación |
 
@@ -42,13 +43,19 @@ Sin coordenadas nuevas: la cancelación queda registrada sin ubicación (criteri
 
 ## Backend
 
+**P5b · Sanción por finalizar el pasajero (criterio 5c).**
+- `solicitarViaje` cuenta los viajes que el pasajero finalizó él mismo en la ventana, leyéndolos con `req.supabase`. Si llega al tope y la última vez fue hace menos del bloqueo, responde 429 con «Podrás pedir de nuevo a las HH:MM».
+- Parámetros `SANCION_FINALIZAR_MAX` (3), `SANCION_VENTANA_DIAS` (30) y `SANCION_BLOQUEO_HORAS` (24), validados al arrancar como los de D-11.
+- `POST /:id/terminar` hecho por el pasajero responde cuántas lleva, para el aviso de la app.
+- Alternativa descartada: fijar el tope en la BD con un trigger. Cambiar los números exigiría una migración, y la regla de negocio la aplica el servidor, igual que D-11.
+
 **P6 · Endpoints.** Todos con `req.supabase`, validación previa y `errorResponse` sin detalles internos:
 - `POST /api/viajes/:id/llegada`, `/iniciar`, `/terminar`, `/cancelar` (con `{ motivo }`), `/confirmar` (con `{ llego }`) y `/calificar` (con `{ estrellas, comentario }`).
 - `GET /api/conductores/resenas` (las propias).
 - `PATCH /:id/estado` queda solo para la cancelación del 003 y llama a `cancelar_viaje`; se retira cuando la app ya no lo use.
 
 **P7 · Avisos a la otra parte (criterios 3, 4, 5 y 8).**
-- Por socket (`viaje_estado` con `{ viajeId, estado, llegadoEn?, canceladoPor?, motivo? }`) y por aviso con la app cerrada.
+- Por socket (`viaje_estado` con `{ viajeId, cambio, encomienda }`) y por aviso con la app cerrada. `cambio` es `llegada`, `en_curso`, `finalizado`, `finalizado_por_pasajero`, `cancelado_por_pasajero` o `cancelado_por_conductor`; el detalle (hora, motivo) la app lo lee del viaje.
 - Textos nuevos en `avisos/mensajes.js`, sin nombre ni teléfono: «Tu tricimoto llegó», «Tu viaje terminó: confirma y califica» y «El conductor canceló el viaje». En encomienda: «Recogimos tu paquete» y «Tu paquete fue entregado».
 
 **P8 · Datos del conductor para el pasajero (criterio 18).** `datosDelConductor` añade promedio y número de reseñas con `resumen_conductor`.

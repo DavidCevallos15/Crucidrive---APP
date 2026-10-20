@@ -3,6 +3,7 @@ const { rateLimit } = require('express-rate-limit');
 const router = express.Router();
 const { enviarVerificacion, obtenerMiVerificacion, cambiarDisponibilidad, actualizarUbicacion } = require('../controllers/conductorController');
 const authMiddleware = require('../middlewares/authMiddleware');
+const { misResenas } = require('../controllers/viajeEnCursoController');
 const roleMiddleware = require('../middlewares/roleMiddleware');
 
 // Solo conductores: enviar o corregir su solicitud de verificación y ver su estado.
@@ -11,6 +12,9 @@ router.get('/verificacion', authMiddleware, roleMiddleware(['conductor']), obten
 
 // Ponerse disponible o dejar de estarlo (paso 003). La ubicación va por socket (update_location).
 router.patch('/disponibilidad', authMiddleware, roleMiddleware(['conductor']), cambiarDisponibilidad);
+
+// Reseñas propias, sin autor (paso 005, criterio 17).
+router.get('/resenas', authMiddleware, roleMiddleware(['conductor']), misResenas);
 
 // Respaldo REST de update_location (paso 004, plan P11). Límite por conductor, no por IP:
 // detrás del CGNAT de las operadoras muchos conductores comparten IP. La app envía como mucho

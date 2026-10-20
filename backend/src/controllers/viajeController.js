@@ -6,6 +6,8 @@ const {
 } = require('../utils/validation');
 const { findViajeById } = require('../utils/supabaseHelpers');
 const { obtenerDespachador } = require('../despacho');
+const { revisarSancion, horaLocal } = require('../viaje/sancion');
+const viajeEnCurso = require('./viajeEnCursoController');
 
 const tieneCoordenadas = (p) => p != null && p.lat != null && p.lng != null;
 
@@ -69,6 +71,12 @@ const solicitarViaje = asyncHandler(async (req, res) => {
     return errorResponse(res, 400, `La descripción no puede superar ${MAX_DESCRIPCION} caracteres.`);
   }
 
+  // Sanción por finalizar él mismo varios viajes (005, criterio 5c).
+  const { bloqueadoHasta } = await revisarSancion(db, pasajeroId, viajeEnCurso.CONFIG_SANCION);
+  if (bloqueadoHasta) {
+    return errorResponse(res, 429, `Terminaste tú mismo varios viajes seguidos. Podrás pedir de nuevo a las ${horaLocal(bloqueadoHasta)}.`);
+  }
+
   const registro = {
         pasajero_id: pasajeroId,
         // Con lugar, la BD reemplaza el punto por el del lugar (el cliente no puede moverlo).
@@ -118,7 +126,9 @@ const datosDelConductor = async (db, conductorId) => {
     db.from('perfiles').select('nombre, telefono').eq('id', conductorId).single(),
     db.from('tricimotos').select('placa').eq('conductor_id', conductorId).single(),
   ]);
-  return { id: conductorId, nombre: perfil?.nombre ?? null, telefono: perfil?.telefono ?? null, placa: tricimoto?.placa ?? null };
+  // Estrellas y reseñas junto al nombre y la placa (005, criterio 18).
+  const resenas = await viajeEnCurso.resumenDelConductor(db, conductorId);
+  return { id: conductorId, nombre: perfil?.nombre ?? null, telefono: perfil?.telefono ?? null, placa: tricimoto?.placa ?? null, resenas };
 };
 
 /**
@@ -171,71 +181,22 @@ const aceptarViaje = asyncHandler(async (req, res) => {
   }, 'Viaje aceptado correctamente e hilo de chat inicializado.');
 });
 
-const ESTADOS_FINALES = ['finalizado', 'cancelado', 'sin_conductor'];
-
 /**
- * Cambia el estado del viaje (en_curso, finalizado, cancelado).
- * Valida que el solicitante sea participante del viaje. La BD valida además cada
- * transición (trigger de 0012), así que esta es la primera barrera, no la única.
+ * Ruta anterior al 005 (`PATCH /:id/estado`), que se mantiene mientras la app la use. Desde el
+ * 005 el estado solo cambia por las funciones de la BD (0017): cada estado se envía al paso
+ * correspondiente, que valida quién y en qué orden (criterio 6).
  */
-const cambiarEstadoViaje = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const { estado } = req.body;
-  const userId = req.user.id;
-  const db = req.supabase;
+const PASOS_POR_ESTADO = {
+  en_curso: viajeEnCurso.iniciarViaje,
+  finalizado: viajeEnCurso.terminarViaje,
+  cancelado: viajeEnCurso.cancelarViaje,
+};
 
-  if (!isUuid(id)) {
-    return errorResponse(res, 400, 'El identificador del viaje no es válido.');
-  }
-
-  if (!estado || !['en_curso', 'finalizado', 'cancelado'].includes(estado)) {
-    return errorResponse(res, 400, 'Estado inválido. Debe ser: "en_curso", "finalizado" o "cancelado".');
-  }
-
-  const { viaje, error: getError } = await findViajeById(db, id);
-
-  if (getError || !viaje) {
-    return errorResponse(res, 404, 'No se encontró el viaje solicitado.', getError ? getError.message : null);
-  }
-
-  if (viaje.pasajero_id !== userId && viaje.conductor_id !== userId) {
-    return errorResponse(res, 403, 'Acceso denegado. No eres participante de este viaje.');
-  }
-
-  if (estado === 'en_curso' && viaje.estado !== 'aceptado') {
-    return errorResponse(res, 400, 'El viaje debe estar "aceptado" antes de iniciar ("en_curso").');
-  }
-
-  if (estado === 'finalizado' && viaje.estado !== 'en_curso') {
-    return errorResponse(res, 400, 'El viaje debe estar "en_curso" antes de finalizar.');
-  }
-
-  if (estado === 'cancelado' && ESTADOS_FINALES.includes(viaje.estado)) {
-    return errorResponse(res, 400, `No se puede cancelar un viaje que ya está ${viaje.estado}.`);
-  }
-
-  // La BD vuelve a fijar finalizado_en con su propia hora al cerrar el viaje (trigger de 0012).
-  const { data: viajeActualizado, error: updateError } = await db
-    .from('viajes')
-    .update({
-      estado,
-      ...(estado === 'finalizado' || estado === 'cancelado' ? { finalizado_en: new Date().toISOString() } : {})
-    })
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (updateError) {
-    return errorResponse(res, 400, 'Error al actualizar el estado del viaje.', updateError.message);
-  }
-
-  // Cancelado mientras buscaba conductor: la BD ya cerró las ofertas; se retiran de las pantallas (criterio 12).
-  if (estado === 'cancelado' && viaje.estado === 'solicitado') {
-    await obtenerDespachador()?.cancelar(id);
-  }
-
-  successResponse(res, viajeActualizado, `Estado del viaje actualizado a "${estado}" correctamente.`);
-});
+const cambiarEstadoViaje = (req, res, next) => {
+  const paso = PASOS_POR_ESTADO[req.body?.estado];
+  if (!paso) return errorResponse(res, 400, 'Estado inválido. Debe ser: "en_curso", "finalizado" o "cancelado".');
+  return paso(req, res, next);
+};
 
 module.exports = {
   solicitarViaje,

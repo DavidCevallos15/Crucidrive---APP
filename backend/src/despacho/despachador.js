@@ -279,6 +279,18 @@ const crearDespachador = ({ obtenerDb, io, conexiones, config, ahora = Date.now,
 
     barrer,
 
+    /**
+     * Cambio del viaje en curso a la otra parte (005, plan P7): por socket (`viaje_estado`) y
+     * con la app cerrada. Nunca lanza: si el aviso falla, el paso ya quedó hecho en la BD.
+     * @param {string} userId
+     * @param {{ viajeId: string, cambio: string, encomienda?: boolean }} datos
+     */
+    avisarViaje(userId, datos) {
+      if (!userId) return;
+      emitir(userId, 'viaje_estado', datos);
+      avisar('estadoViaje', userId, datos);
+    },
+
     /** Al arrancar: cierra lo vencido y retoma las solicitudes que siguen buscando (criterio 14). */
     async recuperar() {
       await barrer();

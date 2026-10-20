@@ -2,6 +2,28 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.66.0] - 2026-10-20 (Hora Local)
+
+### 005 · Viaje en curso: BD y backend (PR 2)
+- **Alcance:** el pasajero también puede terminar el viaje, solo en curso. Queda registrado y se le avisa; con 3 en 30 días no puede pedir durante 24 h. El conductor queda libre y recibe aviso. Ese viaje no se confirma ni se califica (spec, criterios 5b y 5c).
+- **BD** (`0017_viaje_en_curso.sql`, **sin aplicar en producción**):
+  - Funciones `marcar_llegada`, `iniciar_viaje`, `terminar_viaje`, `cancelar_viaje` (motivo obligatorio si ya hay conductor), `confirmar_llegada`, `punto_recogida`, `calificar_viaje`, `mis_resenas` y `resumen_conductor`.
+  - Se quita el `update` directo de `estado`. La tabla `calificaciones` no tiene lectura directa, así el conductor no sabe quién lo calificó. El chat queda en solo lectura al terminar.
+- **Backend:**
+  - `POST /api/viajes/:id/llegada`, `/iniciar`, `/terminar`, `/cancelar`, `/confirmar` y `/calificar`, y `GET /api/conductores/resenas`. `PATCH /:id/estado` sigue, ahora sobre las mismas funciones.
+  - Errores de la BD → 400, 403 o 409, sin detalles internos.
+  - Avisos a la otra parte por socket (`viaje_estado`) y con la app cerrada, sin nombre ni teléfono.
+  - Las reseñas (promedio y número) van en los datos del conductor que recibe el pasajero.
+  - Sanción en `solicitarViaje`: 429 con «Podrás pedir de nuevo a las HH:MM». Parámetros `SANCION_*` en `.env.example`, validados al arrancar.
+  - Escribir en el chat de un viaje terminado devuelve «El chat se cerró…».
+- **Humo:** el conductor termina el viaje (no el pasajero, para no sancionarlo) y se prueban el chat cerrado y la calificación única.
+- Pruebas:
+  - `rls_007.sql`: 20 en verde. `rls_001` a `rls_006` siguen en verde.
+  - Backend: 363/363. Incluye `tests/viaje005.test.js` (64 pruebas) y las del 001 y 003, reescritas a las funciones de la BD.
+- **Antes de desplegar el backend hay que aplicar la 0017.** Sin ella, los endpoints nuevos responden 500.
+
+---
+
 ## [1.65.0] - 2026-10-20 (Hora Local)
 
 ### Plan del 005 (viaje en curso) para revisión
