@@ -2,7 +2,7 @@
 
 ## HISTORIAL DE LOGS:
 
-## [1.53.0] - 2026-10-19 (Hora Local)
+## [1.54.0] - 2026-10-19 (Hora Local)
 
 ### Paso 004 · T16, prueba de humo ampliada (41/41 en verde)
 `backend/scripts/smoke.js` y `smokeHelpers.js` comprueban de punta a punta contra Supabase y el backend reales los criterios del paso 004:
@@ -11,6 +11,19 @@
 - Límite de 2 envíos REST cada 5 s por conductor (el tercero responde 429).
 - Proyección de consumo en una jornada de 10 h en segundo plano (criterio 18): **0,71 MB** por socket con avisos y pings (referencia si todo fuera por REST: **13,63 MB**, también por debajo del tope de 15 MB).
 - Pruebas unitarias en `backend/tests/smokeHelpers.test.js` (backend 278/278 en verde) y corrida real `PRUEBA DE HUMO: TODO OK`.
+
+---
+
+## [1.53.0] - 2026-10-19 (Hora Local)
+
+### Corrección: el inicio de sesión desmontaba la pantalla y devolvía al mapa sin entrar ni mostrar error
+En `app/_layout.tsx`, `<AppRaiz>` reemplazaba `<Slot />` por la pantalla de carga completa cada vez que `isLoading` pasaba a `true`. Como `signIn` y `signUp` activan `isLoading`, al pulsar «Entrar» se desmontaba todo el árbol de navegación (incluido `LoginScreen`):
+- Si el inicio de sesión fallaba, el error se perdía al desmontarse `LoginScreen` y en Android `<Slot />` volvía a montarse en la ruta raíz `/` (`MapScreen`).
+- Si el inicio de sesión tenía éxito pero `<Slot />` se remontaba en `/` (`segments = []`), la guardia solo redirigía desde `(auth)` o dentro de `(app)`, dejando al usuario en el mapa de visitante sin entrar a su consola.
+
+Cambios:
+- `src/utils/routing.ts` y `app/_layout.tsx`: `mostrarCargaInicial` solo espera a `isInitialized` y a las fuentes (sin `isLoading`, que ya muestra el botón de `LoginScreen`), y `destinoGuardia` redirige a la pantalla del rol también cuando una cuenta con sesión y perfil está en `/`.
+- Pruebas: 3 pruebas nuevas en `tests/identidad.test.ts` (268/268 en verde, 100 % de cobertura en `routing.ts`, 0 errores de tipos en `src/` y `app/`).
 
 ---
 
