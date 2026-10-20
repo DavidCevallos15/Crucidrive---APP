@@ -18,6 +18,10 @@
 - Pendientes antes de fusionar/publicar: revisión formal del PR, pruebas SQL/RLS 001–005 en base limpia y advisors, eliminación de una cuenta desechable en pruebas, revisión legal de privacidad, CI verde y validación de permisos/almacenamiento/notificaciones/marcador en teléfono. Docker Desktop apagado impidió validar SQL localmente. No se modificó la base remota ni se eliminó una cuenta real.
 - Detalles reproducibles y límites en `docs/diseno-seguridad-2026-10.md` y `docs/navegacion-encomiendas-2026-10.md`. Video de referencia, credenciales, builds y cobertura local excluidos del commit.
 
+### Revisión del PR
+- Corrección: el aviso push de una oferta de encomienda decía «Nuevo viaje · $0.00» y «1 persona», porque `avisos/mensajes.js` formateaba la tarifa NULL como cero. Contradecía el criterio 4 y D-14 justo en el canal que usa el conductor con la app cerrada. Ahora dice «Nueva encomienda · Precio a convenir» y «Encomienda». Prueba nueva en `backend/tests/avisos.test.js`, que falla con el código anterior (backend 290/290).
+- SQL validado sin Docker (Postgres 16 + PostGIS 3): las 15 migraciones aplican en bases limpias y `rls_001` a `rls_005` quedan en verde. `rls_005` amplía con 5 intentos bloqueados y el borrado de cuentas con historial (T6 y parte SQL de T9). Faltan los advisors del proyecto real.
+
 ---
 
 ## [1.57.0] - 2026-10-20 (Hora Local)
