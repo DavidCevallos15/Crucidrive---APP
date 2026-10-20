@@ -8,6 +8,7 @@ import {
   Alert,
   ActivityIndicator,
   AppState,
+  Linking,
   useWindowDimensions,
 } from 'react-native';
 import MapView from '../components/Map';
@@ -21,7 +22,21 @@ import { BlurContainer } from '../components/BlurContainer';
 import { PressableScale } from '../components/PressableScale';
 import { TarjetaOferta } from '../components/TarjetaOferta';
 import { HojaDesplazable } from '../components/HojaDesplazable';
+import { TarjetaViajeActivo } from '../components/TarjetaViajeActivo';
+import { MotivoCancelacion } from '../components/MotivoCancelacion';
 import { esCompacta } from '../utils/compacto';
+import { separacionInferior } from '../utils/barraPestanas';
+import { distanciaMetros } from '../utils/geo';
+import {
+  confirmacionDelPaso,
+  enlaceComoLlegar,
+  motivosPara,
+  textoResenas,
+  type MotivoCancelacion as Motivo,
+  type PasoConductor,
+} from '../utils/viajeConductor';
+import { useViajeConductor } from '../hooks/useViajeConductor';
+import { useResenasConductor } from '../hooks/useResenasConductor';
 import { useLocation } from '../hooks/useLocation';
 import { useSocket } from '../hooks/useSocket';
 import { useMapRegion } from '../hooks/useMapRegion';
@@ -58,6 +73,8 @@ const TEXTO_ESTADO: Record<EstadoTricimoto, string> = {
  * - Oferta entrante por socket con cuenta regresiva según el reloj del servidor (15, R14),
  *   Aceptar y Rechazar; se cierra sola si vence, la toma otro o el pasajero cancela (6, 12)
  * - Regla 6 (28): modal opaco sin blur, botones de 64 px, contraste AA y aviso de sin conexión
+ * - Viaje aceptado (paso 005): tarjeta con recogida, «Cómo llegar», Llamar, Chat, el paso que
+ *   sigue y cancelar con motivo (criterios 1 a 9)
  *
  * Diseño: DESIGN.md §3.C — Consola del Conductor
  */
@@ -72,6 +89,24 @@ export const DriverConsoleScreen: React.FC = () => {
   const { estado, cambiando, ofertas, segundosDe, aceptando, parametros } = consola;
   const disponible = estado === 'disponible';
   const seguimiento = useSeguimientoFondo(estado, parametros);
+  const router = useRouter();
+
+  // ─── Viaje aceptado (paso 005) ─────────────────────────────
+  const { leerEstado } = consola;
+  const alCerrarViaje = useCallback((aviso: { titulo: string; texto: string } | null) => {
+    // El trigger del 003 deja la tricimoto disponible: se vuelve a leer de la BD.
+    void leerEstado();
+    if (aviso) Alert.alert(aviso.titulo, aviso.texto);
+  }, [leerEstado]);
+  const viajeActivo = useViajeConductor(socket, estado, alCerrarViaje);
+  const { viaje } = viajeActivo;
+  const [eligiendoMotivo, setEligiendoMotivo] = useState(false);
+  const resenas = useResenasConductor();
+  // La tarjeta ocupa lo que queda entre la cabecera y la barra de pestañas.
+  const [bordeCabecera, setBordeCabecera] = useState(insets.top + 160);
+  const separacion = separacionInferior(true, insets.bottom);
+  const altoTarjeta = Math.max(220, alto - bordeCabecera - separacion - 2 * SPACING.sm);
+  const distanciaRecogida = viaje?.recogida && userCoords ? distanciaMetros(userCoords, viaje.recogida) : null;
 
   // ─── Región del mapa ──────────────────────────────────────
   const region = useMapRegion(userCoords);
@@ -106,7 +141,6 @@ export const DriverConsoleScreen: React.FC = () => {
 
   // Al tocar el aviso: la oferta se abre solo si sigue viva en la BD.
   const { oferta: ofertaDeAviso } = useLocalSearchParams<{ oferta?: string }>();
-  const router = useRouter();
   const { abrirOfertaDeAviso } = consola;
   useEffect(() => {
     if (!ofertaDeAviso) return;
@@ -170,12 +204,38 @@ export const DriverConsoleScreen: React.FC = () => {
   // ─── Aceptar y rechazar ───────────────────────────────────
   const handleAcceptRide = useCallback(async (viajeId: string) => {
     const resultado = await consola.aceptar(viajeId);
-    if (resultado.ok) {
-      Alert.alert('Viaje aceptado', 'Coordina con el pasajero desde la pestaña Chat.');
-    } else {
-      Alert.alert('No se pudo aceptar', resultado.mensaje);
-    }
+    // Aceptado: aparece la tarjeta del viaje (005, criterio 1).
+    if (!resultado.ok) Alert.alert('No se pudo aceptar', resultado.mensaje);
   }, [consola]);
+
+  // ─── Pasos del viaje (005, criterios 3 a 5 y 20) ───────────
+  const { darPaso, cancelar } = viajeActivo;
+  const enviarPaso = useCallback(async (paso: PasoConductor) => {
+    const resultado = await darPaso(paso);
+    if (!resultado.ok) Alert.alert('No se pudo', resultado.mensaje);
+  }, [darPaso]);
+
+  const handlePaso = useCallback((paso: PasoConductor) => {
+    const pregunta = viaje ? confirmacionDelPaso(paso, viaje.encomienda) : null;
+    if (!pregunta) {
+      void enviarPaso(paso);
+      return;
+    }
+    Alert.alert(pregunta, undefined, [
+      { text: 'Todavía no', style: 'cancel' },
+      { text: 'Sí', onPress: () => void enviarPaso(paso) },
+    ]);
+  }, [viaje, enviarPaso]);
+
+  const handleCancelar = useCallback(async (motivo: Motivo) => {
+    setEligiendoMotivo(false);
+    const resultado = await cancelar(motivo);
+    if (!resultado.ok) Alert.alert('No se pudo cancelar', resultado.mensaje);
+  }, [cancelar]);
+
+  const abrirEnlace = useCallback((url: string, siFalla: string) => {
+    void Linking.openURL(url).catch(() => Alert.alert('No se pudo abrir', siFalla));
+  }, []);
 
   const textoEstado = estado ? TEXTO_ESTADO[estado] : 'Cargando…';
   const colorEstado = disponible ? COLORS.success : estado === 'ocupado' ? COLORS.secondary : COLORS.glassTextMutedDark;
@@ -197,6 +257,7 @@ export const DriverConsoleScreen: React.FC = () => {
       <Animated.View
         entering={FadeIn.delay(200).duration(400)}
         style={[styles.headerContainer, { top: insets.top + 12 }]}
+        onLayout={(e) => setBordeCabecera(e.nativeEvent.layout.y + e.nativeEvent.layout.height)}
       >
         <BlurContainer intensity={30} style={styles.header}>
           <View style={styles.headerContent}>
@@ -240,10 +301,10 @@ export const DriverConsoleScreen: React.FC = () => {
           {/* Estadísticas rápidas */}
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>
-                {profile?.calificacion?.toFixed(1) ?? 'Sin datos'}
+              <Text style={styles.statValue} numberOfLines={1}>
+                {resenas.resumen ? textoResenas(resenas.resumen.promedio, resenas.resumen.total) : '--'}
               </Text>
-              <Text style={styles.statLabel}>Rating</Text>
+              <Text style={styles.statLabel}>Calificación</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
@@ -278,6 +339,36 @@ export const DriverConsoleScreen: React.FC = () => {
           </View>
         )}
       </Animated.View>
+
+      {/* ─── VIAJE ACEPTADO (paso 005) ─────────────────────── */}
+      {viaje && (
+        <View style={[styles.viajeContainer, { bottom: separacion + SPACING.sm }]}>
+          <TarjetaViajeActivo
+            viaje={viaje}
+            distanciaM={distanciaRecogida}
+            conectado={isConnected}
+            enviando={viajeActivo.enviando}
+            onPaso={handlePaso}
+            onComoLlegar={() => {
+              if (viaje.recogida) abrirEnlace(enlaceComoLlegar(viaje.recogida), 'Instala una app de mapas o abre Google Maps.');
+            }}
+            onLlamar={() => {
+              if (viaje.pasajero.telefono) abrirEnlace(`tel:${viaje.pasajero.telefono}`, `Marca ${viaje.pasajero.telefono} desde el teléfono.`);
+            }}
+            onChat={() => router.push('/(app)/(driver)/chat' as never)}
+            onCancelar={() => setEligiendoMotivo(true)}
+            altoMaximo={altoTarjeta}
+            compacta={esCompacta(alto)}
+          />
+        </View>
+      )}
+      <MotivoCancelacion
+        visible={eligiendoMotivo}
+        motivos={motivosPara('conductor')}
+        explicacion="El viaje se cancela y le avisamos al pasajero."
+        onElegir={(m) => void handleCancelar(m)}
+        onCerrar={() => setEligiendoMotivo(false)}
+      />
 
       {/* Aviso de privacidad vigente antes de ponerse disponible (004, criterio 5) */}
       <ConsentimientoVigenteScreen
@@ -438,6 +529,13 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sizes.base,
     fontFamily: FONTS.body,
     fontWeight: FONTS.weights.semibold,
+  },
+
+  // ─── Viaje aceptado (paso 005) ─────────────────────────────
+  viajeContainer: {
+    position: 'absolute',
+    left: SPACING.md,
+    right: SPACING.md,
   },
 
   // ─── Modal de oferta: opaco y sin blur (regla 6) ─────────

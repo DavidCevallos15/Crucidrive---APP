@@ -159,7 +159,7 @@ export const useConsolaConductor = (
       for (const otra of ofertas) if (otra.viajeId !== oferta.viajeId) void descartarAvisosDeOferta(otra.viajeId);
       setOfertas([]);
       setEstado('ocupado');
-      // Para el chat del viaje; las pantallas del viaje en curso son del paso 005.
+      // Para el chat mientras se lee el viaje completo (useViajeConductor, paso 005).
       useRideStore.getState().setActiveRide({
         id: oferta.viajeId,
         serviceType: oferta.tipoServicio ?? 'viaje',
@@ -237,5 +237,7 @@ export const useConsolaConductor = (
   return {
     estado, cambiando, ofertas, segundosDe, aceptando, parametros,
     cambiarDisponibilidad, aceptar, rechazar, abrirOfertaDeAviso, aceptarConsentimiento,
+    // Al cerrarse el viaje (005), la disponibilidad la vuelve a fijar la BD (R11).
+    leerEstado,
   };
 };

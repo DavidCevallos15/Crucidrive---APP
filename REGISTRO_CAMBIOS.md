@@ -2,6 +2,27 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.67.0] - 2026-10-20 (Hora Local)
+
+### 005 · Viaje en curso: pantallas del conductor (PR 3)
+- **BD:** la 0017 quedó aplicada en producción y revisada. Seguridad: solo D-10. Rendimiento: nada nuevo, salvo los índices recién creados, que aún no se usan. T1 y T5 cerradas.
+- **Consola del conductor:** al aceptar aparece la tarjeta del viaje en lugar del aviso «Coordina por chat». Muestra:
+  - recogida, destino y distancia a la recogida;
+  - total y personas, o en una encomienda el contenido y quién recibe;
+  - nombre del pasajero;
+  - **Cómo llegar** (abre la app de mapas del teléfono con la recogida como destino, sin clave ni costo), **Llamar** y **Chat**.
+- **El botón del paso:** «Llegué» → «Empezar viaje» (o «Paquete recogido») → «Llegamos» (o «Paquete entregado»).
+  - Empezar y terminar piden confirmación.
+  - Solo cambia de estado si el servidor responde bien; sin conexión queda deshabilitado y lo dice.
+- **Cancelar viaje:** solo mientras está aceptado, con motivo («No encuentro al pasajero» u «Otro»).
+- **Aviso al conductor:** si el pasajero cancela o termina, la tarjeta se cierra con un aviso y se vuelve a leer la disponibilidad. Si se perdió el aviso, la tarjeta se quita al reconectar.
+- **Viaje en curso al abrir la app:** si la tricimoto está ocupada, el viaje se recupera de la BD.
+- **Perfil del conductor:** «Tus reseñas», con promedio, número de reseñas y comentarios. Solo se ve la fecha, nunca quién calificó. La consola muestra «★ 4,7 · 3 reseñas» o «Nuevo» en lugar de «Rating: Sin datos».
+- **360 × 640:** el paso, Cómo llegar, Llamar y Chat quedan fijos; el resto de la tarjeta se desplaza con «Desliza para ver más». Capturas en `docs/capturas/005-conductor/`.
+- Pruebas: frontend 341/341, con 19 nuevas en `tests/viajeConductor.test.ts`. `tsc` sin errores.
+
+---
+
 ## [1.66.0] - 2026-10-20 (Hora Local)
 
 ### 005 · Viaje en curso: BD y backend (PR 2)
