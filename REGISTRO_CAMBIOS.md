@@ -2,6 +2,18 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.62.0] - 2026-10-20 (Hora Local)
+
+### Specs 005 y 010 aprobadas; decisiones de David para el 005
+- David fusionó el #49: las specs 005 y 010 quedan aprobadas y D-15 (lista de hasta 3 ofertas sin quitar D-11) entra en la constitución.
+- Respuestas a las preguntas abiertas del 005:
+  - **Calificaciones: sí.** El pasajero califica al conductor (1 a 5 estrellas y un comentario opcional); el conductor ve su promedio, sus reseñas y los comentarios, sin datos de quien los escribe (criterios 15 a 19).
+  - **Motivos de cancelación: sí**, la lista propuesta.
+  - **Llegada confirmada por las dos partes:** el conductor marca «Llegamos» o «Paquete entregado» y el pasajero confirma «Llegué» o «Se entregó» antes de calificar. Un «No llegué» queda para el administrador y, sin respuesta en 30 min, la llegada se da por confirmada (criterio 5a).
+- Sin cambios de código.
+
+---
+
 ## [1.61.0] - 2026-10-20 (Hora Local)
 
 ### Specs 005 y 010 en borrador, tras la prueba de las encomiendas

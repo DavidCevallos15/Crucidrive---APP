@@ -1,6 +1,6 @@
 # 010 · Interfaz compacta y lista de ofertas del conductor
 
-Estado: **Borrador para revisión** (20 oct 2026). Sin código hasta que David la apruebe. Decisiones tomadas en la conversación del 20 oct 2026: compactar el diseño (sin ajuste de tamaño en la app) y lista de ofertas sin quitar D-11.
+Estado: **Aprobada** al fusionar el PR #49 (20 oct 2026). Decisiones tomadas en la conversación del 20 oct 2026: compactar el diseño (sin ajuste de tamaño en la app) y lista de ofertas sin quitar D-11.
 
 ## Por qué
 En la prueba con dos teléfonos del 20 oct 2026 (APK con el 009), David encontró dos problemas.
@@ -53,5 +53,5 @@ En el mapa del pasajero, el panel de «¿Desde dónde sales?» mostraba solo «U
 - **Más avisos por conductor.** Con 3 o 4 conductores en el piloto, el volumen sigue siendo bajo. Se mide con el registro de ofertas (criterio 17 del 003).
 
 ## Decisiones de David
-- **D-15 (propuesta, 20 oct 2026): lista de ofertas sin quitar D-11.** Un conductor puede tener hasta 3 ofertas abiertas a la vez y las ve en una lista. D-11 no cambia. Se agrega a la constitución al aprobar esta spec.
+- **D-15 (20 oct 2026): lista de ofertas sin quitar D-11.** Un conductor puede tener hasta 3 ofertas abiertas a la vez y las ve en una lista. D-11 no cambia. Registrada en la constitución.
 - **Interfaz: compactar** (20 oct 2026). Sin ajuste de tamaño en la app.
