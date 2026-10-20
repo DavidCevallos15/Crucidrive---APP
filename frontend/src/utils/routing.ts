@@ -31,3 +31,51 @@ export const rutaPermitida = (
   if (rol === 'conductor') return estaAprobado(verificacion) ? seccion === '(driver)' : seccion === 'verificacion';
   return seccion === '(passenger)';
 };
+
+export interface EstadoGuardia {
+  isInitialized: boolean;
+  hasSession: boolean;
+  profileChecked: boolean;
+  rol: Rol | null;
+  verificationChecked: boolean;
+  verificacion: EstadoVerificacion | null;
+}
+
+/**
+ * Devuelve la ruta a la que debe redirigir el layout raíz, o null si puede quedarse donde está.
+ * Con sesión y perfil completos, tanto `(auth)` como la raíz `/` redirigen a la pantalla del rol.
+ */
+export const destinoGuardia = (segmentos: string[], estado: EstadoGuardia): string | null => {
+  if (!estado.isInitialized) return null;
+
+  const inAuthGroup = segmentos[0] === '(auth)';
+  const inAppGroup = segmentos[0] === '(app)';
+
+  if (!estado.hasSession) {
+    return inAppGroup ? '/' : null;
+  }
+
+  if (!estado.profileChecked) return null;
+
+  if (!estado.rol) {
+    return inAuthGroup && segmentos[1] === 'perfil' ? null : '/(auth)/perfil';
+  }
+
+  if (estado.rol === 'conductor' && !estado.verificationChecked) return null;
+
+  if (!inAppGroup || !rutaPermitida(segmentos, estado.rol, estado.verificacion)) {
+    return rutaInicial(estado.rol, estado.verificacion);
+  }
+  return null;
+};
+
+/**
+ * La pantalla de carga inicial solo espera a la sesión guardada y a las fuentes.
+ * No usa `isLoading` para no desmontar `<Slot />` durante `signIn` o `signUp`.
+ */
+export const mostrarCargaInicial = (
+  isInitialized: boolean,
+  fontsLoaded: boolean,
+  hasFontError: boolean
+): boolean => !isInitialized || (!fontsLoaded && !hasFontError);
+

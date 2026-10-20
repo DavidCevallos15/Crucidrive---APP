@@ -16,7 +16,7 @@ import {
   normalizarEmail,
   normalizarPlaca,
 } from '../src/utils/validators';
-import { rutaInicial, rutaPermitida } from '../src/utils/routing';
+import { destinoGuardia, mostrarCargaInicial, rutaInicial, rutaPermitida } from '../src/utils/routing';
 import { CONSENT_VERSION, CONSENTIMIENTO } from '../src/constants/consentimiento';
 import { useAuthStore } from '../src/store/useAuthStore';
 
@@ -179,6 +179,82 @@ describe('enrutamiento por rol (criterios 2, 5 y 9)', () => {
   it('fuera del grupo (app) (mapa y login) nada está restringido', () => {
     expect(rutaPermitida([], 'pasajero', null)).toBe(true);
     expect(rutaPermitida(['(auth)', 'login'], 'conductor', 'pendiente')).toBe(true);
+  });
+
+  it('la guardia lleva desde login o desde la raíz / a la pantalla del rol al iniciar sesión', () => {
+    const base = {
+      isInitialized: true,
+      hasSession: true,
+      profileChecked: true,
+      rol: 'conductor' as const,
+      verificationChecked: true,
+      verificacion: 'aprobado' as const,
+    };
+    expect(destinoGuardia(['(auth)', 'login'], base)).toBe('/(app)/(driver)');
+    expect(destinoGuardia([], base)).toBe('/(app)/(driver)');
+    expect(destinoGuardia(['(app)', '(driver)'], base)).toBeNull();
+    expect(destinoGuardia(['(app)', '(passenger)'], base)).toBe('/(app)/(driver)');
+  });
+
+  it('la guardia respeta estados intermedios, visitantes y cuentas sin perfil', () => {
+    expect(
+      destinoGuardia(['(auth)', 'login'], {
+        isInitialized: false,
+        hasSession: false,
+        profileChecked: false,
+        rol: null,
+        verificationChecked: false,
+        verificacion: null,
+      })
+    ).toBeNull();
+
+    // Visitante: puede estar en / y en login, pero no en (app)
+    const visitante = {
+      isInitialized: true,
+      hasSession: false,
+      profileChecked: false,
+      rol: null,
+      verificationChecked: false,
+      verificacion: null,
+    };
+    expect(destinoGuardia([], visitante)).toBeNull();
+    expect(destinoGuardia(['(auth)', 'login'], visitante)).toBeNull();
+    expect(destinoGuardia(['(app)', '(driver)'], visitante)).toBe('/');
+
+    // Con sesión pero aún leyendo perfil o verificación
+    expect(
+      destinoGuardia(['(auth)', 'login'], {
+        ...visitante,
+        hasSession: true,
+        profileChecked: false,
+      })
+    ).toBeNull();
+    expect(
+      destinoGuardia(['(auth)', 'login'], {
+        ...visitante,
+        hasSession: true,
+        profileChecked: true,
+        rol: 'conductor',
+        verificationChecked: false,
+      })
+    ).toBeNull();
+
+    // Cuenta sin perfil: va a /(auth)/perfil salvo que ya esté ahí
+    const sinPerfil = {
+      ...visitante,
+      hasSession: true,
+      profileChecked: true,
+      rol: null,
+    };
+    expect(destinoGuardia(['(auth)', 'login'], sinPerfil)).toBe('/(auth)/perfil');
+    expect(destinoGuardia(['(auth)', 'perfil'], sinPerfil)).toBeNull();
+  });
+
+  it('la carga inicial no depende de isLoading para no desmontar Slot durante el login', () => {
+    expect(mostrarCargaInicial(false, true, false)).toBe(true);
+    expect(mostrarCargaInicial(true, false, false)).toBe(true);
+    expect(mostrarCargaInicial(true, true, false)).toBe(false);
+    expect(mostrarCargaInicial(true, false, true)).toBe(false);
   });
 });
 
