@@ -2,6 +2,13 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.52.0] - 2026-10-19 (Hora Local)
+
+### Corrección: la versión web (PWA) se caía al abrir por los avisos del paso 004
+`useRespuestaAvisos` llama a `Notifications.useLastNotificationResponse`, que en web lanza `UnavailabilityError` y derribaba el layout raíz (`<AppRaiz>`) antes de pintar nada. Los avisos push no existen en la PWA.
+- Nuevo `src/hooks/useRespuestaAvisos.web.ts`: versión vacía que Metro usa solo en web. En Android sigue el original.
+- Prueba: `tests/respuestaAvisosWeb.test.ts` (la versión web no importa `expo-notifications` ni lanza).
+
 ## [1.51.0] - 2026-10-09 (Hora Local)
 
 ### Corrección: el APK preview se cerraba al abrirse
