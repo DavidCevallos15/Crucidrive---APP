@@ -1,3 +1,4 @@
+import { COLORS } from '../constants/theme';
 import type { Punto } from './geo';
 import type { PuntoOferta } from './oferta';
 
@@ -211,3 +212,9 @@ export const textoFecha = (fecha: string): string => {
   const mes = meses[Number(m[2]) - 1];
   return mes ? `${Number(m[3])} ${mes} ${m[1]}` : '';
 };
+
+/** Estrellas y promedio de «Tus reseñas» sobre la tarjeta blanca del 011 (la crema no se ve). */
+export const COLORES_RESENAS = {
+  estrellas: COLORS.primary,
+  promedio: COLORS.primary,
+} as const;

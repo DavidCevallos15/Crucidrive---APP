@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { GlassCard } from './GlassCard';
 import { GlassButton } from './GlassButton';
 import { COLORS, FONTS, SPACING } from '../constants/theme';
-import { textoFecha, textoResenas, type ResenasConductor } from '../utils/viajeConductor';
+import { COLORES_RESENAS, textoFecha, textoResenas, type ResenasConductor } from '../utils/viajeConductor';
 
 interface Props {
   resumen: ResenasConductor | null;
@@ -16,7 +16,7 @@ interface Props {
 const Estrellas: React.FC<{ n: number }> = ({ n }) => (
   <View style={styles.estrellas} accessibilityLabel={`${n} de 5 estrellas`}>
     {[1, 2, 3, 4, 5].map((i) => (
-      <Ionicons key={i} name={i <= n ? 'star' : 'star-outline'} size={16} color={COLORS.secondary} />
+      <Ionicons key={i} name={i <= n ? 'star' : 'star-outline'} size={16} color={COLORES_RESENAS.estrellas} />
     ))}
   </View>
 );
@@ -30,7 +30,7 @@ export const ResenasDelConductor: React.FC<Props> = ({ resumen, error, cargando,
   <GlassCard style={styles.tarjeta}>
     <Text style={styles.titulo} accessibilityRole="header">Tus reseñas</Text>
     {resumen && <Text style={styles.resumen}>{textoResenas(resumen.promedio, resumen.total)}</Text>}
-    {cargando && !resumen && <ActivityIndicator color={COLORS.primaryLight} style={styles.cargando} />}
+    {cargando && !resumen && <ActivityIndicator color={COLORS.primary} style={styles.cargando} />}
     {error && !resumen && (
       <>
         <Text style={styles.error} accessibilityRole="alert">{error}</Text>
@@ -55,7 +55,7 @@ export const ResenasDelConductor: React.FC<Props> = ({ resumen, error, cargando,
 const styles = StyleSheet.create({
   tarjeta: { marginBottom: SPACING.xl },
   titulo: { fontSize: FONTS.sizes.lg, fontFamily: FONTS.heading, fontWeight: FONTS.weights.semibold, color: COLORS.glassTextDark },
-  resumen: { fontSize: FONTS.sizes.xl, fontFamily: FONTS.heading, fontWeight: FONTS.weights.bold, color: COLORS.secondary, marginTop: SPACING.xs, marginBottom: SPACING.sm },
+  resumen: { fontSize: FONTS.sizes.xl, fontFamily: FONTS.heading, fontWeight: FONTS.weights.bold, color: COLORES_RESENAS.promedio, marginTop: SPACING.xs, marginBottom: SPACING.sm },
   cargando: { marginVertical: SPACING.md },
   error: { color: COLORS.dangerLight, fontFamily: FONTS.body, fontSize: FONTS.sizes.sm, marginVertical: SPACING.sm },
   vacio: { color: COLORS.glassTextMutedDark, fontFamily: FONTS.body, fontSize: FONTS.sizes.sm, lineHeight: 20 },

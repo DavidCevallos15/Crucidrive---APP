@@ -2,7 +2,7 @@ import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { PressableScale } from './PressableScale';
-import { COLORS, FONTS, SHAPES, SPACING } from '../constants/theme';
+import { FONTS, SHAPES, SPACING } from '../constants/theme';
 import { COLORES_OFERTA, textoDistancia, textoPunto, type OfertaViaje } from '../utils/oferta';
 
 interface Props {
@@ -40,7 +40,7 @@ export const TarjetaOferta: React.FC<Props> = ({ oferta, segundos, conectado, ac
       {/* Detalles de la ruta */}
       <View style={[styles.ruta, compacta && styles.rutaCompacta]}>
         <View style={styles.rutaFila}>
-          <Ionicons name="radio-button-on" size={16} color={COLORS.primaryLight} />
+          <Ionicons name="radio-button-on" size={16} color={COLORES_OFERTA.origen} />
           <Text style={[styles.rutaTexto, compacta && styles.rutaTextoCompacto]} numberOfLines={compacta ? 2 : 3}>{textoPunto(oferta.origen)}</Text>
         </View>
         <View style={styles.rutaLinea} />

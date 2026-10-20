@@ -87,6 +87,8 @@ export const COLORES_OFERTA = {
   rechazarTexto: '#FFFFFF',
   avisoFondo: '#7F1D1D',
   avisoTexto: '#FFFFFF',
+  /** Ícono del punto de recogida: azul Wild Navy del 011 (el vino no se ve sobre el fondo). */
+  origen: '#88AEE0',
 } as const;
 
 const luminancia = (hex: string): number => {
