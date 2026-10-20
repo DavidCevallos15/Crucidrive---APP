@@ -148,8 +148,17 @@ export const APP_CONFIG = {
 // ─── CONFIGURACIÓN INCOMPLETA ───────────────────────────────────────────────
 
 /**
- * Variables sin las que la app no funciona. Sin ellas, el layout raíz muestra una pantalla
- * que las nombra en vez de cerrarse (un APK compilado sin variables se cerraba al abrirse).
+ * Un valor usable en una URL o en un header HTTP: solo ASCII visible, sin espacios.
+ * El APK del 20 oct 2026 llevaba la anon key copiada enmascarada del panel de Supabase
+ * (`eyJhbGci••••…`): OkHttp rechaza un header con `•` antes de enviarlo y ninguna petición
+ * llegaba a Supabase, sin ningún error visible.
+ */
+const ES_VALIDO = /^[\x21-\x7E]+$/;
+
+/**
+ * Variables sin las que la app no funciona, vacías o con caracteres que no pueden ir en una
+ * URL o un header. El layout raíz muestra una pantalla que las nombra en vez de fallar en
+ * silencio (un APK sin variables se cerraba; uno con la clave enmascarada no conectaba).
  */
 export const variablesFaltantes = (
   valores: Record<string, string | undefined> = {
@@ -158,4 +167,6 @@ export const variablesFaltantes = (
     EXPO_PUBLIC_API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL,
     EXPO_PUBLIC_SOCKET_URL: process.env.EXPO_PUBLIC_SOCKET_URL,
   }
-): string[] => Object.entries(valores).filter(([, valor]) => !valor).map(([nombre]) => nombre);
+): string[] => Object.entries(valores)
+  .filter(([, valor]) => !valor || !ES_VALIDO.test(valor))
+  .map(([nombre]) => nombre);

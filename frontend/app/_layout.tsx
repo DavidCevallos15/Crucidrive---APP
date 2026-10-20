@@ -45,7 +45,7 @@ function ConfiguracionFaltante({ faltantes }: { faltantes: string[] }) {
       <StatusBar style="light" />
       <Text style={styles.configTitulo}>Falta configurar esta versión de la app</Text>
       <Text style={styles.configTexto}>
-        Se compiló sin estas variables de entorno. Agrégalas en EAS (entorno de este perfil) y vuelve a compilar:
+        Estas variables de entorno faltan o tienen un valor inválido (por ejemplo, una clave copiada con puntos ••• de un panel). Corrígelas en EAS (entorno de este perfil) y vuelve a compilar:
       </Text>
       {faltantes.map((nombre) => (
         <Text key={nombre} style={styles.configVariable}>{nombre}</Text>

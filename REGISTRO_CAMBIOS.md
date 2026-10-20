@@ -2,6 +2,23 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.57.0] - 2026-10-20 (Hora Local)
+
+### Causa encontrada: el APK no llegaba a Supabase
+- En el bundle del APK `524b8707`, la anon key compilada era `eyJhbGci` seguida de 200 puntos `•` (U+2022). Era la clave **enmascarada**, tal como la muestra el panel de Supabase antes de pulsar "Reveal", copiada en la variable de EAS `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
+- OkHttp rechaza un header con caracteres no ASCII antes de enviarlo. Por eso el login y el buscador fallaban sin que ninguna petición llegara a Supabase.
+- Expo Go funcionaba porque usa el `frontend/.env` local, con la clave correcta.
+- Corrección del diagnóstico anterior (1.55.0): la anon key **no** estaba bien. En el log del build los puntos parecían el enmascarado normal de EAS.
+- Arreglo de configuración (David): reemplazar el valor en EAS por la clave real y recompilar.
+
+### Endurecimiento
+- `variablesFaltantes` ahora también marca como mal configurado un valor con caracteres que no pueden ir en una URL o en un header (puntos `•`, espacios, saltos de línea, comillas tipográficas). La pantalla "Falta configurar esta versión de la app" lo nombra en vez de fallar en silencio.
+
+### Pruebas
+- 2 pruebas nuevas en `tests/configuracion.test.ts`, que fallan con el código anterior. Frontend 281/281. El bundle de Android compila.
+
+---
+
 ## [1.56.0] - 2026-10-20 (Hora Local)
 
 ### Corrección: Expo Go se caía con una pantalla roja al abrir la app
