@@ -1,5 +1,5 @@
 /**
- * Prueba de humo contra la BD y el backend reales (pasos 001, 002 y 003).
+ * Prueba de humo contra la BD y el backend reales (pasos 001 a 004).
  *
  * Recorre: consentimiento y registro -> el conductor sube fotos y cédula -> un
  * conductor SIN aprobar no puede aceptar un viaje -> el administrador revisa y
@@ -7,6 +7,9 @@
  * rechazo -> "sin conductor" -> nueva solicitud -> aceptación con chat -> en_curso ->
  * finalizado -> la tricimoto vuelve a disponible. Mide los bytes de la oferta y de cada
  * envío de ubicación y proyecta una jornada de 10 h (criterio 27).
+ * Paso 004: registro y reasignación del teléfono para avisos (11), la ubicación del conductor en
+ * un viaje llega solo a su pasajero, por socket y por REST (13, 14, 15), límite del REST y
+ * proyección de 10 h en segundo plano con avisos (18).
  *
  * Requisitos:
  *   - Backend corriendo (npm run dev) y backend/.env con SUPABASE_URL, SUPABASE_ANON_KEY y
@@ -29,7 +32,9 @@ const { createClient } = require('@supabase/supabase-js');
 const { io } = require('socket.io-client');
 const {
   conectarSocket: conectar, esperar, esperarCondicion, cerrarViajesDePrueba, dormir, bytesEvento,
+  bytesHttp, proyeccionJornada,
 } = require('./smokeHelpers');
+const { avisoOferta, avisoRetirada } = require('../src/avisos/mensajes');
 
 const API = process.env.SMOKE_API || 'http://localhost:3000';
 const CEDULA = process.env.SMOKE_CEDULA || '1710034065';
@@ -55,6 +60,8 @@ let fallos = 0;
 let pas;
 let con;
 const sockets = [];
+// Token de avisos ficticio: se borra antes del despacho para no mandarle avisos reales a Expo.
+const TOKEN_PRUEBA = 'ExponentPushToken[pruebaDeHumo0004]';
 const paso = (nombre, ok, detalle = '') => {
   if (!ok) fallos += 1;
   console.log(`${ok ? 'OK   ' : 'FALLO'} ${nombre}${detalle ? ` - ${detalle}` : ''}`);
@@ -85,6 +92,26 @@ const http = async (token, method, ruta, cuerpo) => {
   const json = await res.json().catch(() => ({}));
   return { status: res.status, json };
 };
+
+/** POST /api/conductores/ubicacion midiendo los bytes de texto de la petición y la respuesta. */
+const ubicacionRest = async (token, cuerpo) => {
+  const url = `${API}/api/conductores/ubicacion`;
+  const json = JSON.stringify(cuerpo);
+  const cabeceras = {
+    'content-type': 'application/json', authorization: `Bearer ${token}`, 'content-length': String(Buffer.byteLength(json)),
+  };
+  const res = await fetch(url, { method: 'POST', headers: cabeceras, body: json, signal: AbortSignal.timeout(10000) });
+  const cuerpoRespuesta = await res.text();
+  const cabecerasRespuesta = {};
+  res.headers.forEach((valor, nombre) => { cabecerasRespuesta[nombre] = valor; });
+  return {
+    status: res.status,
+    bytes: bytesHttp({ metodo: 'POST', url, cabeceras, cuerpo: json, status: res.status, cabecerasRespuesta, cuerpoRespuesta }),
+  };
+};
+
+/** Espera un tiempo fijo y dice si llegó el evento (para comprobar que NO llega). */
+const recibe = (socket, evento, ms = 2500) => esperar(socket, evento, () => true, ms).then((d) => d !== null);
 
 const conectarSocket = async (token) => {
   const socket = await conectar(io, API, token);
@@ -209,6 +236,22 @@ const SOLICITUD = {
     paso('El administrador aprueba al conductor', aprobada.status === 200, `HTTP ${aprobada.status}`);
   }
 
+  // 4b. Teléfono para avisos (paso 004, criterio 11)
+  const malo = await http(pas.token, 'POST', '/api/dispositivos', { token: 'no-es-un-token' });
+  paso('Un identificador de avisos inválido se rechaza', malo.status === 400, `HTTP ${malo.status}`);
+  const tokenDe = async (u) => {
+    const { data, error } = await u.sb.from('dispositivos_push').select('token').eq('token', TOKEN_PRUEBA);
+    if (error) throw new Error('No se pudo leer dispositivos_push.');
+    return data.length > 0;
+  };
+  const reg = await http(pas.token, 'POST', '/api/dispositivos', { token: TOKEN_PRUEBA });
+  paso('El pasajero registra su teléfono y lo ve como propio', reg.status === 204 && await tokenDe(pas), `HTTP ${reg.status}`);
+  const reasignado = await http(con.token, 'POST', '/api/dispositivos', { token: TOKEN_PRUEBA });
+  paso('Si el teléfono inicia sesión con otra cuenta, el token pasa a esa cuenta (criterio 11)',
+    reasignado.status === 204 && await tokenDe(con) && !await tokenDe(pas), `HTTP ${reasignado.status}`);
+  const olvidado = await http(con.token, 'DELETE', `/api/dispositivos/${encodeURIComponent(TOKEN_PRUEBA)}`);
+  paso('Al cerrar sesión el token se borra (criterio 11)', olvidado.status === 204 && !await tokenDe(con), `HTTP ${olvidado.status}`);
+
   // 5. Despacho (paso 003)
   const sCon = await conectarSocket(con.token);
   const sPas = await conectarSocket(pas.token);
@@ -289,6 +332,33 @@ const SOLICITUD = {
   const ocupado = await http(con.token, 'PATCH', '/api/conductores/disponibilidad', { disponible: false });
   paso('Con un viaje en curso no puede cambiar su disponibilidad (criterio 3)', ocupado.status === 409, `HTTP ${ocupado.status}`);
 
+  // 5.2b Seguimiento del conductor (paso 004): solo su pasajero recibe la posición.
+  const sAdm = await conectarSocket(adm.token);
+  const deEsteViaje = (d) => d.viajeId === viaje.id;
+  const posicionSocket = esperar(sPas, 'conductor_ubicacion', deEsteViaje, 5000);
+  const terceroSocket = recibe(sAdm, 'conductor_ubicacion');
+  const conductorSocket = recibe(sCon, 'conductor_ubicacion');
+  sCon.emit('update_location', ubicacion);
+  const posicion = await posicionSocket;
+  paso('El pasajero recibe la posición de su conductor por socket (criterio 13)',
+    !!posicion && posicion.lat === MALECON.lat && posicion.lng === MALECON.lng && !!posicion.en,
+    posicion ? `${bytesEvento('conductor_ubicacion', posicion)} B` : 'no llegó en 5 s');
+  const [alTercero, alConductor] = await Promise.all([terceroSocket, conductorSocket]);
+  paso('Ningún otro usuario recibe esa posición (criterio 14)', !alTercero && !alConductor,
+    `tercero=${alTercero}, conductor=${alConductor}`);
+
+  const posicionRest = esperar(sPas, 'conductor_ubicacion', deEsteViaje, 5000);
+  const terceroRest = recibe(sAdm, 'conductor_ubicacion');
+  const rest1 = await ubicacionRest(con.token, ubicacion);
+  const llegoRest = await posicionRest;
+  paso('Envío por REST: 204 y el pasajero recibe la posición (plan P11)', rest1.status === 204 && !!llegoRest,
+    `HTTP ${rest1.status}, ${rest1.bytes} B por envío`);
+  paso('Por REST tampoco la recibe un tercero (criterio 14)', !await terceroRest);
+  const rest2 = await ubicacionRest(con.token, ubicacion);
+  const rest3 = await ubicacionRest(con.token, ubicacion);
+  paso('Un tercer envío por REST en 5 s responde 429 (límite por conductor)', rest2.status === 204 && rest3.status === 429,
+    `HTTP ${rest2.status}/${rest3.status}`);
+
   // 5.3 Chat
   sPas.emit('join_chat', { threadId });
   sCon.emit('join_chat', { threadId });
@@ -307,6 +377,9 @@ const SOLICITUD = {
   paso('Estado finalizado', fin.status === 200, `HTTP ${fin.status}`);
   const { data: trici } = await con.sb.from('tricimotos').select('estado').eq('conductor_id', con.id).single();
   paso('Al terminar, la tricimoto vuelve sola a disponible (R11)', trici?.estado === 'disponible', `estado=${trici?.estado}`);
+  const despues = recibe(sPas, 'conductor_ubicacion');
+  await guardarUbicacion(sCon, con, ubicacion);
+  paso('Con el viaje finalizado, el pasajero deja de recibir la posición (criterio 15)', !await despues);
 
   // 5.4 Presupuesto de datos (criterio 27): 10 h con un envío de ubicación cada 5 s y 40 ofertas.
   const bytesUbicacion = bytesEvento('update_location', ubicacion);
@@ -317,6 +390,22 @@ const SOLICITUD = {
   paso('Proyección de ubicación y ofertas en 10 h por debajo de 15 MB (criterio 27)', mb < 15,
     `ubicación ${bytesUbicacion} B x ${ENVIOS} + oferta ${bytesOferta} B x ${OFERTAS}, x2 de margen = ${mb.toFixed(2)} MB`);
 
+  // 5.5 Presupuesto del 004 (criterio 18): 10 h disponible en segundo plano. Peor caso de la
+  // frecuencia adaptativa (en movimiento todo el día, cada UBICACION_FONDO_MOV_SEG), 40 ofertas
+  // por socket con su aviso y su retirada, y los pings de Socket.io (cada 25 s, unos 10 B).
+  const fondoMovSeg = disp.json.data?.ubicacion?.fondoMovSeg;
+  const bytesAvisos = Buffer.byteLength(JSON.stringify(avisoOferta(oferta1, [TOKEN_PRUEBA], (id) => id)))
+    + Buffer.byteLength(JSON.stringify(avisoRetirada(oferta1.viajeId, [TOKEN_PRUEBA])));
+  const comun = { horas: 10, ofertas: OFERTAS, bytesOferta, bytesAvisos, pingSeg: 25, bytesPing: 10 };
+  if (paso('El servidor entrega la frecuencia de envío en segundo plano (plan P12)', Number.isInteger(fondoMovSeg),
+    `fondoMovSeg=${fondoMovSeg}`)) {
+    const porSocket = proyeccionJornada({ ...comun, envioSeg: fondoMovSeg, bytesEnvio: bytesUbicacion });
+    paso('Proyección de 10 h en segundo plano por debajo de 15 MB (criterio 18)', porSocket.mb < 15,
+      `ubicación ${bytesUbicacion} B x ${porSocket.envios} + (oferta ${bytesOferta} B + avisos ${bytesAvisos} B) x ${OFERTAS} + pings x ${porSocket.pings}, x2 = ${porSocket.mb.toFixed(2)} MB`);
+    const porRest = proyeccionJornada({ ...comun, envioSeg: fondoMovSeg, bytesEnvio: rest1.bytes });
+    console.log(`      Referencia: si todos los envíos fueran por REST (${rest1.bytes} B cada uno) serían ${porRest.mb.toFixed(2)} MB`);
+  }
+
   // Deja al conductor fuera del despacho.
   const fuera = await http(con.token, 'PATCH', '/api/conductores/disponibilidad', { disponible: false });
   paso('El conductor queda fuera del despacho al terminar', fuera.status === 200 && fuera.json.data?.estado === 'inactivo');
@@ -325,6 +414,12 @@ const SOLICITUD = {
   fallos += 1;
 }).finally(async () => {
   // No dejar una oferta activa y al conductor disponible tras un fallo intermedio.
+  if (pas && con) {
+    // El token ficticio no debe quedar en la BD si el guion se cortó a mitad.
+    for (const u of [pas, con]) {
+      await http(u.token, 'DELETE', `/api/dispositivos/${encodeURIComponent(TOKEN_PRUEBA)}`).catch(() => {});
+    }
+  }
   if (pas && con && sockets.length) {
     try {
       await cerrarViajesDePrueba(pas, con, http);

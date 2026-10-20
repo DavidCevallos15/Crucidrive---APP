@@ -1,6 +1,6 @@
 const { EventEmitter } = require('node:events');
 const {
-  conectarSocket, esperar, esperarCondicion, cerrarViajesDePrueba,
+  conectarSocket, esperar, esperarCondicion, cerrarViajesDePrueba, bytesHttp, proyeccionJornada,
 } = require('../scripts/smokeHelpers');
 
 describe('Humo: conexión y eventos del despacho', () => {
@@ -153,5 +153,31 @@ describe('Humo: limpieza comprobada y limitada a la prueba', () => {
     const http = jest.fn();
     await expect(cerrarViajesDePrueba(pas, usuario('con'), http)).rejects.toThrow('consultar');
     expect(http).not.toHaveBeenCalled();
+  });
+});
+
+describe('Humo: presupuesto de datos (criterio 18 del 004)', () => {
+  test('cuenta línea inicial, cabeceras y cuerpo de la petición y la respuesta', () => {
+    const bytes = bytesHttp({
+      metodo: 'POST', url: 'http://localhost:3000/api/x?y=1', cabeceras: { a: 'b' }, cuerpo: '{}',
+      status: 204, cabecerasRespuesta: { c: 'dd' },
+    });
+    const esperado = 'POST /api/x?y=1 HTTP/1.1\r\nhost: localhost:3000\r\na: b\r\n\r\n{}'.length
+      + 'HTTP/1.1 204\r\nc: dd\r\n\r\n'.length;
+    expect(bytes).toBe(esperado);
+  });
+
+  test('cuenta bytes y no caracteres (tildes)', () => {
+    const base = { metodo: 'GET', url: 'http://h/', cabeceras: {}, status: 200, cabecerasRespuesta: {} };
+    expect(bytesHttp({ ...base, cuerpoRespuesta: 'á' }) - bytesHttp(base)).toBe(2);
+  });
+
+  test('proyecta envíos, ofertas con sus avisos y pings, con margen x2', () => {
+    const r = proyeccionJornada({
+      horas: 10, envioSeg: 10, bytesEnvio: 100, ofertas: 40, bytesOferta: 500, bytesAvisos: 700, pingSeg: 25, bytesPing: 10,
+    });
+    expect(r.envios).toBe(3600);
+    expect(r.pings).toBe(1440);
+    expect(r.mb).toBeCloseTo(((3600 * 100 + 40 * 1200 + 1440 * 10) * 2) / (1024 * 1024), 10);
   });
 });

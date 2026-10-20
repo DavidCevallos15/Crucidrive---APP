@@ -2,6 +2,18 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.54.0] - 2026-10-19 (Hora Local)
+
+### Paso 004 · T16, prueba de humo ampliada (41/41 en verde)
+`backend/scripts/smoke.js` y `smokeHelpers.js` comprueban de punta a punta contra Supabase y el backend reales los criterios del paso 004:
+- Registro, reasignación a otra cuenta y borrado del token de avisos (`POST`/`DELETE /api/dispositivos`, criterio 11).
+- Envío de la posición del conductor durante un viaje (`conductor_ubicacion` de 144 B por socket y `POST /api/conductores/ubicacion` con 204 por REST) que solo recibe el pasajero de ese viaje y deja de recibirse al finalizar (criterios 13, 14 y 15).
+- Límite de 2 envíos REST cada 5 s por conductor (el tercero responde 429).
+- Proyección de consumo en una jornada de 10 h en segundo plano (criterio 18): **0,71 MB** por socket con avisos y pings (referencia si todo fuera por REST: **13,63 MB**, también por debajo del tope de 15 MB).
+- Pruebas unitarias en `backend/tests/smokeHelpers.test.js` (backend 278/278 en verde) y corrida real `PRUEBA DE HUMO: TODO OK`.
+
+---
+
 ## [1.53.0] - 2026-10-19 (Hora Local)
 
 ### Corrección: el inicio de sesión desmontaba la pantalla y devolvía al mapa sin entrar ni mostrar error

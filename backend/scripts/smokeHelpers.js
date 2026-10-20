@@ -94,4 +94,34 @@ const cerrarViajesDePrueba = async (pas, con, http) => {
 
 const bytesEvento = (evento, datos) => Buffer.byteLength(`42${JSON.stringify([evento, datos])}`);
 
-module.exports = { conectarSocket, esperar, esperarCondicion, cerrarViajesDePrueba, dormir, bytesEvento };
+/**
+ * Bytes de texto de una petición HTTP/1.1 y su respuesta: línea inicial, cabeceras y cuerpo.
+ * Sin TLS ni TCP (eso lo cubre el margen x2 de la proyección).
+ * @param {{ metodo: string, url: string, cabeceras: Record<string, string>, cuerpo?: string,
+ *   status: number, cabecerasRespuesta: Record<string, string>, cuerpoRespuesta?: string }} p
+ */
+const bytesHttp = ({ metodo, url, cabeceras, cuerpo = '', status, cabecerasRespuesta, cuerpoRespuesta = '' }) => {
+  const { host, pathname, search } = new URL(url);
+  const lineas = (obj) => Object.entries(obj).map(([k, v]) => `${k}: ${v}\r\n`).join('');
+  const peticion = `${metodo} ${pathname}${search} HTTP/1.1\r\nhost: ${host}\r\n${lineas(cabeceras)}\r\n${cuerpo}`;
+  const respuesta = `HTTP/1.1 ${status}\r\n${lineas(cabecerasRespuesta)}\r\n${cuerpoRespuesta}`;
+  return Buffer.byteLength(peticion) + Buffer.byteLength(respuesta);
+};
+
+/**
+ * Proyección de datos de una jornada (criterio 18 del 004). Todo en bytes; devuelve MB con el
+ * margen x2 para cabeceras de WebSocket, TCP/TLS y reintentos, como en el 003.
+ * @param {{ horas: number, envioSeg: number, bytesEnvio: number, ofertas: number,
+ *   bytesOferta: number, bytesAvisos: number, pingSeg: number, bytesPing: number }} p
+ */
+const proyeccionJornada = ({ horas, envioSeg, bytesEnvio, ofertas, bytesOferta, bytesAvisos, pingSeg, bytesPing }) => {
+  const segundos = horas * 3600;
+  const envios = Math.floor(segundos / envioSeg);
+  const pings = Math.floor(segundos / pingSeg);
+  const total = envios * bytesEnvio + ofertas * (bytesOferta + bytesAvisos) + pings * bytesPing;
+  return { envios, pings, mb: (total * 2) / (1024 * 1024) };
+};
+
+module.exports = {
+  conectarSocket, esperar, esperarCondicion, cerrarViajesDePrueba, dormir, bytesEvento, bytesHttp, proyeccionJornada,
+};
