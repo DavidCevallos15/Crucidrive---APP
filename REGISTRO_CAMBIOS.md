@@ -2,7 +2,6 @@
 
 ## HISTORIAL DE LOGS:
 
-<<<<<<< HEAD
 ## [1.54.0] - 2026-10-19 (Hora Local)
 
 ### Paso 004 · T16, prueba de humo ampliada (41/41 en verde)
@@ -15,8 +14,6 @@
 
 ---
 
-=======
->>>>>>> origin/main
 ## [1.53.0] - 2026-10-19 (Hora Local)
 
 ### Corrección: el inicio de sesión desmontaba la pantalla y devolvía al mapa sin entrar ni mostrar error
