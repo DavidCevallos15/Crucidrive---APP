@@ -5,22 +5,18 @@ import MapViewNative, { Marker, PROVIDER_GOOGLE, Region, type MapViewProps } fro
 import { COLORS } from '../constants/theme';
 
 /**
- * Estilo nocturno de Google Maps. Combina con el cristal oscuro de la interfaz
- * y asegura el contraste del texto blanco flotando sobre el mapa.
+ * Estilo claro de Google Maps: papel, caminos blancos y agua azul suave.
  */
-const DARK_MAP_STYLE = [
-  { elementType: 'geometry', stylers: [{ color: '#121826' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#8A97AD' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#0B0F19' }] },
-  { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#2A3345' }] },
+const COASTAL_MAP_STYLE = [
+  { elementType: 'geometry', stylers: [{ color: '#F3EEE8' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#74636D' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#FFFFFF' }] },
   { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#10261F' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#232C3F' }] },
-  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#0B0F19' }] },
-  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#2F3B52' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#E5EAE0' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#FFFFFF' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#FEE8C1' }] },
   { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0A2230' }] },
-  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#4F6F82' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#C8DCF4' }] },
 ];
 
 /**
@@ -40,7 +36,7 @@ const MapView = forwardRef<MapViewNative, MapViewProps>((props, ref) => {
       </View>
     );
   }
-  return <MapViewNative ref={ref} customMapStyle={DARK_MAP_STYLE} {...props} />;
+  return <MapViewNative ref={ref} customMapStyle={COASTAL_MAP_STYLE} {...props} />;
 });
 MapView.displayName = 'MapView';
 

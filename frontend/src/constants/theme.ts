@@ -9,57 +9,70 @@
 // ─── PALETA DE COLORES ──────────────────────────────────────────────────────
 
 export const COLORS = {
-  /** Verde azulado marino — color principal de marca */
-  primary: '#087E78',
-  /** Variante clara del primario para estados activos/hover */
-  primaryLight: '#61E3CF',
+  /** Neon Candy — acción principal y marca */
+  primary: '#7F1139',
+  /** Alias histórico: vino de alto contraste para selección y foco */
+  primaryLight: '#7F1139',
 
   /** Arena costera — acentos y acciones principales del acceso */
-  secondary: '#F3D6A1',
-  /** Variante clara del secundario */
-  secondaryLight: '#F9E8C9',
+  secondary: '#FEE8C1',
+  /** Alias histórico: texto cálido de alto contraste sobre papel */
+  secondaryLight: '#704B20',
 
   /** Rojo alerta — botón de pánico, errores */
-  danger: '#EF4444',
+  danger: '#BB2635',
   /** Variante clara del rojo */
-  dangerLight: '#F87171',
+  dangerLight: '#A51D2D',
 
-  /** Verde esmeralda — estado disponible, éxito */
-  success: '#10B981',
-  /** Variante clara del verde */
-  successLight: '#34D399',
+  /** Verde semántico — estado disponible y éxito */
+  success: '#27634D',
+  /** Alias histórico para texto de éxito legible */
+  successLight: '#27634D',
 
-  /** Fondo oscuro principal (modo noche / base de la app) */
-  darkBg: '#061C23',
-  /** Fondo claro (modo día, si aplica) */
-  lightBg: '#F8FAFC',
+  /** Alias histórico darkBg: papel cálido del sistema claro 010 */
+  darkBg: '#FFFCF7',
+  /** Papel cálido del sistema claro */
+  lightBg: '#FFFCF7',
 
-  // ─── COLORES GLASSMORPHIC ─────────────────────────────────
-  /** Fondo translúcido de las tarjetas de cristal (modo oscuro) */
-  glassBgDark: 'rgba(255, 255, 255, 0.07)',
+  // ─── ALIAS DE SUPERFICIE — COMPATIBILIDAD CON COMPONENTES EXISTENTES ─────────────────────────────────
+  /** Superficie de controles discretos */
+  glassBgDark: '#F5EFEA',
   /**
-   * Superficie del cristal sobre el mapa. Es lo bastante opaca para que el texto
-   * claro cumpla contraste AA (>= 4.5:1) sobre cualquier fondo, también un mapa claro.
+   * Superficie blanca opaca para conservar lectura sobre el mapa.
    */
-  glassSurface: 'rgba(6, 28, 35, 0.94)',
+  glassSurface: '#FFFFFF',
 
-  /** Fondo translúcido de las tarjetas de cristal (modo claro) */
-  glassBgLight: 'rgba(15, 23, 42, 0.04)',
+  /** Superficie de controles discretos */
+  glassBgLight: '#F5EFEA',
 
-  /** Borde de cristal (modo oscuro) */
-  glassBorderDark: 'rgba(255, 255, 255, 0.12)',
-  /** Borde de cristal (modo claro) */
-  glassBorderLight: 'rgba(15, 23, 42, 0.08)',
+  /** Contorno compartido */
+  glassBorderDark: '#E3D8D4',
+  /** Contorno compartido */
+  glassBorderLight: '#E3D8D4',
 
-  /** Texto principal sobre cristal oscuro */
-  glassTextDark: '#F2F8F7',
-  /** Texto principal sobre cristal claro */
-  glassTextLight: '#0F172A',
+  /** Texto principal sobre superficie clara */
+  glassTextDark: '#291B25',
+  /** Texto principal sobre superficie clara */
+  glassTextLight: '#291B25',
 
-  /** Texto secundario/muted sobre cristal oscuro */
-  glassTextMutedDark: '#ACBFBE',
-  /** Texto secundario/muted sobre cristal claro */
-  glassTextMutedLight: '#64748B',
+  /** Texto secundario sobre papel/blanco */
+  glassTextMutedDark: '#74636D',
+  /** Texto secundario sobre papel/blanco */
+  glassTextMutedLight: '#74636D',
+
+  // Roles normativos del sistema 010. Los nombres glass/dark se conservan como alias de compatibilidad.
+  ink: '#291B25',
+  paper: '#FFFCF7',
+  surface: '#FFFFFF',
+  sand: '#FEE8C1',
+  wine: '#7F1139',
+  blue: '#88AEE0',
+  blueLight: '#E9F1FB',
+  blueInk: '#294A75',
+  wineSoft: '#F7EAF0',
+  outline: '#E3D8D4',
+  overlay: 'rgba(41, 27, 37, 0.38)',
+  onBrand: '#FFFFFF',
 
   // ─── UTILIDADES ───────────────────────────────────────────
   /** Blanco puro */
@@ -144,24 +157,24 @@ export const SHAPES = {
 
 export const EFFECTS = {
   /** Intensidad del blur para el componente BlurView de expo-blur */
-  blurIntensity: 20,
+  blurIntensity: 0,
 
   /** Sombra suave para modo claro */
   shadowLight: {
-    shadowColor: 'rgba(31, 38, 135, 0.08)',
+    shadowColor: '#291B25',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 32,
-    elevation: 8,
+    shadowOpacity: 0.06,
+    shadowRadius: 24,
+    elevation: 3,
   },
 
-  /** Sombra pronunciada para modo oscuro */
+  /** Sombra de ficha y tarjeta; alias histórico shadowDark */
   shadowDark: {
-    shadowColor: 'rgba(0, 0, 0, 0.37)',
+    shadowColor: '#291B25',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 32,
-    elevation: 12,
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 4,
   },
 } as const;
 
@@ -180,6 +193,9 @@ export const ANIMATION = {
 
   /** Entrada de paneles: corta, para que la interfaz se sienta inmediata (< 300 ms) */
   enterDuration: 220,
+  welcomeDuration: 2400,
+  pressInDuration: 100,
+  pressOutDuration: 140,
   /** Salida: más rápida que la entrada, el sistema responde enseguida */
   exitDuration: 140,
   /** ease-out exponencial (cubic-bezier) para entradas y respuestas táctiles */

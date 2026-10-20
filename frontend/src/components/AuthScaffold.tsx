@@ -1,6 +1,6 @@
 import React from 'react';
 import { ImageBackground, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { CoastalScene } from './CoastalScene';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import Animated from 'react-native-reanimated';
@@ -22,13 +22,7 @@ export const AuthScaffold: React.FC<AuthScaffoldProps> = ({ children, showBrand 
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" />
-      <ImageBackground source={require('../../assets/coast-login.jpg')} style={StyleSheet.absoluteFill} imageStyle={styles.backgroundImage} resizeMode="cover" accessible={false}>
-        <LinearGradient
-          colors={wide ? ['rgba(6, 28, 35, 0.18)', 'rgba(6, 28, 35, 0.90)'] : ['rgba(6, 28, 35, 0.35)', 'rgba(6, 28, 35, 0.76)', COLORS.darkBg]}
-          start={{ x: 0, y: 0 }} end={{ x: wide ? 1 : 0, y: 1 }} style={StyleSheet.absoluteFill}
-        />
-      </ImageBackground>
+      <StatusBar style="dark" />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView
           contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.lg, paddingBottom: insets.bottom + SPACING.lg }, wide && styles.wideContent]}
@@ -42,7 +36,8 @@ export const AuthScaffold: React.FC<AuthScaffoldProps> = ({ children, showBrand 
                   <View style={[styles.story, wide && styles.wideStory]}>
                     <Text style={[styles.headline, wide && styles.wideHeadline]} accessibilityRole="header">El siguiente destino{wide ? '\n' : ' '}está cerca.</Text>
                     <Text style={styles.description}>Muévete en tricimoto por Crucita. Pide tu viaje, encuentra tu ruta y sigue tu camino.</Text>
-                    {wide && <View style={styles.local}><Ionicons name="location-outline" size={20} color={COLORS.secondary} /><Text style={styles.localText}>Hecho para movernos en Crucita.</Text></View>}
+                    {wide && <View style={{ marginTop: 32, maxWidth: 480 }}><CoastalScene /></View>}
+                    {wide && <View style={styles.local}><Ionicons name="location-outline" size={20} color={COLORS.wine} /><Text style={styles.localText}>Hecho para movernos en Crucita.</Text></View>}
                   </View>
                 )}
               </View>
@@ -70,8 +65,8 @@ const styles = StyleSheet.create({
   brand: { marginBottom: SPACING.lg },
   wideBrand: { flex: 1, alignSelf: 'stretch', justifyContent: 'space-between', paddingVertical: SPACING.lg, marginBottom: 0 },
   story: { marginTop: SPACING.lg },
-  wideStory: { marginTop: 96, marginBottom: SPACING.xl },
-  headline: { fontFamily: 'Outfit-SemiBold', color: COLORS.white, fontSize: FONTS.sizes.title, lineHeight: 38, letterSpacing: -0.6 },
+  wideStory: { marginTop: 40, marginBottom: SPACING.xl },
+  headline: { fontFamily: 'Outfit-SemiBold', color: COLORS.ink, fontSize: FONTS.sizes.title, lineHeight: 38, letterSpacing: -0.6 },
   wideHeadline: { fontSize: 56, lineHeight: 60, letterSpacing: -1.4 },
   description: { fontFamily: FONTS.body, color: COLORS.glassTextDark, fontSize: FONTS.sizes.sm, lineHeight: 22, marginTop: SPACING.sm, maxWidth: 360 },
   local: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginTop: SPACING.xl },

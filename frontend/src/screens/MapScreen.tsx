@@ -19,6 +19,7 @@ import { GlassButton } from '../components/GlassButton';
 import { BlurContainer } from '../components/BlurContainer';
 import { PressableScale } from '../components/PressableScale';
 import { PanicButton } from '../components/PanicButton';
+import { TricimotoIcon } from '../components/TricimotoIcon';
 import { AppMenuButton } from '../components/AppMenuButton';
 import { CheckboxRow } from '../components/CheckboxRow';
 import { useServiceStore } from '../store/useServiceStore';
@@ -273,14 +274,14 @@ export const MapScreen: React.FC = () => {
     {([{ id: 'viaje', label: 'Tricimoto', icon: 'navigate-outline' }, { id: 'encomienda', label: 'Encomienda', icon: 'cube-outline' }] as const).map((item) => <PressableScale key={item.id}
       onPress={() => { selectService(item.id); setParcelError(null); }} accessibilityRole="button" accessibilityLabel={item.label} accessibilityState={{ selected: service === item.id }}
       style={[styles.serviceOption, service === item.id && styles.serviceOptionActive]}>
-      <Ionicons name={item.icon} size={22} color={service === item.id ? COLORS.primaryLight : COLORS.glassTextMutedDark} />
+      {item.id === 'viaje' ? <TricimotoIcon size={26} color={service === item.id ? COLORS.wine : COLORS.glassTextMutedDark} /> : <Ionicons name={item.icon} size={22} color={service === item.id ? COLORS.primaryLight : COLORS.glassTextMutedDark} />}
       <Text style={[styles.serviceText, service === item.id && styles.serviceTextActive]}>{item.label}</Text>
     </PressableScale>)}
   </View>;
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
 
       {/* ─── MAPA DE PANTALLA COMPLETA ──────────────────────── */}
       <MapView
@@ -310,12 +311,12 @@ export const MapScreen: React.FC = () => {
                 {
                   backgroundColor:
                     driver.estado === 'disponible'
-                      ? COLORS.success
-                      : COLORS.glassTextMutedDark,
+                      ? COLORS.surface
+                      : COLORS.glassBgDark,
                 },
               ]}
             >
-              <Ionicons name="car" size={16} color={COLORS.white} />
+              <TricimotoIcon size={28} color={COLORS.wine} />
             </View>
           </Marker>
         ))}
@@ -328,7 +329,7 @@ export const MapScreen: React.FC = () => {
             description={activeRide?.driver?.placa ? `Placa ${activeRide.driver.placa}` : undefined}
           >
             <View style={[styles.driverMarker, styles.myDriverMarker]}>
-              <Ionicons name="car" size={20} color={COLORS.darkBg} />
+              <TricimotoIcon size={32} />
             </View>
           </Marker>
         )}
@@ -568,7 +569,7 @@ export const MapScreen: React.FC = () => {
               loading={isRequesting}
               disabled={!origen || !destino}
               leftIcon={
-                <Ionicons name={isParcel ? 'cube-outline' : 'navigate-outline'} size={20} color={COLORS.darkBg} />
+                <Ionicons name={isParcel ? 'cube-outline' : 'navigate-outline'} size={20} color={COLORS.ink} />
               }
               style={styles.requestButton}
             />
@@ -688,7 +689,7 @@ const EstadoViaje: React.FC<EstadoViajeProps> = ({
           variant="secondary"
           size="lg"
           loading={isRequesting}
-          leftIcon={<Ionicons name="refresh" size={20} color={COLORS.darkBg} />}
+          leftIcon={<Ionicons name="refresh" size={20} color={COLORS.ink} />}
           style={styles.stateButton}
         />
         <GlassButton
@@ -739,7 +740,7 @@ const EstadoViaje: React.FC<EstadoViajeProps> = ({
           onPress={() => void Linking.openURL(`tel:${conductor.telefono}`)}
           variant="secondary"
           size="lg"
-          leftIcon={<Ionicons name="call" size={20} color={COLORS.darkBg} />}
+          leftIcon={<Ionicons name="call" size={20} color={COLORS.ink} />}
           style={styles.stateButton}
         />
       )}
@@ -760,7 +761,7 @@ const EstadoViaje: React.FC<EstadoViajeProps> = ({
 const styles = StyleSheet.create({
   serviceTabs: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.lg },
   serviceOption: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm, minHeight: 56, borderRadius: 12, backgroundColor: COLORS.glassBgDark, padding: SPACING.sm },
-  serviceOptionActive: { backgroundColor: 'rgba(97, 227, 207, 0.13)', borderWidth: 1, borderColor: COLORS.primaryLight },
+  serviceOptionActive: { backgroundColor: COLORS.wineSoft, borderWidth: 1, borderColor: COLORS.primaryLight },
   serviceText: { fontFamily: FONTS.body, fontSize: FONTS.sizes.sm, color: COLORS.glassTextMutedDark },
   serviceTextActive: { color: COLORS.primaryLight },
   parcelPrice: { fontSize: FONTS.sizes.xxl, flexShrink: 1 },
@@ -838,7 +839,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     paddingHorizontal: SPACING.md,
     paddingVertical: 12,
-    borderRadius: SHAPES.borderRadiusFull,
+    borderRadius: SHAPES.borderRadiusSm,
     borderWidth: 1,
     borderColor: COLORS.glassBorderDark,
   },
@@ -926,7 +927,7 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sizes.display,
     fontFamily: FONTS.heading,
     fontWeight: FONTS.weights.bold,
-    color: COLORS.secondary,
+    color: COLORS.wine,
     fontVariant: ['tabular-nums'],
   },
   rideCurrency: {
@@ -982,7 +983,7 @@ const styles = StyleSheet.create({
     marginTop: SPACING.sm,
     paddingHorizontal: SPACING.md,
     paddingVertical: 12,
-    borderRadius: SHAPES.borderRadiusFull,
+    borderRadius: SHAPES.borderRadiusSm,
     borderWidth: 1,
     borderColor: COLORS.glassBorderDark,
     color: COLORS.glassTextDark,
@@ -1035,7 +1036,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.secondaryLight,
+    backgroundColor: COLORS.sand,
     borderWidth: 2,
     borderColor: COLORS.white,
   },
