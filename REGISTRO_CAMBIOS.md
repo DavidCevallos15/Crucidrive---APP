@@ -2,6 +2,20 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.58.0] - 2026-10-20 (Hora Local)
+
+### T8 cerrada: el APK registra el token de avisos
+- Prueba de David con el APK `preview` recompilado con la anon key correcta. Logs de Supabase (UTC):
+  - 05:50:52 `auth/v1/token?grant_type=password` 200 desde `okhttp/4.9.2` (login en el teléfono).
+  - 05:50:56 `rpc/registrar_dispositivo` 204 desde el backend (`node`), vía ngrok. Para llegar ahí el teléfono tuvo que obtener permiso y token de Expo, lo que exige Firebase en el APK.
+  - 05:51:31 `rpc/olvidar_dispositivo` 200 y luego `auth/v1/logout` 204: al cerrar sesión el token se borra antes del logout (criterio 11, ahora también en el teléfono real).
+- `dispositivos_push` queda con 0 filas por ese cierre de sesión. Es lo esperado.
+- El buscador (`rpc/buscar_lugares` 200) y la lectura de perfil y tricimoto también funcionan en el APK.
+- Pendiente fuera de la T8: el `EXPO_ACCESS_TOKEN` del backend desplegado se configura con el despliegue del piloto (008). Hoy el único backend es el del PC de David, que ya lo tiene.
+- Sin cambios de código. Siguiente paso: T17 (prueba de campo con dos teléfonos).
+
+---
+
 ## [1.57.0] - 2026-10-20 (Hora Local)
 
 ### Causa encontrada: el APK no llegaba a Supabase
