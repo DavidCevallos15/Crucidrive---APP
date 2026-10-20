@@ -10,6 +10,9 @@ import { AppMenuButton } from '../components/AppMenuButton';
 import { GlassCard } from '../components/GlassCard';
 import { GlassButton } from '../components/GlassButton';
 import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
+import { useResenasConductor } from '../hooks/useResenasConductor';
+import { ResenasDelConductor } from '../components/ResenasDelConductor';
+import { textoResenas } from '../utils/viajeConductor';
 import { COLORS, FONTS, SPACING } from '../constants/theme';
 
 /**
@@ -23,6 +26,8 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
 
   const isDriver = profile?.rol === 'conductor';
+  // Estrellas, reseñas y comentarios del conductor (paso 005, criterio 17).
+  const resenas = useResenasConductor(isDriver);
 
   return (
     <View style={styles.container}>
@@ -71,8 +76,8 @@ export default function ProfileScreen() {
                 <Text style={styles.statsTitle}>Estadísticas</Text>
                 <View style={styles.statsGrid}>
                   <View style={styles.statBox}>
-                    <Text style={styles.statNumber}>
-                      {profile?.calificacion?.toFixed(1) ?? 'Sin datos'}
+                    <Text style={styles.statNumber} numberOfLines={1} adjustsFontSizeToFit>
+                      {resenas.resumen ? textoResenas(resenas.resumen.promedio, resenas.resumen.total) : '--'}
                     </Text>
                     <Text style={styles.statLabel}>Calificación</Text>
                   </View>
@@ -123,6 +128,15 @@ export default function ProfileScreen() {
             )}
           </GlassCard>
         </View>
+
+        {isDriver && (
+          <ResenasDelConductor
+            resumen={resenas.resumen}
+            error={resenas.error}
+            cargando={resenas.cargando}
+            onReintentar={() => void resenas.recargar()}
+          />
+        )}
 
         {/* Cerrar sesión */}
         <View>

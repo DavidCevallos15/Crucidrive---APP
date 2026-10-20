@@ -48,6 +48,8 @@ export const API_CONFIG = {
       availability: '/api/conductores/disponibilidad',
       // Respaldo de la ubicación sin socket (paso 004, P11).
       location: '/api/conductores/ubicacion',
+      // Reseñas propias, sin autor (paso 005, criterio 17).
+      resenas: '/api/conductores/resenas',
     },
     admin: {
       drivers: '/api/admin/conductores',
@@ -61,6 +63,13 @@ export const API_CONFIG = {
       request: '/api/viajes/solicitar',
       accept: '/api/viajes/aceptar',
       updateStatus: (id: string) => `/api/viajes/${id}/estado`,
+      // Viaje en curso (paso 005, plan P6). La BD valida quién y en qué orden.
+      llegada: (id: string) => `/api/viajes/${id}/llegada`,
+      iniciar: (id: string) => `/api/viajes/${id}/iniciar`,
+      terminar: (id: string) => `/api/viajes/${id}/terminar`,
+      cancelar: (id: string) => `/api/viajes/${id}/cancelar`,
+      confirmar: (id: string) => `/api/viajes/${id}/confirmar`,
+      calificar: (id: string) => `/api/viajes/${id}/calificar`,
     },
     chat: {
       messages: (threadId: string) => `/api/chats/${threadId}/mensajes`,

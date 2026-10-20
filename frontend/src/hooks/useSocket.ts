@@ -4,6 +4,7 @@ import { SOCKET_CONFIG } from '../constants/config';
 import { useAuthStore } from '../store/useAuthStore';
 import type { EventoViajeAceptado, EventoViajeSinConductor } from '../utils/viaje';
 import type { OfertaViaje } from '../utils/oferta';
+import type { EventoViajeEstado } from '../utils/viajeConductor';
 import { devolverSocket, prestarSocket } from '../servicios/ubicacion';
 
 /**
@@ -49,6 +50,8 @@ interface ServerEvents {
   hora_servidor: (data: { ahora: number }) => void;
   // Paso 004 (P14): posición del conductor, solo a la sala del pasajero de su viaje.
   conductor_ubicacion: (data: { viajeId: string; lat: number; lng: number; en: string }) => void;
+  // Paso 005 (P7): cambios del viaje en curso, a la otra parte.
+  viaje_estado: (data: EventoViajeEstado) => void;
 }
 
 type Handler = (...args: any[]) => void;
