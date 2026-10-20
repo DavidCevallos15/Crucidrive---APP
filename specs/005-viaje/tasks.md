@@ -11,8 +11,8 @@ Cada tarea indica su prueba y se tilda solo al cumplirse.
 - [x] T5 · **David:** aplicar la 0017 en producción antes de desplegar el backend.
 
 ## Conductor (PR 3)
-- [ ] T6 · `TarjetaViajeActivo`, botón según el estado, «Cómo llegar» y cancelar con motivo (P9; criterios 1 a 9) → prueba: utilidades en `tests/` y capturas en 360 × 640 y 360 × 800.
-- [ ] T7 · Reseñas en el perfil del conductor (criterio 17) → prueba: captura y utilidades.
+- [x] T6 · `TarjetaViajeActivo`, botón según el estado, «Cómo llegar» y cancelar con motivo (P9; criterios 1 a 9) → prueba: utilidades en `tests/` y capturas en 360 × 640 y 360 × 800. *(`tests/viajeConductor.test.ts`; capturas en `docs/capturas/005-conductor/`. En 360 × 640 el paso, Cómo llegar, Llamar y Chat quedan fijos y el resto se desplaza.)*
+- [x] T7 · Reseñas en el perfil del conductor (criterio 17) → prueba: captura y utilidades.
 
 ## Pasajero (PR 4)
 - [ ] T8 · Estados en `EstadoViaje`, cancelar con motivo y volver a pedir (criterios 3 a 5, 8 y 11) → prueba: `tests/` y captura.
