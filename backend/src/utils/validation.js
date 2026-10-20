@@ -22,6 +22,9 @@ const NOMBRE_LUGAR_MIN = 2;
 const NOMBRE_LUGAR_MAX = 120;
 // Barrera técnica anti-abuso; la regla de negocio no fija capacidad (D-08).
 const MAX_PASAJEROS = 20;
+// Igual que el CHECK de viajes.motivo_cancelacion (0017, criterio 8 del 005).
+const MOTIVOS_CANCELACION = ['ya_no_lo_necesito', 'tarda_demasiado', 'no_encuentro_al_pasajero', 'otro'];
+const COMENTARIO_MAX = 280;
 
 const isUuid = (v) => typeof v === 'string' && UUID_RE.test(v);
 const isSectorId = (v) => typeof v === 'string' && SECTOR_RE.test(v);
@@ -47,6 +50,24 @@ const isCedulaValida = (v) => {
 const isCategoriaLugar = (v) => CATEGORIAS_LUGAR.includes(v);
 const isNombreLugarValido = (v) => typeof v === 'string' && v.length >= NOMBRE_LUGAR_MIN && v.length <= NOMBRE_LUGAR_MAX;
 const isMotivoValido = (v) => typeof v === 'string' && v.length >= MOTIVO_MIN && v.length <= MOTIVO_MAX;
+const isMotivoCancelacion = (v) => MOTIVOS_CANCELACION.includes(v);
+const isEstrellas = (v) => Number.isInteger(v) && v >= 1 && v <= 5;
+
+/**
+ * Comentario de una calificación (005, criterio 19). Igual que el CHECK de
+ * calificaciones.comentario (0017): sin enlaces ni teléfonos (7 o más dígitos, aunque vayan
+ * separados). Devuelve el mensaje para el usuario o null si es válido; vacío = sin comentario.
+ */
+const errorComentario = (v) => {
+  if (v == null) return null;
+  if (typeof v !== 'string') return 'El comentario no es válido.';
+  const texto = v.trim();
+  if (texto === '') return null;
+  if (texto.length > COMENTARIO_MAX) return `El comentario no puede superar ${COMENTARIO_MAX} caracteres.`;
+  if (/(https?:\/\/|www\.)/i.test(texto)) return 'El comentario no puede tener enlaces.';
+  if (/[0-9]{7,}/.test(texto.replace(/[\s.-]/g, ''))) return 'El comentario no puede tener números de teléfono.';
+  return null;
+};
 
 const normalizarCedula = (v) => (typeof v === 'string' ? v.replace(/[\s-]/g, '') : '');
 const normalizarNombre = (v) => (typeof v === 'string' ? v.trim().replace(/\s+/g, ' ') : '');
@@ -65,6 +86,11 @@ module.exports = {
   MOTIVO_MAX,
   MAX_DESCRIPCION,
   MAX_PASAJEROS,
+  MOTIVOS_CANCELACION,
+  COMENTARIO_MAX,
+  isMotivoCancelacion,
+  isEstrellas,
+  errorComentario,
   isUuid,
   isSectorId,
   isPasajerosValido,

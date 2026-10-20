@@ -236,9 +236,19 @@ describe('viajeController', () => {
     // El resto de aceptarViaje (RPC atómica del paso 003) está en tests/spec003.test.js.
   });
 
+  // Desde el 005 el cambio de estado lo valida la BD (funciones de 0017); aquí solo se
+  // comprueba que se llama a la función correcta y que sus errores se traducen sin detalles.
   describe('cambiarEstadoViaje', () => {
+    const ID = '0a1b2c3d-0000-4000-8000-000000000001';
+    let rpc;
+
+    beforeEach(() => {
+      rpc = jest.fn().mockResolvedValue({ data: null, error: null });
+      req.supabase = { ...req.supabase, rpc };
+      req.params = { id: ID };
+    });
+
     it('should return 400 if estado is missing', async () => {
-      req.params = { id: '0a1b2c3d-0000-4000-8000-000000000001' };
       req.body = {};
 
       await cambiarEstadoViaje(req, res);
@@ -249,109 +259,71 @@ describe('viajeController', () => {
           message: expect.stringContaining('Estado inválido'),
         })
       );
+      expect(rpc).not.toHaveBeenCalled();
     });
 
     it('should return 400 if estado is not a valid transition value', async () => {
-      req.params = { id: '0a1b2c3d-0000-4000-8000-000000000001' };
       req.body = { estado: 'aceptado' };
 
       await cambiarEstadoViaje(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
+      expect(rpc).not.toHaveBeenCalled();
     });
 
-    it('should return 404 if viaje is not found', async () => {
-      req.params = { id: '0a1b2c3d-0000-4000-8000-000000000999' };
+    it('should return 400 if the id is not a uuid', async () => {
+      req.params = { id: 'no-es-uuid' };
       req.body = { estado: 'en_curso' };
-      findViajeById.mockResolvedValue({ viaje: null, error: null });
 
       await cambiarEstadoViaje(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(rpc).not.toHaveBeenCalled();
     });
 
-    it('should return 403 if user is not a participant of the trip', async () => {
-      req.params = { id: '0a1b2c3d-0000-4000-8000-000000000001' };
+    it.each([
+      ['en_curso', 'iniciar_viaje', { p_viaje: ID }],
+      ['finalizado', 'terminar_viaje', { p_viaje: ID }],
+      ['cancelado', 'cancelar_viaje', { p_viaje: ID, p_motivo: null }],
+    ])('estado %s llama a %s', async (estado, funcion, args) => {
+      req.body = { estado };
+      findViajeById.mockResolvedValue({ viaje: { id: ID, pasajero_id: 'user-123', conductor_id: 'c-1', estado }, error: null });
+
+      await cambiarEstadoViaje(req, res);
+
+      expect(rpc).toHaveBeenCalledWith(funcion, args);
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it('should return 403 without details if the trip is not yours (or does not exist)', async () => {
       req.body = { estado: 'en_curso' };
-      req.user = { id: 'outsider' };
-      findViajeById.mockResolvedValue({
-        viaje: { id: '0a1b2c3d-0000-4000-8000-000000000001', pasajero_id: 'user-a', conductor_id: 'user-b', estado: 'aceptado' },
-        error: null,
-      });
+      rpc.mockResolvedValue({ data: null, error: { code: '42501', message: 'no_es_tu_viaje' } });
 
       await cambiarEstadoViaje(req, res);
 
       expect(res.status).toHaveBeenCalledWith(403);
+      expect(JSON.stringify(res.json.mock.calls[0][0])).not.toContain('no_es_tu_viaje');
     });
 
-    it('should return 400 if transitioning to en_curso from non-aceptado state', async () => {
-      req.params = { id: '0a1b2c3d-0000-4000-8000-000000000001' };
-      req.body = { estado: 'en_curso' };
-      findViajeById.mockResolvedValue({
-        viaje: { id: '0a1b2c3d-0000-4000-8000-000000000001', pasajero_id: 'user-123', conductor_id: 'c-1', estado: 'solicitado' },
-        error: null,
-      });
-
-      await cambiarEstadoViaje(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: expect.stringContaining('aceptado'),
-        })
-      );
-    });
-
-    it('should return 400 if transitioning to finalizado from non-en_curso state', async () => {
-      req.params = { id: '0a1b2c3d-0000-4000-8000-000000000001' };
-      req.body = { estado: 'finalizado' };
-      findViajeById.mockResolvedValue({
-        viaje: { id: '0a1b2c3d-0000-4000-8000-000000000001', pasajero_id: 'user-123', conductor_id: 'c-1', estado: 'aceptado' },
-        error: null,
-      });
-
-      await cambiarEstadoViaje(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-    });
-
-    it('should return 400 if trying to cancel a finalizado trip', async () => {
-      req.params = { id: '0a1b2c3d-0000-4000-8000-000000000001' };
+    it('should return 409 if the state does not allow the step', async () => {
       req.body = { estado: 'cancelado' };
-      findViajeById.mockResolvedValue({
-        viaje: { id: '0a1b2c3d-0000-4000-8000-000000000001', pasajero_id: 'user-123', conductor_id: 'c-1', estado: 'finalizado' },
-        error: null,
-      });
+      rpc.mockResolvedValue({ data: null, error: { code: 'P0001', message: 'estado_no_permite' } });
 
       await cambiarEstadoViaje(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: expect.stringContaining('No se puede cancelar'),
-        })
-      );
+      expect(res.status).toHaveBeenCalledWith(409);
     });
 
-    it('should successfully transition to en_curso from aceptado', async () => {
-      req.params = { id: '0a1b2c3d-0000-4000-8000-000000000001' };
+    it('should return the updated trip on success', async () => {
       req.body = { estado: 'en_curso' };
-      findViajeById.mockResolvedValue({
-        viaje: { id: '0a1b2c3d-0000-4000-8000-000000000001', pasajero_id: 'user-123', conductor_id: 'c-1', estado: 'aceptado' },
-        error: null,
-      });
-
-      const mockUpdated = { id: '0a1b2c3d-0000-4000-8000-000000000001', estado: 'en_curso' };
-      __mockSingle.mockResolvedValue({ data: mockUpdated, error: null });
+      const actualizado = { id: ID, pasajero_id: 'user-123', conductor_id: 'c-1', estado: 'en_curso' };
+      findViajeById.mockResolvedValue({ viaje: actualizado, error: null });
 
       await cambiarEstadoViaje(req, res);
 
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          status: 'success',
-          data: mockUpdated,
-        })
+        expect.objectContaining({ status: 'success', data: actualizado })
       );
     });
   });

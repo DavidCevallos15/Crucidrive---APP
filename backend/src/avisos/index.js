@@ -79,6 +79,10 @@ const crearAvisos = ({ obtenerDb, cliente = crearClienteExpo(), activos = proces
     sinConductor(pasajeroId, viajeId) {
       return enviarA(pasajeroId, (tokens) => mensajes.avisoSinConductor(viajeId, tokens));
     },
+    /** Cambios del viaje en curso a la otra parte (005, plan P7). */
+    estadoViaje(userId, datos) {
+      return enviarA(userId, (tokens) => mensajes.avisoEstadoViaje(datos, tokens));
+    },
   };
 };
 

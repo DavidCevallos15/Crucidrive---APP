@@ -1,5 +1,10 @@
 jest.mock('../src/utils/asyncHandler', () => (fn) => fn);
 jest.mock('../src/despacho', () => ({ obtenerDespachador: jest.fn(() => ({ iniciar: jest.fn() })) }));
+// La sanción del 005 tiene sus pruebas en viaje005.test.js; aquí el pasajero nunca está bloqueado.
+jest.mock('../src/viaje/sancion', () => ({
+  ...jest.requireActual('../src/viaje/sancion'),
+  revisarSancion: jest.fn(async () => ({ llevas: 0, bloqueadoHasta: null })),
+}));
 const { solicitarViaje } = require('../src/controllers/viajeController');
 const { armarOferta } = require('../src/despacho/oferta');
 const res = () => ({ status: jest.fn().mockReturnThis(), json: jest.fn().mockReturnThis() });

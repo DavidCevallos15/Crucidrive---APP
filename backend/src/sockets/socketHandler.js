@@ -185,6 +185,10 @@ const initSocketHandler = (io, { conexiones = conexionesProceso } = {}) => {
 
         if (error) {
           console.error(`[Socket.io] Error al guardar mensaje en DB: ${error.message}`);
+          // 42501: la política de 0017 no deja escribir si el viaje terminó o se canceló (005, criterio 7).
+          if (error.code === '42501') {
+            return socket.emit('error_message', 'El chat se cerró porque el viaje terminó. Puedes leer los mensajes, pero ya no escribir.');
+          }
           return socket.emit('error_message', 'No se pudo guardar el mensaje.');
         }
 
