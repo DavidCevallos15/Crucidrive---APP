@@ -54,12 +54,16 @@ export const textoDistancia = (metros: number | null): string => {
   return `a ${(metros / 1000).toFixed(1).replace('.', ',')} km`;
 };
 
-/** Una oferta a la vez (criterio 7): la nueva reemplaza a la anterior. */
-export const alRecibirOferta = (_actual: OfertaViaje | null, nueva: OfertaViaje): OfertaViaje => nueva;
+/**
+ * Varias ofertas a la vez (D-15, spec 010, criterios 7 y 8): la que vence antes va primero.
+ * Si llega otra del mismo viaje (por ejemplo, la del aviso), reemplaza a la anterior.
+ */
+export const agregarOferta = (lista: OfertaViaje[], nueva: OfertaViaje): OfertaViaje[] =>
+  [...lista.filter((o) => o.viajeId !== nueva.viajeId), nueva].sort((a, b) => a.venceEn - b.venceEn);
 
-/** `oferta_retirada`: venció, la tomó otro o el pasajero canceló (criterio 12). */
-export const alRetirarOferta = (actual: OfertaViaje | null, viajeId: string): OfertaViaje | null =>
-  actual && actual.viajeId === viajeId ? null : actual;
+/** `oferta_retirada`, vencida, aceptada o rechazada: sale solo esa (criterios 10 y 12 del 003). */
+export const quitarOferta = (lista: OfertaViaje[], viajeId: string): OfertaViaje[] =>
+  lista.some((o) => o.viajeId === viajeId) ? lista.filter((o) => o.viajeId !== viajeId) : lista;
 
 /** Estado de la tricimoto según la BD (`tricimotos.estado`). */
 export type EstadoTricimoto = 'disponible' | 'ocupado' | 'inactivo';

@@ -116,13 +116,20 @@ describe('Humo: limpieza comprobada y limitada a la prueba', () => {
     const http = jest.fn().mockResolvedValue({ status: 200 });
     await expect(cerrarViajesDePrueba(pas, con, http)).resolves.toBe(1);
     expect(http).toHaveBeenCalledTimes(1);
-    expect(http).toHaveBeenCalledWith('token-pas', 'PATCH', '/api/viajes/viaje/estado', { estado: 'cancelado' });
+    expect(http).toHaveBeenCalledWith('token-pas', 'POST', '/api/viajes/viaje/cancelar', { motivo: 'otro' });
   });
 
-  test('finaliza un viaje de prueba en curso', async () => {
+  test('cancela sin motivo un viaje de prueba que aún busca conductor', async () => {
+    const http = jest.fn().mockResolvedValue({ status: 200 });
+    await cerrarViajesDePrueba(usuario('pas', [viaje({ estado: 'solicitado', conductor_id: null })]), usuario('con'), http);
+    expect(http).toHaveBeenCalledWith('token-pas', 'POST', '/api/viajes/viaje/cancelar', {});
+  });
+
+  test('un viaje de prueba en curso lo termina el conductor, no el pasajero (sanción del 005)', async () => {
     const http = jest.fn().mockResolvedValue({ status: 200 });
     await cerrarViajesDePrueba(usuario('pas', [viaje({ estado: 'en_curso' })]), usuario('con'), http);
-    expect(http).toHaveBeenCalledWith('token-pas', 'PATCH', '/api/viajes/viaje/estado', { estado: 'finalizado' });
+    expect(http).toHaveBeenCalledTimes(1);
+    expect(http).toHaveBeenCalledWith('token-con', 'POST', '/api/viajes/viaje/terminar');
   });
 
   test.each([

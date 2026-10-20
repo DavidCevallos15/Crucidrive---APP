@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING } from '../constants/theme';
 import { PANEL_IN } from '../constants/motion';
 import { BrandLockup } from './BrandLockup';
+import { esCompacta } from '../utils/compacto';
 
 interface AuthScaffoldProps {
   children: React.ReactNode;
@@ -17,22 +18,24 @@ interface AuthScaffoldProps {
 
 export const AuthScaffold: React.FC<AuthScaffoldProps> = ({ children, showBrand = true, welcome = false }) => {
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const wide = welcome && width >= 900;
+  // En pantallas bajas se quita la bienvenida y el pie: el formulario cabe sin desplazar (010, 1).
+  const compacta = !wide && esCompacta(height);
 
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView
-          contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.lg, paddingBottom: insets.bottom + SPACING.lg }, wide && styles.wideContent]}
+          contentContainerStyle={[styles.content, { paddingTop: insets.top + (compacta ? SPACING.sm : SPACING.lg), paddingBottom: insets.bottom + (compacta ? SPACING.sm : SPACING.lg) }, wide && styles.wideContent]}
           keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false}
         >
           <View style={[styles.layout, wide && styles.wideLayout]}>
             {showBrand && (
-              <View style={[styles.brand, wide && styles.wideBrand]}>
-                <BrandLockup />
-                {welcome && (
+              <View style={[styles.brand, wide && styles.wideBrand, compacta && styles.compactBrand]}>
+                <BrandLockup compact={compacta} />
+                {welcome && !compacta && (
                   <View style={[styles.story, wide && styles.wideStory]}>
                     <Text style={[styles.headline, wide && styles.wideHeadline]} accessibilityRole="header">El siguiente destino{wide ? '\n' : ' '}está cerca.</Text>
                     <Text style={styles.description}>Muévete en tricimoto por Crucita. Pide tu viaje, encuentra tu ruta y sigue tu camino.</Text>
@@ -44,10 +47,10 @@ export const AuthScaffold: React.FC<AuthScaffoldProps> = ({ children, showBrand 
             )}
             <Animated.View entering={PANEL_IN} style={[styles.body, wide && styles.wideBody]}>{children}</Animated.View>
           </View>
-          <View style={styles.footer}>
+          {!compacta && <View style={styles.footer}>
             <Ionicons name="location-outline" size={14} color={COLORS.glassTextMutedDark} />
             <Text style={styles.footerText}>Crucita · Manabí · Ecuador</Text>
-          </View>
+          </View>}
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -63,6 +66,7 @@ const styles = StyleSheet.create({
   layout: { width: '100%', maxWidth: 440, alignSelf: 'center' },
   wideLayout: { maxWidth: 1200, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: SPACING.xxl },
   brand: { marginBottom: SPACING.lg },
+  compactBrand: { marginBottom: SPACING.sm },
   wideBrand: { flex: 1, alignSelf: 'stretch', justifyContent: 'space-between', paddingVertical: SPACING.lg, marginBottom: 0 },
   story: { marginTop: SPACING.lg },
   wideStory: { marginTop: 40, marginBottom: SPACING.xl },

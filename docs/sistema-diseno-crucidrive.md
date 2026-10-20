@@ -2,6 +2,8 @@
 
 Fecha: 20 de octubre de 2026. Dirección solicitada por David: móvil, moderno, cuidado y premium, a partir de su paleta e imágenes. Esta guía define los valores predeterminados para ampliar la app; `frontend/src/constants/theme.ts` es la fuente normativa. El catálogo funcional está en `/diseno` y la bienvenida se puede volver a ver en `/bienvenida`.
 
+Integración de main antes del PR: esta ampliación se identifica como **011**, sin sustituir `010-ajustes-de-campo`. Se conservan el acceso compacto bajo 880 puntos de alto, la hoja desplazable y las alturas de navegación/áreas seguras. Las ofertas del conductor mantienen su componente operativo existente; los nuevos tokens no cambian la regla de asignación ni la lista de hasta tres ofertas.
+
 ## Identidad
 
 CruciDrive es movilidad local en tricimoto en Crucita, con viajes y encomiendas. El símbolo conserva la C, camino y ola; pasa a vino y arena. La tricimoto propia sustituye al automóvil genérico en selección y marcadores. La ilustración es arte de marca, no una fotografía de una unidad o un conductor real.

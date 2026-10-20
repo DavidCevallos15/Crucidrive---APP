@@ -21,6 +21,8 @@ import { API_CONFIG } from '../constants/config';
 import { authFetch } from '../utils/authFetch';
 import { COLORS, FONTS, SPACING, SHAPES } from '../constants/theme';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { alturaBarraPestanas } from '../utils/barraPestanas';
 import {
   useSharedValue,
   useAnimatedStyle,
@@ -55,6 +57,7 @@ interface ChatMessage {
  * Diseño: DESIGN.md §3.D — Chat de Viaje
  */
 export const ChatScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
   const activeRide = useRideStore((s) => s.activeRide);
   const { joinChat, sendMessage, onEvent } = useSocket();
@@ -238,7 +241,7 @@ export const ChatScreen: React.FC = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={90}
       >
-        <BlurContainer intensity={30} style={styles.inputBar}>
+        <BlurContainer intensity={30} style={[styles.inputBar, { paddingBottom: alturaBarraPestanas(insets.bottom) + SPACING.sm }]}>
           <View style={styles.inputBarContent}>
             <View style={styles.inputWrapper}>
               <GlassInput

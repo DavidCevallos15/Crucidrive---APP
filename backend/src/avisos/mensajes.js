@@ -72,4 +72,33 @@ const avisoSinConductor = (viajeId, tokens) => tokens.map((to) => ({
   ttl: 300,
 }));
 
-module.exports = { avisoOferta, avisoRetirada, avisoAceptado, avisoSinConductor, textoPunto };
+/**
+ * Textos del viaje en curso (005, criterios 3, 4, 5, 5b y 8). Sin nombre ni teléfono (criterio 6
+ * del 004). `cambio` es lo que pasó; `encomienda` cambia el texto para el paquete.
+ */
+const TEXTOS_VIAJE = {
+  llegada: [['Tu tricimoto llegó', 'Te espera en el punto de recogida.'], ['El conductor llegó', 'Está en el punto de recogida del paquete.']],
+  en_curso: [['Tu viaje empezó', 'Puedes seguirlo en la app.'], ['Recogimos tu paquete', 'Va en camino a la entrega.']],
+  finalizado: [['Tu viaje terminó', 'Confirma que llegaste y califica al conductor.'], ['Tu paquete fue entregado', 'Confírmalo y califica al conductor.']],
+  finalizado_por_pasajero: [['El pasajero terminó el viaje', 'Ya puedes recibir otras solicitudes.'], ['El pasajero terminó la encomienda', 'Ya puedes recibir otras solicitudes.']],
+  cancelado_por_pasajero: [['El pasajero canceló el viaje', 'Ya puedes recibir otras solicitudes.'], ['Se canceló la encomienda', 'Ya puedes recibir otras solicitudes.']],
+  cancelado_por_conductor: [['El conductor canceló el viaje', 'Toca para volver a pedir.'], ['El conductor canceló la encomienda', 'Toca para volver a pedir.']],
+};
+
+const avisoEstadoViaje = ({ viajeId, cambio, encomienda = false }, tokens) => {
+  const textos = TEXTOS_VIAJE[cambio];
+  if (!textos) return [];
+  const [title, body] = textos[encomienda ? 1 : 0];
+  return tokens.map((to) => ({
+    to,
+    title,
+    body,
+    data: { tipo: 'viaje_estado', viajeId, cambio },
+    priority: 'high',
+    channelId: 'viaje',
+    sound: 'default',
+    ttl: 600,
+  }));
+};
+
+module.exports = { avisoOferta, avisoRetirada, avisoAceptado, avisoSinConductor, avisoEstadoViaje, TEXTOS_VIAJE, textoPunto };

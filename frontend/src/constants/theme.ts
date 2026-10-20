@@ -29,7 +29,7 @@ export const COLORS = {
   /** Alias histórico para texto de éxito legible */
   successLight: '#27634D',
 
-  /** Alias histórico darkBg: papel cálido del sistema claro 010 */
+  /** Alias histórico darkBg: papel cálido del sistema claro 011 */
   darkBg: '#FFFCF7',
   /** Papel cálido del sistema claro */
   lightBg: '#FFFCF7',
@@ -60,7 +60,7 @@ export const COLORS = {
   /** Texto secundario sobre papel/blanco */
   glassTextMutedLight: '#74636D',
 
-  // Roles normativos del sistema 010. Los nombres glass/dark se conservan como alias de compatibilidad.
+  // Roles normativos del sistema 011. Los nombres glass/dark se conservan como alias de compatibilidad.
   ink: '#291B25',
   paper: '#FFFCF7',
   surface: '#FFFFFF',

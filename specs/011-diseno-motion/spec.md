@@ -1,4 +1,4 @@
-# 010 · Diseño premium y bienvenida costera
+# 011 · Diseño premium y bienvenida costera
 
 Alcance autorizado por la petición directa de David del 20 oct 2026 y sus imágenes: renovar el diseño con crema #FEE8C1, vino #7F1139 y azul #88AEE0, tricimotos propias y una bienvenida con logo y espuma. David confirmó que solo debe aparecer la primera vez; después se entra directamente. Se documenta antes de implementar; no se amplían tarifas, datos ni permisos.
 

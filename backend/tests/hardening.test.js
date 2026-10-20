@@ -227,4 +227,17 @@ describe('sockets · validación y autenticación', () => {
     expect(socket.emit).toHaveBeenCalledWith('error_message', expect.stringContaining('1000'));
     expect(db.from).not.toHaveBeenCalled();
   });
+
+  it('send_message en un viaje terminado avisa que el chat se cerró (paso 005, criterio 7)', async () => {
+    const { socket, handlers, onConnection, db } = await crearEntorno({ perfil: { rol: 'pasajero', nombre: 'Pedro' } });
+    onConnection(socket);
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    const q = { insert: jest.fn(() => q), select: jest.fn(() => q),
+      single: jest.fn().mockResolvedValue({ data: null, error: { code: '42501', message: 'new row violates row-level security policy for table "messages"' } }) };
+    db.from.mockImplementation(() => q);
+    await handlers.send_message({ threadId: V1, content: 'hola' });
+    expect(socket.emit).toHaveBeenCalledWith('error_message', expect.stringContaining('chat se cerró'));
+    expect(socket.emit).not.toHaveBeenCalledWith('error_message', expect.stringContaining('row-level'));
+    console.error.mockRestore();
+  });
 });

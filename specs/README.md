@@ -10,7 +10,7 @@ Flujo por paso: spec → aprobación → plan → tareas → implementación (co
 | 2 | `002-identidad` | **Completo** (prueba de humo 28/28). Pendiente: texto de consentimiento revisado por un abogado y ver con sesiones reales las vistas del conductor y del administrador |
 | 3 | `003-despacho` | **Completo** (prueba de humo 29/29 el 2026-10-09). Pendiente: probar en un teléfono real que la oferta llegue con la app abierta; con la app cerrada, en el paso 004 |
 | 4 | `004-tracking-push` | **Plan en revisión** (spec aprobada en el PR #35) |
-| 5 | `005-viaje` | Sin iniciar |
+| 5 | `005-viaje` | **Spec aprobada** (PR #49; decisiones del 20 oct 2026: calificaciones, motivos y llegada confirmada por las dos partes). **Plan en revisión** (`plan.md` y `tasks.md`, 20 oct 2026) |
 | 6 | `006-sos-admin` | Sin iniciar |
 | 7 | `007-hardening` | Sin iniciar |
 | 8 | `008-piloto` | Sin iniciar |
@@ -23,4 +23,5 @@ Cada carpeta contiene `spec.md` (qué y por qué), `plan.md` (cómo) y `tasks.md
 | Carpeta | Estado |
 | --- | --- |
 | `009-experiencia-encomiendas` | Identidad, seguridad de sesión, navegación, configuración y encomiendas solicitadas por David el 20 oct 2026. Implementación local y formalización posterior, documentada como desviación de «spec primero». PR en borrador: pendientes revisión formal, RLS 0015 y teléfono. No completa ni renumera 005–008. |
-| `010-diseno-motion` | Paleta y motion premium solicitados por David; bienvenida una sola vez, tricimoto propia, componentes y guía de sistema. Spec/plan antes de código. Validación web y empaquetado; teléfono pendiente. |
+| `010-ajustes-de-campo` | **Implementado** (A: #51, B: #52; 0016 en producción). Falta la revisión en el APK (T7 y T12). Spec aprobada en el PR #49, 20 oct 2026: interfaz compacta para 360 × 640 y lista de ofertas del conductor sin quitar D-11 (D-15 propuesta). |
+| `011-diseno-motion` | Paleta y motion premium solicitados por David; bienvenida una sola vez, tricimoto propia, componentes y guía de sistema. Spec/plan antes de código. Validación web y empaquetado; teléfono pendiente. |

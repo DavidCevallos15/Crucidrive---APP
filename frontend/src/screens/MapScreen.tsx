@@ -42,6 +42,9 @@ import { PANEL_IN, PANEL_OUT } from '../constants/motion';
 import { rutaInicial } from '../utils/routing';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../store/useAuthStore';
+import { separacionInferior } from '../utils/barraPestanas';
+import { altoMaximoHoja, esCompacta } from '../utils/compacto';
+import { HojaDesplazable } from '../components/HojaDesplazable';
 import { GlassInput } from '../components/GlassInput';
 import { useBuscarLugares } from '../hooks/useBuscarLugares';
 import { ATRIBUCION_OSM, ICONO_CATEGORIA, type Lugar } from '../utils/lugares';
@@ -75,7 +78,13 @@ type Panel = 'destino' | 'origen' | 'ficha';
 export const MapScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
-  const sheetMaxHeight = Math.max(220, height - insets.top - insets.bottom - 132);
+  // Con sesión hay barra de pestañas (absoluta): las hojas suben lo que ella mide.
+  const conBarra = useAuthStore((st) => Boolean(st.session));
+  const separacion = separacionInferior(conBarra, insets.bottom);
+  const sheetMaxHeight = Math.max(220, height - insets.top - (conBarra ? separacion : insets.bottom) - 132);
+  // Panel de destino u origen: deja a la vista al menos un 35 % del mapa (010, criterio 2).
+  const panelMaxHeight = altoMaximoHoja(height, conBarra ? separacion : insets.bottom);
+  const compacta = esCompacta(height);
   const service = useServiceStore((s) => s.service);
   const selectService = useServiceStore((s) => s.selectService);
   const isParcel = service === 'encomienda';
@@ -270,10 +279,10 @@ export const MapScreen: React.FC = () => {
     </View>
   );
 
-  const serviceSelector = <View style={styles.serviceTabs}>
+  const serviceSelector = <View style={[styles.serviceTabs, compacta && styles.serviceTabsCompact]}>
     {([{ id: 'viaje', label: 'Tricimoto', icon: 'navigate-outline' }, { id: 'encomienda', label: 'Encomienda', icon: 'cube-outline' }] as const).map((item) => <PressableScale key={item.id}
       onPress={() => { selectService(item.id); setParcelError(null); }} accessibilityRole="button" accessibilityLabel={item.label} accessibilityState={{ selected: service === item.id }}
-      style={[styles.serviceOption, service === item.id && styles.serviceOptionActive]}>
+      style={[styles.serviceOption, compacta && styles.serviceOptionCompact, service === item.id && styles.serviceOptionActive]}>
       {item.id === 'viaje' ? <TricimotoIcon size={26} color={service === item.id ? COLORS.wine : COLORS.glassTextMutedDark} /> : <Ionicons name={item.icon} size={22} color={service === item.id ? COLORS.primaryLight : COLORS.glassTextMutedDark} />}
       <Text style={[styles.serviceText, service === item.id && styles.serviceTextActive]}>{item.label}</Text>
     </PressableScale>)}
@@ -377,15 +386,15 @@ export const MapScreen: React.FC = () => {
           key={panel}
           entering={PANEL_IN}
           exiting={PANEL_OUT}
-          style={styles.destinationContainer}
+          style={[styles.destinationContainer, { bottom: separacion }]}
         >
           <GlassCard
             style={styles.destinationCard}
             noPadding
           >
-            <ScrollView style={{ maxHeight: Math.min(sheetMaxHeight, height * 0.62) }} contentContainerStyle={[styles.sheetBody, { paddingBottom: insets.bottom + SPACING.md }]} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
+            <HojaDesplazable maxHeight={panelMaxHeight} contentContainerStyle={[styles.sheetBody, { paddingBottom: (conBarra ? 0 : insets.bottom) + SPACING.md }]} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
             {serviceSelector}
-            <Text style={styles.sectionTitle} accessibilityRole="header">
+            <Text style={[styles.sectionTitle, compacta && styles.sectionTitleCompact]} accessibilityRole="header">
               {panel === 'origen' ? isParcel ? '¿Dónde la recogemos?' : '¿Desde dónde sales?' : isParcel ? '¿Dónde la entregamos?' : '¿A dónde vas?'}
             </Text>
             {panel === 'destino' && filaOrigen}
@@ -473,7 +482,7 @@ export const MapScreen: React.FC = () => {
                 style={styles.cancelButton}
               />
             )}
-            </ScrollView>
+            </HojaDesplazable>
           </GlassCard>
         </Animated.View>
       )}
@@ -483,10 +492,10 @@ export const MapScreen: React.FC = () => {
         <Animated.View
           entering={PANEL_IN}
           exiting={PANEL_OUT}
-          style={styles.rideSheetContainer}
+          style={[styles.rideSheetContainer, { bottom: separacion }]}
         >
           <GlassCard style={styles.rideSheet} noPadding>
-            <ScrollView style={{ maxHeight: sheetMaxHeight }} contentContainerStyle={[styles.sheetBody, { paddingBottom: insets.bottom + SPACING.md }]} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
+            <HojaDesplazable maxHeight={sheetMaxHeight} contentContainerStyle={[styles.sheetBody, { paddingBottom: (conBarra ? 0 : insets.bottom) + SPACING.md }]} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
             {serviceSelector}
             {/* Encabezado con el total */}
             <View style={styles.rideHeader}>
@@ -582,7 +591,7 @@ export const MapScreen: React.FC = () => {
               size="sm"
               style={styles.cancelButton}
             />
-            </ScrollView>
+            </HojaDesplazable>
           </GlassCard>
         </Animated.View>
       )}
@@ -593,11 +602,11 @@ export const MapScreen: React.FC = () => {
           key={activeRide.status}
           entering={PANEL_IN}
           exiting={PANEL_OUT}
-          style={styles.rideSheetContainer}
+          style={[styles.rideSheetContainer, { bottom: separacion }]}
         >
           <GlassCard style={styles.rideSheet} noPadding>
             <View
-              style={[styles.sheetBody, { paddingBottom: insets.bottom + SPACING.md }]}
+              style={[styles.sheetBody, { paddingBottom: (conBarra ? 0 : insets.bottom) + SPACING.md }]}
               accessibilityLiveRegion="polite"
             >
               <EstadoViaje
@@ -761,6 +770,9 @@ const EstadoViaje: React.FC<EstadoViajeProps> = ({
 const styles = StyleSheet.create({
   serviceTabs: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.lg },
   serviceOption: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm, minHeight: 56, borderRadius: 12, backgroundColor: COLORS.glassBgDark, padding: SPACING.sm },
+  serviceTabsCompact: { marginBottom: SPACING.md },
+  serviceOptionCompact: { minHeight: 48 },
+  sectionTitleCompact: { marginBottom: SPACING.sm },
   serviceOptionActive: { backgroundColor: COLORS.wineSoft, borderWidth: 1, borderColor: COLORS.primaryLight },
   serviceText: { fontFamily: FONTS.body, fontSize: FONTS.sizes.sm, color: COLORS.glassTextMutedDark },
   serviceTextActive: { color: COLORS.primaryLight },

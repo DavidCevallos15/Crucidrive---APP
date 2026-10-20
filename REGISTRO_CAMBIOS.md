@@ -2,11 +2,12 @@
 
 ## HISTORIAL DE LOGS:
 
-## [1.60.0] - 2026-10-20 (Hora Local)
+## [1.67.0] - 2026-10-20 (Hora Local)
 
-### Paso 010 · Sistema claro y bienvenida costera
-- Commits locales de trazabilidad: `7b523b5` (spec/plan/tareas) y `2fb0309` (implementación, recursos y pruebas), en `codex/010-diseno-premium-motion`.
-- Alcance, plan y tareas documentados antes de implementar en `specs/010-diseno-motion/`. David pidió diseño premium con su paleta y confirmó la bienvenida solo la primera vez.
+### Paso 011 · Sistema claro y bienvenida costera
+- Integración previa al PR con `origin/main` en `bbb5e71`: conserva interfaz compacta, altura de pestañas, hoja desplazable y lista de ofertas de los PR #48–#52, además del backend de viaje en curso #54. La ampliación visual se renumera de 010 a **011** para no colisionar con `010-ajustes-de-campo`; los commits originales mantienen su identificador histórico.
+- Commits locales de trazabilidad: `7b523b5` (spec/plan/tareas) y `2fb0309` (implementación, recursos y pruebas), en `codex/011-diseno-premium-motion`.
+- Alcance, plan y tareas documentados antes de implementar en `specs/011-diseno-motion/`. David pidió diseño premium con su paleta y confirmó la bienvenida solo la primera vez.
 - Paleta Silk Mango `#FEE8C1`, Neon Candy `#7F1139`, Wild Navy `#88AEE0`, papel y tinta; componentes, mapa, acceso, menú, ajustes, chat e iconos de instalación adaptados. Los alias `darkBg` y `glass*` preservan compatibilidad; no implican modo oscuro automático.
 - Logo adaptado, tricimoto propia para UI/marcadores, ilustración generada y vector exportable. Recursos con procedencia y prompts en `frontend/assets/premium/`; máscara adaptativa con padding reproducible. No se incorporaron los videos de referencia a la distribución.
 - Intro Reanimated de 2,4 s: logo, agua y espuma, con Omitir y sin sonido. Primera visita recordada por bandera local no sensible; lectura fallida permite entrar al mapa. Variante estática con Reduce Motion también registra presentación. No se alteran guardias por rol ni servicios.
@@ -15,8 +16,118 @@
 
 ### Evidencia y límites
 - Frontend **327/327**, TypeScript sin errores y exportaciones Expo web y Android/Hermes correctas. Ocho combinaciones normativas pasan contraste AA; cinco pruebas cubren preferencia de bienvenida y fallos de almacenamiento. El backend no cambia en esta ampliación.
+- Tras integrar main: frontend **335/335**, backend **363/363** (**698 pruebas**); TypeScript sin errores y auditoría del backend de producción sin alertas. Se conserva el modo compacto de las pantallas bajas.
 - Revisión visual independiente web: disposición «ship» tras puntuar resueltos los dos hallazgos (persistencia reducida y mínimo Android). Capturas en `.impeccable/review/premium/`, móvil 390 × 844 y escritorio 1440 × 900.
 - Pendientes: APK nuevo y prueba física de Reduced Motion, tipografía ampliada, lector de pantalla, marcador nativo y FPS en teléfono modesto. El empaquetado no acredita esos resultados. No se publicó ni desplegó esta ampliación desde esta tarea.
+
+---
+
+## [1.66.0] - 2026-10-20 (Hora Local)
+
+### 005 · Viaje en curso: BD y backend (PR 2)
+- **Alcance:** el pasajero también puede terminar el viaje, solo en curso. Queda registrado y se le avisa; con 3 en 30 días no puede pedir durante 24 h. El conductor queda libre y recibe aviso. Ese viaje no se confirma ni se califica (spec, criterios 5b y 5c).
+- **BD** (`0017_viaje_en_curso.sql`, **sin aplicar en producción**):
+  - Funciones `marcar_llegada`, `iniciar_viaje`, `terminar_viaje`, `cancelar_viaje` (motivo obligatorio si ya hay conductor), `confirmar_llegada`, `punto_recogida`, `calificar_viaje`, `mis_resenas` y `resumen_conductor`.
+  - Se quita el `update` directo de `estado`. La tabla `calificaciones` no tiene lectura directa, así el conductor no sabe quién lo calificó. El chat queda en solo lectura al terminar.
+- **Backend:**
+  - `POST /api/viajes/:id/llegada`, `/iniciar`, `/terminar`, `/cancelar`, `/confirmar` y `/calificar`, y `GET /api/conductores/resenas`. `PATCH /:id/estado` sigue, ahora sobre las mismas funciones.
+  - Errores de la BD → 400, 403 o 409, sin detalles internos.
+  - Avisos a la otra parte por socket (`viaje_estado`) y con la app cerrada, sin nombre ni teléfono.
+  - Las reseñas (promedio y número) van en los datos del conductor que recibe el pasajero.
+  - Sanción en `solicitarViaje`: 429 con «Podrás pedir de nuevo a las HH:MM». Parámetros `SANCION_*` en `.env.example`, validados al arrancar.
+  - Escribir en el chat de un viaje terminado devuelve «El chat se cerró…».
+- **Humo:** el conductor termina el viaje (no el pasajero, para no sancionarlo) y se prueban el chat cerrado y la calificación única.
+- Pruebas:
+  - `rls_007.sql`: 20 en verde. `rls_001` a `rls_006` siguen en verde.
+  - Backend: 363/363. Incluye `tests/viaje005.test.js` (64 pruebas) y las del 001 y 003, reescritas a las funciones de la BD.
+- **Antes de desplegar el backend hay que aplicar la 0017.** Sin ella, los endpoints nuevos responden 500.
+
+---
+
+## [1.65.0] - 2026-10-20 (Hora Local)
+
+### Plan del 005 (viaje en curso) para revisión
+- `specs/005-viaje/plan.md` y `tasks.md`.
+- **BD (0017):**
+  - Las transiciones del viaje pasan a funciones que validan quién y en qué orden (llegada, iniciar, terminar, cancelar con motivo, confirmar). Se quita el permiso de `update` directo sobre `estado`.
+  - `punto_recogida` da las coordenadas solo al conductor asignado y solo durante el viaje.
+  - Tabla `calificaciones` sin lectura directa, para que el conductor no pueda saber quién lo calificó (LOPDP), con funciones para calificar, ver las reseñas propias y ver el resumen.
+  - El chat queda en solo lectura al terminar el viaje.
+- **Backend:** endpoints por paso y avisos a la otra parte por socket y con la app cerrada, sin nombre ni teléfono.
+- **App:** tarjeta del viaje activo del conductor con «Cómo llegar» (enlace de Google Maps, sin clave ni costo), estados para el pasajero y hoja final para confirmar y calificar.
+- Entrega en 3 PRs: BD y backend; conductor; pasajero y calificaciones.
+- `specs/README.md`: el 010 queda implementado; falta revisarlo en el APK.
+
+---
+
+## [1.64.0] - 2026-10-20 (Hora Local)
+
+### 011 · Parte B: lista de ofertas sin quitar D-11 (D-15)
+- **BD** (`0016_varias_ofertas.sql`): un conductor puede tener hasta 3 ofertas abiertas (parámetro `p_max_ofertas`). `crear_ofertas` bloquea la tricimoto antes de contar, para que dos solicitudes a la vez no superen el tope. Al aceptar, las demás ofertas del conductor quedan como **«liberada»**, un resultado nuevo, y no como «rechazada», para no ensuciar las métricas del piloto.
+- **Backend:** `OFERTAS_MAX_POR_CONDUCTOR` (1 a 5, por defecto 3; con 1, como en el 003). Al aceptar, las solicitudes liberadas se retiran de la pantalla del conductor y pasan al siguiente candidato sin esperar a que venzan.
+- **App:** la consola muestra las ofertas en una lista, primero la que vence antes, cada una con su cuenta atrás, Aceptar y Rechazar. Rechazar quita solo esa. La lista reutiliza `TarjetaOferta` y `HojaDesplazable` de la parte A.
+- Pruebas:
+  - `rls_006.sql`: 17 en verde; falla sin la 0016.
+  - `rls_003`: el criterio 7 del 003 pasa a probarse con tope 1. `rls_001` a `rls_005` siguen en verde.
+  - Backend 296/296 (6 nuevas): la de aceptar falla sin el cambio.
+  - Frontend 322/322; `tsc` sin errores.
+- **Orden de despliegue:** primero la 0016 en el SQL Editor y después el backend. El backend anterior sigue funcionando con la BD nueva; al revés no.
+- **0016 aplicada en producción** (20 oct 2026, SQL Editor). Un primer intento falló porque el SQL llegó cortado (`unterminated dollar-quoted string`) y no aplicó nada: el editor lo ejecuta en una sola transacción. Verificado: índice viejo quitado, «liberada» en el check, funciones nuevas con bloqueo y permisos solo para `service_role`, y `aceptar_viaje` que libera. Linter de seguridad: solo D-10; rendimiento: sin hallazgos nuevos. Como en la 0014 y la 0015, no figura en `schema_migrations`.
+
+---
+
+## [1.63.0] - 2026-10-20 (Hora Local)
+
+### 011 · Parte A: interfaz compacta
+- Modo compacto por debajo de **880 px** de alto (`utils/compacto.ts`). Cubre 360 × 640, 360 × 800 (el teléfono de David) y 393 × 852; deja fuera 412 × 915. David aprobó subir el umbral desde 720.
+- **Login** (criterio 1): sin bienvenida ni pie, marca compacta y espacios apretados. En 360 × 640 el contenido pasó de 929 px a 640 y el botón Entrar queda en y = 448; en 360 × 800, en y = 528.
+- **Panel del mapa** (criterios 2 y 3): el panel de destino u origen deja al menos un 35 % del mapa, también con la barra de pestañas. `HojaDesplazable` avisa «Desliza para ver más» mientras queda contenido abajo; en la prueba del 20 oct, el buscador y los sectores pasaron desapercibidos.
+- **Oferta del conductor** (criterio 4): pasa a `components/TarjetaOferta.tsx`, que también usará la lista de la parte B. En el peor caso (textos largos, aviso abierto, sin conexión) cabe entera en 360 × 640, con Aceptar y Rechazar de 64 px.
+- Capturas en 360 × 640, 360 × 800 y 412 × 915 en `docs/capturas/010-a/`, más el login de antes.
+- Deuda encontrada: el modo ligero sin blur de la regla 6 no existe en el código. Se propone para `007-hardening`. Lo nuevo no usa blur.
+- `specs/010-ajustes-de-campo/plan.md` y `tasks.md`: parte A hecha (T1 a T6); falta que David la revise en el APK (T7). La parte B empieza por completar su plan.
+- Pruebas: frontend 321/321 (4 nuevas en `tests/compacto.test.ts`) y `tsc` sin errores en `src/` ni `app/`.
+
+---
+
+## [1.62.0] - 2026-10-20 (Hora Local)
+
+### Specs 005 y 010 aprobadas; decisiones de David para el 005
+- David fusionó el #49: las specs 005 y 010 quedan aprobadas y D-15 (lista de hasta 3 ofertas sin quitar D-11) entra en la constitución.
+- Respuestas a las preguntas abiertas del 005:
+  - **Calificaciones: sí.** El pasajero califica al conductor (1 a 5 estrellas y un comentario opcional); el conductor ve su promedio, sus reseñas y los comentarios, sin datos de quien los escribe (criterios 15 a 19).
+  - **Motivos de cancelación: sí**, la lista propuesta.
+  - **Llegada confirmada por las dos partes:** el conductor marca «Llegamos» o «Paquete entregado» y el pasajero confirma «Llegué» o «Se entregó» antes de calificar. Un «No llegué» queda para el administrador y, sin respuesta en 30 min, la llegada se da por confirmada (criterio 5a).
+- Sin cambios de código.
+
+---
+
+## [1.61.0] - 2026-10-20 (Hora Local)
+
+### Specs 005 y 010 en borrador, tras la prueba de las encomiendas
+- David probó con dos teléfonos hasta las encomiendas: salieron bien y los avisos llegan rápido con la app cerrada.
+- Pidió lo que falta del viaje: cancelar después de aceptar, seguimiento de la tricimoto y el lugar donde está el pasajero. Es el paso 005, que el 003 y el 004 dejaron fuera a propósito. `specs/005-viaje/spec.md`: recogida con «Cómo llegar», «Llegué», viaje en curso, cierre, cancelación con motivo y chat en solo lectura al terminar. Con 3 preguntas abiertas: calificaciones, motivos y «Llegué» manual o automático.
+- El seguimiento en el mapa de Android depende de la clave de Google Maps (D-02); sin ella se ve la distancia, como hoy.
+- Pidió que el diseño quepa en pantallas pequeñas y una lista de solicitudes para el conductor. Decidió compactar la interfaz (sin ajuste de tamaño) y la lista sin quitar D-11. `specs/010-ajustes-de-campo/spec.md`, con la medida del login: 929 px en una pantalla de 640 (versión web, 360 × 640) y D-15 propuesta (hasta 3 ofertas abiertas por conductor).
+- El origen que solo mostraba «Usar mi ubicación (La Loma)» era el panel tapado por la barra de pestañas (corregido en el #48) y sin señal de que se podía desplazar: lo cubre el criterio 3 del 010.
+- Sin cambios de código. Esperan la aprobación de David.
+
+---
+
+## [1.60.0] - 2026-10-20 (Hora Local)
+
+### Prueba del APK del 009: el viaje funciona, pero la barra de pestañas tapaba cosas
+- Prueba de David con 2 teléfonos (hora local 12:43 a 12:49; logs de Supabase en UTC). El flujo completo respondió bien:
+  - 17:43:13 y 17:45:00: login de conductor y pasajero. A los 5 s, `registrar_dispositivo` 204 en cada uno (T8 confirmada también en el APK del 009).
+  - 17:45:29: primer pedido sin conductor disponible, que se cerró como `sin_conductor` (el conductor aún no estaba disponible).
+  - 17:45:51: segundo pedido. El backend leyó el token del conductor (`dispositivos_push`) para avisarle, y a los 10 s `aceptar_viaje` 200 y se leyó el token del pasajero para el aviso de aceptado. Tarifa 1,00 USD con 2 personas, `tipo_servicio = viaje`.
+  - 17:48:32 y 17:48:33: los dos cerraron sesión. `olvidar_dispositivo` 200 en ambos y luego `logout` 204, por eso `dispositivos_push` quedó en 0.
+- Sin pruebas todavía: una encomienda (0 filas en `encomiendas`) y la sesión migrada de SecureStore (en ambos teléfonos se inició sesión de nuevo).
+- Se corrige lo que se ve en las capturas, antes de la 009 también:
+  - La barra de pestañas mide 85 fijos y es `absolute`: con navegación de 3 botones de Android quedaban sus etiquetas debajo del sistema; además no reserva espacio y tapaba el botón «Abrir chat» de la hoja del viaje del pasajero y la caja de escribir del chat.
+  - Ahora la barra crece lo que ocupa el sistema abajo, las hojas del mapa suben lo que mide la barra (solo con sesión; sin sesión no hay barra) y la caja del chat también.
+- Código: `src/utils/barraPestanas.ts` (medidas, con prueba), `AppTabLayout`, `MapScreen` y `ChatScreen`. Frontend 317/317, `tsc` sin errores en `src/` ni `app/`. Sin revisión en el teléfono: el cambio es de diseño y hay que verlo en el APK.
+- Backend de David: `[despacho] Recuperación: column viajes.tipo_servicio does not exist` salía de arrancar el código del 009 antes de aplicar la 0015; ya no sale. El `ValidationError: X-Forwarded-For` es de ngrok: en `backend/.env` falta `TRUST_PROXY=1`.
 
 ---
 

@@ -1,4 +1,6 @@
-# 010 · Plan
+# 011 · Plan
+
+Al preparar el PR se integra main hasta `bbb5e71`: las mejoras de interfaz compacta, safe area, lista de ofertas y viaje en curso se conservan. Esta ampliación se renumera como 011, porque 010 ya corresponde a ajustes de campo; no se reescriben sus decisiones ni los commits históricos.
 
 Extender `constants/theme.ts`, mantener Outfit/Inter y componentes existentes. Sustituir superficies oscuras por papel cálido y texto tinta, conservar alias por compatibilidad y exponer nombres semánticos. Aplicar el mismo sistema a mapa, acceso, menú y ajustes. Mapa nativo claro y atribución web legible.
 

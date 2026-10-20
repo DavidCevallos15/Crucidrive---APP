@@ -12,6 +12,11 @@ jest.mock('../src/config/supabase', () => ({ supabase: {}, createUserClient: jes
 
 const mockDespachador = { iniciar: jest.fn(), aceptado: jest.fn(), cancelar: jest.fn(), alResponder: jest.fn() };
 jest.mock('../src/despacho', () => ({ obtenerDespachador: jest.fn(() => mockDespachador) }));
+// La sanción del 005 tiene sus pruebas en viaje005.test.js; aquí el pasajero nunca está bloqueado.
+jest.mock('../src/viaje/sancion', () => ({
+  ...jest.requireActual('../src/viaje/sancion'),
+  revisarSancion: jest.fn(async () => ({ llevas: 0, bloqueadoHasta: null })),
+}));
 
 const { solicitarViaje, aceptarViaje, cambiarEstadoViaje } = require('../src/controllers/viajeController');
 const { obtenerDespachador } = require('../src/despacho');
@@ -126,10 +131,12 @@ describe('T9 · aceptar viaje (criterios 8, 9 y 10)', () => {
     expect(mockDespachador.aceptado).not.toHaveBeenCalled();
   });
 
-  test('acepta con la RPC, responde con el chat y avisa al pasajero con nombre, placa y teléfono', async () => {
+  test('acepta con la RPC, responde con el chat y avisa al pasajero con nombre, placa, teléfono y reseñas', async () => {
     const viaje = { id: VIAJE, estado: 'aceptado', pasajero_id: PASAJERO, conductor_id: CONDUCTOR };
     const { db, llamadas } = crearDb({
-      rpc: () => Promise.resolve({ data: [{ viaje_id: VIAJE, thread_id: 'hilo-1' }], error: null }),
+      rpc: (funcion) => Promise.resolve(funcion === 'resumen_conductor'
+        ? { data: [{ promedio: '4.80', total: 23 }], error: null }
+        : { data: [{ viaje_id: VIAJE, thread_id: 'hilo-1' }], error: null }),
       respuestas: {
         viajes: [{ data: viaje, error: null }],
         perfiles: [{ data: { nombre: 'Carla', telefono: '0992222222' }, error: null }],
@@ -144,30 +151,31 @@ describe('T9 · aceptar viaje (criterios 8, 9 y 10)', () => {
     expect(r.status).toHaveBeenCalledWith(200);
     expect(r.json.mock.calls[0][0].data).toEqual({ viaje, chat: { threadId: 'hilo-1' } });
     expect(mockDespachador.aceptado).toHaveBeenCalledWith(viaje, {
-      conductor: { id: CONDUCTOR, nombre: 'Carla', telefono: '0992222222', placa: 'ABC-123' },
+      conductor: { id: CONDUCTOR, nombre: 'Carla', telefono: '0992222222', placa: 'ABC-123', resenas: { promedio: 4.8, total: 23 } },
       chat: { threadId: 'hilo-1' },
     });
+    expect(db.rpc).toHaveBeenCalledWith('resumen_conductor', { p_conductor: CONDUCTOR });
   });
 });
 
 describe('T9 · cancelar mientras busca (criterio 12)', () => {
   test('cancelar una solicitud avisa al despachador para retirar las ofertas', async () => {
-    // Primero la lectura del viaje (findViajeById) y luego la respuesta del update.
+    // Desde el 005 cancela la función cancelar_viaje (sin motivo mientras busca); luego se lee el viaje.
     const { db } = crearDb({ respuestas: { viajes: [
-      { data: { id: VIAJE, estado: 'solicitado', pasajero_id: PASAJERO }, error: null },
-      { data: { id: VIAJE, estado: 'cancelado' }, error: null },
+      { data: { id: VIAJE, estado: 'cancelado', pasajero_id: PASAJERO, conductor_id: null, cancelado_por: 'pasajero' }, error: null },
     ] } });
     const r = res();
     await cambiarEstadoViaje({ params: { id: VIAJE }, body: { estado: 'cancelado' }, user: { id: PASAJERO }, supabase: db }, r);
+    expect(db.rpc).toHaveBeenCalledWith('cancelar_viaje', { p_viaje: VIAJE, p_motivo: null });
     expect(r.status).toHaveBeenCalledWith(200);
     expect(mockDespachador.cancelar).toHaveBeenCalledWith(VIAJE);
   });
 
   test('un viaje ya cerrado sin conductor no se puede cancelar', async () => {
-    const { db } = crearDb({ respuestas: { viajes: [{ data: { id: VIAJE, estado: 'sin_conductor', pasajero_id: PASAJERO }, error: null }] } });
+    const { db } = crearDb({ rpc: () => Promise.resolve({ data: null, error: { code: 'P0001', message: 'estado_no_permite' } }) });
     const r = res();
     await cambiarEstadoViaje({ params: { id: VIAJE }, body: { estado: 'cancelado' }, user: { id: PASAJERO }, supabase: db }, r);
-    expect(r.status).toHaveBeenCalledWith(400);
+    expect(r.status).toHaveBeenCalledWith(409);
     expect(mockDespachador.cancelar).not.toHaveBeenCalled();
   });
 });

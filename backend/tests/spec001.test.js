@@ -119,17 +119,17 @@ describe('spec 001 · controladores alineados al esquema', () => {
     expect(llamadas.filter((l) => l.op === 'update' || l.op === 'insert')).toEqual([]);
   });
 
-  it('cambiarEstadoViaje a finalizado registra finalizado_en y no envía updated_at', async () => {
+  it('cambiarEstadoViaje a finalizado ya no escribe viajes a mano: lo hace terminar_viaje (paso 005)', async () => {
     const { cambiarEstadoViaje } = require('../src/controllers/viajeController');
     const { db, llamadas } = crearDb([
-      { data: { id: '0a1b2c3d-0000-4000-8000-000000000001', estado: 'en_curso', pasajero_id: 'p1', conductor_id: 'c1' }, error: null },
-      { data: { id: '0a1b2c3d-0000-4000-8000-000000000001', estado: 'finalizado' }, error: null },
+      { data: { id: '0a1b2c3d-0000-4000-8000-000000000001', estado: 'finalizado', pasajero_id: 'p1', conductor_id: 'c1', finalizado_por: 'conductor' }, error: null },
     ]);
+    db.rpc = jest.fn().mockResolvedValue({ data: null, error: null });
     const req = { params: { id: '0a1b2c3d-0000-4000-8000-000000000001' }, body: { estado: 'finalizado' }, user: { id: 'c1' }, supabase: db };
 
     await cambiarEstadoViaje(req, res());
 
-    const upd = llamadas.find((l) => l.op === 'update');
-    expect(upd.valores).toEqual({ estado: 'finalizado', finalizado_en: expect.any(String) });
+    expect(db.rpc).toHaveBeenCalledWith('terminar_viaje', { p_viaje: '0a1b2c3d-0000-4000-8000-000000000001' });
+    expect(llamadas.filter((l) => l.op === 'update' || l.op === 'insert')).toEqual([]);
   });
 });

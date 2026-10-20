@@ -7,6 +7,8 @@
  * rechazo -> "sin conductor" -> nueva solicitud -> aceptación con chat -> en_curso ->
  * finalizado -> la tricimoto vuelve a disponible. Mide los bytes de la oferta y de cada
  * envío de ubicación y proyecta una jornada de 10 h (criterio 27).
+ * Paso 005: llegada, inicio y final por el conductor con sus funciones de la BD, chat en solo
+ * lectura al terminar y calificación del pasajero (una sola vez).
  * Paso 004: registro y reasignación del teléfono para avisos (11), la ubicación del conductor en
  * un viaje llega solo a su pasajero, por socket y por REST (13, 14, 15), límite del REST y
  * proyección de 10 h en segundo plano con avisos (18).
@@ -371,10 +373,19 @@ const SOLICITUD = {
   const hist = await http(pas.token, 'GET', `/api/chats/${threadId}/mensajes`);
   paso('Historial REST contiene el mensaje', hist.status === 200 && hist.json.data?.some((m) => m.content === 'Voy en camino'), `HTTP ${hist.status}`);
 
-  const enCurso = await http(con.token, 'PATCH', `/api/viajes/${viaje.id}/estado`, { estado: 'en_curso' });
-  paso('Estado en_curso', enCurso.status === 200, `HTTP ${enCurso.status}`);
-  const fin = await http(pas.token, 'PATCH', `/api/viajes/${viaje.id}/estado`, { estado: 'finalizado' });
-  paso('Estado finalizado', fin.status === 200, `HTTP ${fin.status}`);
+  // 5.3b Viaje en curso (005). Termina el conductor: si terminara el pasajero, contaría para su sanción.
+  const llegada = await http(con.token, 'POST', `/api/viajes/${viaje.id}/llegada`);
+  paso('«Llegué» del conductor (005, criterio 3)', llegada.status === 200 && Boolean(llegada.json.data?.llegado_en), `HTTP ${llegada.status}`);
+  const enCurso = await http(con.token, 'POST', `/api/viajes/${viaje.id}/iniciar`);
+  paso('Estado en_curso', enCurso.status === 200 && enCurso.json.data?.estado === 'en_curso', `HTTP ${enCurso.status}`);
+  const fin = await http(con.token, 'POST', `/api/viajes/${viaje.id}/terminar`);
+  paso('Estado finalizado por el conductor', fin.status === 200 && fin.json.data?.finalizado_por === 'conductor', `HTTP ${fin.status}`);
+  const errorChat = esperar(sCon, 'error_message', (m) => String(m).includes('chat se cerró'), 5000);
+  sCon.emit('send_message', { threadId, content: 'Gracias' });
+  paso('Con el viaje terminado el chat queda en solo lectura (005, criterio 7)', Boolean(await errorChat));
+  const calif = await http(pas.token, 'POST', `/api/viajes/${viaje.id}/calificar`, { estrellas: 5, comentario: 'Prueba de humo' });
+  const otra = await http(pas.token, 'POST', `/api/viajes/${viaje.id}/calificar`, { estrellas: 1 });
+  paso('El pasajero califica una sola vez (005, criterio 15)', calif.status === 200 && otra.status === 409, `HTTP ${calif.status}/${otra.status}`);
   const { data: trici } = await con.sb.from('tricimotos').select('estado').eq('conductor_id', con.id).single();
   paso('Al terminar, la tricimoto vuelve sola a disponible (R11)', trici?.estado === 'disponible', `estado=${trici?.estado}`);
   const despues = recibe(sPas, 'conductor_ubicacion');

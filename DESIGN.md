@@ -1,6 +1,6 @@
 ---
 name: CruciDrive
-description: Sistema 010 claro de movilidad en tricimoto y encomiendas en Crucita.
+description: Sistema 011 claro de movilidad en tricimoto y encomiendas en Crucita.
 colors:
   wine: "#7F1139"
   sand: "#FEE8C1"
@@ -118,7 +118,7 @@ components:
 
 **Creative North Star: "Crucita costera, moderna y tecnológica"**
 
-El sistema 010 expresa la dirección clara y premium elegida por David: papel cálido, arena Silk Mango, vino Neon Candy y azul Wild Navy. La tricimoto propia y la costa reconocible sitúan la marca en Crucita. Outfit construye la identidad; Inter sostiene lectura y acciones de una aplicación móvil.
+El sistema 011 expresa la dirección clara y premium elegida por David: papel cálido, arena Silk Mango, vino Neon Candy y azul Wild Navy. La tricimoto propia y la costa reconocible sitúan la marca en Crucita. Outfit construye la identidad; Inter sostiene lectura y acciones de una aplicación móvil.
 
 La bienvenida concentra la ilustración y la pasada de espuma. Los controles operativos priorizan contenido legible, superficies blancas, tinta oscura y estados explícitos. La profundidad es contenida y no depende de transparencia o animación.
 
