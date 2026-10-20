@@ -3,6 +3,8 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { alturaBarraPestanas } from '../utils/barraPestanas';
 import { COLORS, FONTS } from '../constants/theme';
 
 /**
@@ -31,6 +33,7 @@ interface AppTabLayoutProps {
  * - Definiciones de tabs (nombre, título, icono)
  */
 export const AppTabLayout: React.FC<AppTabLayoutProps> = ({ tabs, activeColor }) => {
+  const insets = useSafeAreaInsets();
   return (
     <Tabs
       screenOptions={{
@@ -48,7 +51,7 @@ export const AppTabLayout: React.FC<AppTabLayoutProps> = ({ tabs, activeColor })
           borderTopWidth: 0.5,
           borderTopColor: COLORS.glassBorderDark,
           paddingTop: 8,
-          height: 85,
+          height: alturaBarraPestanas(insets.bottom),
         },
         tabBarBackground: () => (
           <BlurView
