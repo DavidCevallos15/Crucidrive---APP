@@ -12,9 +12,10 @@ export interface PuntoOferta {
 }
 
 export interface OfertaViaje {
+  tipoServicio?: 'viaje' | 'encomienda';
   viajeId: string;
   pasajeros: number;
-  tarifa: number;
+  tarifa: number | null;
   origen: PuntoOferta;
   destino: PuntoOferta;
   /** Distancia en línea recta del conductor al origen; null si la BD no la tiene. */

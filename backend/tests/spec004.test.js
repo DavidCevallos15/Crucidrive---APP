@@ -3,7 +3,7 @@
  * T3: servicio de ubicación compartido por el socket y POST /api/conductores/ubicacion (plan P11,
  * P14), parámetros de frecuencia (D-13, P12) y límite del respaldo REST.
  * T4: durante un viaje la posición del conductor va solo a su pasajero (criterios 13, 14 y 15).
- * T7: consentimiento 0.2 antes de ponerse disponible (criterio 5; plan P18).
+ * T7: consentimiento 0.3 antes de ponerse disponible (criterio 5; plan P18).
  */
 process.env.SUPABASE_URL = process.env.SUPABASE_URL || 'http://localhost:54321';
 process.env.SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'anon-de-prueba';
@@ -306,7 +306,7 @@ describe('T4 · el pasajero ve a su conductor acercarse (criterios 13, 14 y 15)'
   });
 });
 
-describe('T7 · consentimiento 0.2 para estar disponible (criterio 5; plan P18)', () => {
+describe('T7 · consentimiento 0.3 para estar disponible (criterio 5; plan P18)', () => {
   const { cambiarDisponibilidad } = require('../src/controllers/conductorController');
   const { aceptarConsentimiento } = require('../src/controllers/authController');
   const { CONSENT_VERSION } = require('../src/config/consent');
@@ -329,22 +329,22 @@ describe('T7 · consentimiento 0.2 para estar disponible (criterio 5; plan P18)'
     return { r, filtros, updates };
   };
 
-  test('la versión vigente es la 0.2', () => {
-    expect(CONSENT_VERSION).toBe('0.2');
+  test('la versión vigente es la 0.3', () => {
+    expect(CONSENT_VERSION).toBe('0.3');
   });
 
-  test('sin haber aceptado la 0.2, ponerse disponible responde 428 y no toca la tricimoto', async () => {
+  test('sin haber aceptado la 0.3, ponerse disponible responde 428 y no toca la tricimoto', async () => {
     const { r, filtros, updates } = await pedir({ disponible: true }, [
       { data: { estado: 'inactivo' }, error: null },
       { data: null, error: null },
     ]);
     expect(r.status).toHaveBeenCalledWith(428);
-    expect(r.json.mock.calls[0][0].message).toContain('0.2');
-    expect(filtros).toEqual(expect.arrayContaining([['user_id', CONDUCTOR], ['version', '0.2']]));
+    expect(r.json.mock.calls[0][0].message).toContain('0.3');
+    expect(filtros).toEqual(expect.arrayContaining([['user_id', CONDUCTOR], ['version', '0.3']]));
     expect(updates).toEqual([]);
   });
 
-  test('con la 0.2 aceptada se pone disponible', async () => {
+  test('con la 0.3 aceptada se pone disponible', async () => {
     const { r, updates } = await pedir({ disponible: true }, [
       { data: { estado: 'inactivo' }, error: null },
       { data: { id: 7 }, error: null },
@@ -361,7 +361,7 @@ describe('T7 · consentimiento 0.2 para estar disponible (criterio 5; plan P18)'
       { data: [{ estado: 'inactivo', disponible_desde: null }], error: null },
     ]);
     expect(r.status).toHaveBeenCalledWith(200);
-    expect(filtros).not.toContainEqual(['version', '0.2']);
+    expect(filtros).not.toContainEqual(['version', '0.3']);
   });
 
   test('volver a aceptar guarda la versión del servidor, no la que mande la app', async () => {
@@ -370,7 +370,7 @@ describe('T7 · consentimiento 0.2 para estar disponible (criterio 5; plan P18)'
     const r = { status: jest.fn().mockReturnThis(), json: jest.fn().mockReturnThis() };
     await aceptarConsentimiento({ body: { consentimiento: true, version: '9.9' }, user: { id: CONDUCTOR }, supabase: db }, r);
     expect(r.status).toHaveBeenCalledWith(201);
-    expect(insertados).toEqual([{ user_id: CONDUCTOR, version: '0.2' }]);
+    expect(insertados).toEqual([{ user_id: CONDUCTOR, version: '0.3' }]);
   });
 
   test('sin "consentimiento: true" no registra nada', async () => {

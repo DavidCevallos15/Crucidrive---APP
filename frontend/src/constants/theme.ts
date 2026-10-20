@@ -1,6 +1,6 @@
 /**
- * Tokens del sistema de diseño Glassmorphic de CruciDrive.
- * Fuente de verdad: DESIGN.md v1.0.0
+ * Tokens del sistema costero de CruciDrive.
+ * Implementación normativa documentada en DESIGN.md.
  *
  * Todos los valores están centralizados aquí para garantizar
  * consistencia visual en toda la aplicación.
@@ -10,14 +10,14 @@
 
 export const COLORS = {
   /** Verde azulado marino — color principal de marca */
-  primary: '#0D9488',
+  primary: '#087E78',
   /** Variante clara del primario para estados activos/hover */
-  primaryLight: '#14B8A6',
+  primaryLight: '#61E3CF',
 
-  /** Naranja atardecer — acentos y CTAs secundarios */
-  secondary: '#F59E0B',
+  /** Arena costera — acentos y acciones principales del acceso */
+  secondary: '#F3D6A1',
   /** Variante clara del secundario */
-  secondaryLight: '#FBBF24',
+  secondaryLight: '#F9E8C9',
 
   /** Rojo alerta — botón de pánico, errores */
   danger: '#EF4444',
@@ -30,7 +30,7 @@ export const COLORS = {
   successLight: '#34D399',
 
   /** Fondo oscuro principal (modo noche / base de la app) */
-  darkBg: '#0B0F19',
+  darkBg: '#061C23',
   /** Fondo claro (modo día, si aplica) */
   lightBg: '#F8FAFC',
 
@@ -41,7 +41,7 @@ export const COLORS = {
    * Superficie del cristal sobre el mapa. Es lo bastante opaca para que el texto
    * claro cumpla contraste AA (>= 4.5:1) sobre cualquier fondo, también un mapa claro.
    */
-  glassSurface: 'rgba(11, 15, 25, 0.82)',
+  glassSurface: 'rgba(6, 28, 35, 0.94)',
 
   /** Fondo translúcido de las tarjetas de cristal (modo claro) */
   glassBgLight: 'rgba(15, 23, 42, 0.04)',
@@ -52,12 +52,12 @@ export const COLORS = {
   glassBorderLight: 'rgba(15, 23, 42, 0.08)',
 
   /** Texto principal sobre cristal oscuro */
-  glassTextDark: '#F1F5F9',
+  glassTextDark: '#F2F8F7',
   /** Texto principal sobre cristal claro */
   glassTextLight: '#0F172A',
 
   /** Texto secundario/muted sobre cristal oscuro */
-  glassTextMutedDark: '#94A3B8',
+  glassTextMutedDark: '#ACBFBE',
   /** Texto secundario/muted sobre cristal claro */
   glassTextMutedLight: '#64748B',
 

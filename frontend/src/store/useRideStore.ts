@@ -31,6 +31,8 @@ export interface DriverInfo {
  * Datos completos de un viaje activo.
  */
 export interface ActiveRide {
+  serviceType?: 'viaje' | 'encomienda';
+  parcel?: { descripcion: string; destinatario: string } | null;
   /** ID del viaje en la base de datos */
   id: string;
   /** Estado actual del viaje */
@@ -46,7 +48,7 @@ export interface ActiveRide {
   /** Número de pasajeros */
   passengers: number;
   /** Total en USD (0,50 por persona; lo fija el servidor) */
-  price: number;
+  price: number | null;
   /** Referencia de texto libre del destino (opcional) */
   destinationNote: string;
   /** Datos del conductor asignado (null si aún no se ha aceptado) */

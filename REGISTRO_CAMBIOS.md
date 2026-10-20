@@ -2,6 +2,28 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.58.0] - 2026-10-20 (Hora Local)
+
+### Identidad, seguridad, navegación y encomiendas · ampliación 009
+- Alcance solicitado por David: identidad costera moderna y tecnológica; adaptar el mapa, menú y configuración del video a tricimotos y encomiendas. Precio de encomienda confirmado: acordado con el conductor; no se calcula con la tarifa de pasajeros (D-14). El importe negociado no se registra en esta versión.
+- `specs/009-experiencia-encomiendas/` deja historias, criterios, plan y tareas con evidencia. La documentación se formalizó después de la implementación local: se registra la desviación de «spec primero» y se mantiene la revisión formal pendiente. No se declaran completos los pasos 005–008 ni se fusiona a main desde esta tarea.
+- `702d66f` · Sesiones nativas protegidas mediante SecureStore, migración desde AsyncStorage, fragmentación y serialización; respuestas vinculadas a la sesión y logout comprobado. Caché PWA limitada a recursos públicos y API con no-store. Parches compatibles de Expo y corrección de tipos. El módulo nativo exige nueva compilación.
+- `1eb7870` · Marca, logo, iconos de instalación y fondo costero propios; acceso adaptable y componentes compartidos accesibles. Procedencia y generación de recursos conservadas en `frontend/assets/brand/` y evidencia visual en `.impeccable/review/`.
+- `ba1cc86` · Menú lateral, configuración, cuenta, permisos, privacidad, seguridad y ayuda. Dos servicios: Tricimoto y Encomienda. Solicitud de entrega con autorización y datos privados separados de las ofertas; eliminación de cuenta con contraseña, confirmación y bloqueo de servicios activos. Consentimiento 0.3 sigue como borrador. SOS abre el marcador al 911; el registro de alertas del paso 006 continúa pendiente.
+- Migración nueva `0015_encomiendas.sql` y prueba `rls_005.sql`: tipo de servicio, tarifa NULL para encomiendas, datos privados bajo RLS, creación transaccional y eliminación restringida al backend tras reautenticación. Storage y base de datos no constituyen una única transacción global.
+
+### Evidencia y límites
+- Reejecución antes de subir: frontend **314/314**, backend **289/289**; **603 pruebas** en total. Auditoría actual de dependencias de producción del backend: **0 alertas**.
+- TypeScript sin errores y exportaciones Expo web y Android completadas; la exportación Android es un bundle, no un APK. Revisión visual independiente «ship» para el alcance web responsive documentado.
+- Pendientes antes de fusionar/publicar: revisión formal del PR, pruebas SQL/RLS 001–005 en base limpia y advisors, eliminación de una cuenta desechable en pruebas, revisión legal de privacidad, CI verde y validación de permisos/almacenamiento/notificaciones/marcador en teléfono. Docker Desktop apagado impidió validar SQL localmente. No se modificó la base remota ni se eliminó una cuenta real.
+- Detalles reproducibles y límites en `docs/diseno-seguridad-2026-10.md` y `docs/navegacion-encomiendas-2026-10.md`. Video de referencia, credenciales, builds y cobertura local excluidos del commit.
+
+### Revisión del PR
+- Corrección: el aviso push de una oferta de encomienda decía «Nuevo viaje · $0.00» y «1 persona», porque `avisos/mensajes.js` formateaba la tarifa NULL como cero. Contradecía el criterio 4 y D-14 justo en el canal que usa el conductor con la app cerrada. Ahora dice «Nueva encomienda · Precio a convenir» y «Encomienda». Prueba nueva en `backend/tests/avisos.test.js`, que falla con el código anterior (backend 290/290).
+- SQL validado sin Docker (Postgres 16 + PostGIS 3): las 15 migraciones aplican en bases limpias y `rls_001` a `rls_005` quedan en verde. `rls_005` amplía con 5 intentos bloqueados y el borrado de cuentas con historial (T6 y parte SQL de T9). Faltan los advisors del proyecto real.
+
+---
+
 ## [1.57.0] - 2026-10-20 (Hora Local)
 
 ### Causa encontrada: el APK no llegaba a Supabase

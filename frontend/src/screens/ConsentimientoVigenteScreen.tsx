@@ -32,7 +32,7 @@ export const ConsentimientoVigenteScreen: React.FC<Props> = ({ visible, enviando
           <Text style={styles.titulo} accessibilityRole="header">Actualizamos el aviso de privacidad</Text>
           <Text style={styles.subtitulo}>
             Versión {CONSENT_VERSION}. Para ponerte disponible, léelo y acéptalo. Cambia lo que hacemos con tu
-            ubicación mientras estás disponible y con los avisos al teléfono.
+            ubicación mientras estás disponible, los avisos al teléfono y los datos de entrega de encomiendas.
           </Text>
           <ScrollView style={styles.texto} contentContainerStyle={styles.textoContenido}>
             {CONSENTIMIENTO.map((s) => (

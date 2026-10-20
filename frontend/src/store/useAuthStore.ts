@@ -30,6 +30,8 @@ export interface VerificationInfo {
  * Estado de autenticación y perfil del usuario.
  */
 interface AuthState {
+  /** Cambia al sustituir o cerrar la cuenta, incluso si se vuelve a la misma cuenta. */
+  authGeneration: number;
   /** Sesión activa de Supabase */
   session: Session | null;
   /** Datos del usuario de Supabase Auth */
@@ -69,6 +71,7 @@ interface AuthState {
  * la verificación del conductor y el estado de carga inicial.
  */
 export const useAuthStore = create<AuthState>((set) => ({
+  authGeneration: 0,
   session: null,
   user: null,
   profile: null,
@@ -79,10 +82,18 @@ export const useAuthStore = create<AuthState>((set) => ({
   isInitialized: false,
 
   setSession: (session) =>
-    set({
+    set((state) => ({
       session,
       user: session?.user ?? null,
-    }),
+      // Si cambia de cuenta, nunca mostrar ni reutilizar permisos del perfil anterior.
+      ...(state.user?.id !== session?.user?.id ? {
+        authGeneration: state.authGeneration + 1,
+        profile: null,
+        profileChecked: false,
+        verification: null,
+        verificationChecked: false,
+      } : {}),
+    })),
 
   setProfile: (profile) => set({ profile, profileChecked: true }),
 
@@ -93,7 +104,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   setInitialized: (isInitialized) => set({ isInitialized }),
 
   clearSession: () =>
-    set({
+    set((state) => ({
+      authGeneration: state.authGeneration + 1,
       session: null,
       user: null,
       profile: null,
@@ -101,5 +113,5 @@ export const useAuthStore = create<AuthState>((set) => ({
       verification: null,
       verificationChecked: false,
       isLoading: false,
-    }),
+    })),
 }));

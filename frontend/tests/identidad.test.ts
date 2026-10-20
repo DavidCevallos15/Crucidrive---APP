@@ -261,7 +261,7 @@ describe('enrutamiento por rol (criterios 2, 5 y 9)', () => {
 describe('consentimiento', () => {
   it('la versión de la app coincide con la del servidor y el texto cubre los puntos clave', () => {
     // 0.2 (paso 004): ubicación del conductor en segundo plano, avisos y sin historial de recorridos.
-    expect(CONSENT_VERSION).toBe('0.2');
+    expect(CONSENT_VERSION).toBe('0.3');
     const texto = CONSENTIMIENTO.map((s) => s.texto).join(' ');
     expect(texto).toContain('segundo plano');
     expect(texto).toContain('avisos');

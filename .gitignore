@@ -48,3 +48,8 @@ frontend/ios/
 # Archivos de build de Metro Bundler
 *.jsbundle
 *.hbc
+
+# Informes locales de pruebas y video privado de referencia
+backend/coverage/
+frontend/coverage/
+.impeccable/reference-video/

@@ -2,9 +2,9 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#0B0F19" />
+    <meta name="theme-color" content="#061C23" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -16,7 +16,8 @@
       }
       body {
         margin: 0;
-        background-color: #0B0F19;
+        background-color: #061C23;
+        color: #F2F8F7;
         overflow: hidden;
       }
       /* Sin esto #root mide 0 de alto y los paneles pegados abajo (bottom: 0) quedan fuera de pantalla. */
@@ -25,6 +26,10 @@
         height: 100%;
         flex: 1;
       }
+      :focus-visible { outline: 2px solid #61E3CF; outline-offset: 3px; }
+      ::selection { background: #087E78; color: #fff; }
+      input { caret-color: #61E3CF; }
+      * { scrollbar-color: #476765 #061C23; scrollbar-width: thin; }
     </style>
     <script>
       // En localhost no se registra: el service worker serviría el paquete viejo y ocultaría los cambios al desarrollar.

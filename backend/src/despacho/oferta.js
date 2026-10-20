@@ -5,7 +5,7 @@
  */
 
 /** Columnas del viaje que necesita el despachador (consulta con la clave de servicio). */
-const COLUMNAS_VIAJE = 'id, pasajero_id, estado, pasajeros, tarifa, sector_origen_id, sector_destino_id, origen_descripcion, destino_descripcion, creado_en';
+const COLUMNAS_VIAJE = 'id, pasajero_id, estado, tipo_servicio, pasajeros, tarifa, sector_origen_id, sector_destino_id, origen_descripcion, destino_descripcion, creado_en';
 
 /**
  * @param {object} viaje - Fila de viajes con COLUMNAS_VIAJE.
@@ -13,8 +13,9 @@ const COLUMNAS_VIAJE = 'id, pasajero_id, estado, pasajeros, tarifa, sector_orige
  */
 const armarOferta = (viaje, oferta) => ({
   viajeId: viaje.id,
+  ...(viaje.tipo_servicio === 'encomienda' ? { tipoServicio: 'encomienda' } : {}),
   pasajeros: viaje.pasajeros,
-  tarifa: Number(viaje.tarifa),
+  tarifa: viaje.tipo_servicio === 'encomienda' ? null : Number(viaje.tarifa),
   origen: { sectorId: viaje.sector_origen_id, descripcion: viaje.origen_descripcion },
   destino: { sectorId: viaje.sector_destino_id, descripcion: viaje.destino_descripcion },
   distanciaM: oferta.distancia_m,

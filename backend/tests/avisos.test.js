@@ -89,6 +89,15 @@ describe('T5 · lo que dice cada aviso (criterio 6; plan P7 y P9)', () => {
     expect(m.data).toEqual({ tipo: 'oferta', viajeId: VIAJE.id, venceEn: AHORA + 15_000 });
   });
 
+  test('009 · una encomienda dice precio a convenir, nunca $0.00 ni personas (criterio 4, D-14)', () => {
+    const encomienda = armarOferta({ ...VIAJE, tipo_servicio: 'encomienda', pasajeros: 1, tarifa: null },
+      { fase: 'secuencial', vence_en: new Date(AHORA + 15_000).toISOString(), distancia_m: 420 });
+    const [m] = avisoOferta(encomienda, [TOKEN], nombreSector, AHORA);
+    expect(m.title).toBe('Nueva encomienda · Precio a convenir');
+    expect(m.body).toBe('Encomienda · Muelle de Crucita · Los Arenales → La Boca');
+    expect(JSON.stringify(m)).not.toMatch(/\$0\.00|persona/);
+  });
+
   test('criterio 6: no lleva teléfono, nombre ni coordenadas del pasajero', () => {
     const [m] = avisoOferta(OFERTA, [TOKEN], nombreSector, AHORA);
     const texto = JSON.stringify(m);

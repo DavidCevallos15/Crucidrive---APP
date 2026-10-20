@@ -42,6 +42,11 @@ const createApp = () => {
   }
 
   app.use(helmet());
+  // Sesiones, coordenadas y documentos de identidad no deben quedar en cachés HTTP.
+  app.use('/api', (req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
+  });
   app.use(cors({ origin: getAllowedOrigins() }));
   app.use(express.json({ limit: '100kb' }));
 

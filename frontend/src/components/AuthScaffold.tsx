@@ -1,58 +1,58 @@
 import React from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ImageBackground, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
+import { Ionicons } from '@expo/vector-icons';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING } from '../constants/theme';
 import { PANEL_IN } from '../constants/motion';
+import { BrandLockup } from './BrandLockup';
 
 interface AuthScaffoldProps {
   children: React.ReactNode;
-  /** Muestra la marca arriba. Se oculta en pantallas largas para ganar espacio. */
   showBrand?: boolean;
+  welcome?: boolean;
 }
 
-/**
- * Fondo y estructura común de las pantallas de cuenta (inicio de sesión, perfil,
- * verificación): gradiente marino, contenido centrado con ancho máximo y desplazamiento
- * con teclado, para que ningún campo quede tapado en teléfonos pequeños.
- */
-export const AuthScaffold: React.FC<AuthScaffoldProps> = ({ children, showBrand = true }) => {
+export const AuthScaffold: React.FC<AuthScaffoldProps> = ({ children, showBrand = true, welcome = false }) => {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const wide = welcome && width >= 900;
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      <LinearGradient
-        colors={[COLORS.primary, '#0A2F42', COLORS.darkBg]}
-        locations={[0, 0.5, 1]}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.flex}
-      >
+      <ImageBackground source={require('../../assets/coast-login.jpg')} style={StyleSheet.absoluteFill} imageStyle={styles.backgroundImage} resizeMode="cover" accessible={false}>
+        <LinearGradient
+          colors={wide ? ['rgba(6, 28, 35, 0.18)', 'rgba(6, 28, 35, 0.90)'] : ['rgba(6, 28, 35, 0.35)', 'rgba(6, 28, 35, 0.76)', COLORS.darkBg]}
+          start={{ x: 0, y: 0 }} end={{ x: wide ? 1 : 0, y: 1 }} style={StyleSheet.absoluteFill}
+        />
+      </ImageBackground>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView
-          contentContainerStyle={[
-            styles.content,
-            { paddingTop: insets.top + SPACING.lg, paddingBottom: insets.bottom + SPACING.lg },
-          ]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.lg, paddingBottom: insets.bottom + SPACING.lg }, wide && styles.wideContent]}
+          keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false}
         >
-          {showBrand && (
-            <Animated.View entering={PANEL_IN} style={styles.brand}>
-              <Text style={styles.appName}>CruciDrive</Text>
-              <Text style={styles.tagline}>Transporte hiperlocal, claro como el océano.</Text>
-            </Animated.View>
-          )}
-          <Animated.View entering={PANEL_IN} style={styles.body}>
-            {children}
-          </Animated.View>
-          <Text style={styles.footer}>Crucita, Manabí, Ecuador</Text>
+          <View style={[styles.layout, wide && styles.wideLayout]}>
+            {showBrand && (
+              <View style={[styles.brand, wide && styles.wideBrand]}>
+                <BrandLockup />
+                {welcome && (
+                  <View style={[styles.story, wide && styles.wideStory]}>
+                    <Text style={[styles.headline, wide && styles.wideHeadline]} accessibilityRole="header">El siguiente destino{wide ? '\n' : ' '}está cerca.</Text>
+                    <Text style={styles.description}>Muévete en tricimoto por Crucita. Pide tu viaje, encuentra tu ruta y sigue tu camino.</Text>
+                    {wide && <View style={styles.local}><Ionicons name="location-outline" size={20} color={COLORS.secondary} /><Text style={styles.localText}>Hecho para movernos en Crucita.</Text></View>}
+                  </View>
+                )}
+              </View>
+            )}
+            <Animated.View entering={PANEL_IN} style={[styles.body, wide && styles.wideBody]}>{children}</Animated.View>
+          </View>
+          <View style={styles.footer}>
+            <Ionicons name="location-outline" size={14} color={COLORS.glassTextMutedDark} />
+            <Text style={styles.footerText}>Crucita · Manabí · Ecuador</Text>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -60,34 +60,24 @@ export const AuthScaffold: React.FC<AuthScaffoldProps> = ({ children, showBrand 
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.darkBg },
+  container: { flex: 1, backgroundColor: COLORS.darkBg, overflow: 'hidden' },
+  backgroundImage: { width: '100%', height: '100%' },
   flex: { flex: 1 },
-  content: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: SPACING.lg,
-  },
-  brand: { alignItems: 'center', marginBottom: SPACING.lg },
-  appName: {
-    fontSize: FONTS.sizes.title,
-    fontFamily: FONTS.heading,
-    fontWeight: FONTS.weights.bold,
-    color: COLORS.white,
-    letterSpacing: 0.5,
-  },
-  tagline: {
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONTS.body,
-    color: COLORS.glassTextMutedDark,
-    textAlign: 'center',
-    marginTop: SPACING.xs,
-  },
+  content: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: SPACING.lg },
+  wideContent: { paddingHorizontal: SPACING.xxl },
+  layout: { width: '100%', maxWidth: 440, alignSelf: 'center' },
+  wideLayout: { maxWidth: 1200, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: SPACING.xxl },
+  brand: { marginBottom: SPACING.lg },
+  wideBrand: { flex: 1, alignSelf: 'stretch', justifyContent: 'space-between', paddingVertical: SPACING.lg, marginBottom: 0 },
+  story: { marginTop: SPACING.lg },
+  wideStory: { marginTop: 96, marginBottom: SPACING.xl },
+  headline: { fontFamily: 'Outfit-SemiBold', color: COLORS.white, fontSize: FONTS.sizes.title, lineHeight: 38, letterSpacing: -0.6 },
+  wideHeadline: { fontSize: 56, lineHeight: 60, letterSpacing: -1.4 },
+  description: { fontFamily: FONTS.body, color: COLORS.glassTextDark, fontSize: FONTS.sizes.sm, lineHeight: 22, marginTop: SPACING.sm, maxWidth: 360 },
+  local: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginTop: SPACING.xl },
+  localText: { fontFamily: FONTS.body, color: COLORS.glassTextDark, fontSize: FONTS.sizes.sm },
   body: { width: '100%', maxWidth: 440, alignSelf: 'center' },
-  footer: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONTS.body,
-    color: COLORS.glassTextMutedDark,
-    textAlign: 'center',
-    marginTop: SPACING.lg,
-  },
+  wideBody: { flex: 1 },
+  footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: SPACING.xs, marginTop: SPACING.lg },
+  footerText: { fontFamily: FONTS.body, fontSize: FONTS.sizes.xs, color: COLORS.glassTextMutedDark },
 });

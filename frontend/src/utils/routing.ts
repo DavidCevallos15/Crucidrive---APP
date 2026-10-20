@@ -47,6 +47,8 @@ export interface EstadoGuardia {
  */
 export const destinoGuardia = (segmentos: string[], estado: EstadoGuardia): string | null => {
   if (!estado.isInitialized) return null;
+  // Información de cuenta, privacidad y ayuda está disponible también para visitantes.
+  if (segmentos[0] === '(settings)') return null;
 
   const inAuthGroup = segmentos[0] === '(auth)';
   const inAppGroup = segmentos[0] === '(app)';

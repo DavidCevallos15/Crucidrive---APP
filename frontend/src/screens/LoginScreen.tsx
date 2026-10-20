@@ -1,10 +1,12 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AuthScaffold } from '../components/AuthScaffold';
 import { GlassCard } from '../components/GlassCard';
 import { GlassButton } from '../components/GlassButton';
 import { GlassInput } from '../components/GlassInput';
+import { PressableScale } from '../components/PressableScale';
+import { Ionicons } from '@expo/vector-icons';
 import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
 import { COLORS, FONTS, SPACING } from '../constants/theme';
 import { validarEmail, validarPassword, PASSWORD_MIN } from '../utils/validators';
@@ -27,14 +29,17 @@ export const LoginScreen: React.FC = () => {
   const [password, setPassword] = useState('');
   const [errores, setErrores] = useState<{ email?: string; password?: string; general?: string }>({});
   const [aviso, setAviso] = useState<string | null>(null);
+  const enviando = useRef(false);
 
   const cambiarModo = useCallback((nuevo: Modo) => {
+    if (enviando.current) return;
     setModo(nuevo);
     setErrores({});
     setAviso(null);
   }, []);
 
   const enviar = useCallback(async () => {
+    if (enviando.current || isLoading) return;
     const nuevos = {
       email: validarEmail(email) ?? undefined,
       password: validarPassword(password) ?? undefined,
@@ -45,6 +50,8 @@ export const LoginScreen: React.FC = () => {
     setAviso(null);
     if (nuevos.email || nuevos.password) return;
 
+    enviando.current = true;
+    try {
     if (modo === 'entrar') {
       const r = await signIn(email, password);
       if (!r.ok) setErrores({ general: r.error });
@@ -59,18 +66,31 @@ export const LoginScreen: React.FC = () => {
       setModo('entrar');
       setPassword('');
     }
-  }, [modo, email, password, signIn, signUp]);
+    } finally {
+      enviando.current = false;
+    }
+  }, [modo, email, password, signIn, signUp, isLoading]);
 
   return (
-    <AuthScaffold>
+    <AuthScaffold welcome>
       <GlassCard>
+        <View style={styles.formContent}>
+        <View style={styles.modes}>
+          {(['entrar', 'crear'] as const).map((item) => (
+            <PressableScale key={item} onPress={() => cambiarModo(item)} disabled={isLoading}
+              accessibilityRole="button" accessibilityState={{ selected: modo === item, disabled: isLoading }}
+              style={[styles.mode, modo === item && styles.modeActive]}>
+              <Text style={[styles.modeText, modo === item && styles.modeTextActive]}>{item === 'entrar' ? 'Iniciar sesión' : 'Crear cuenta'}</Text>
+            </PressableScale>
+          ))}
+        </View>
         <Text style={styles.titulo} accessibilityRole="header">
-          {modo === 'entrar' ? 'Iniciar sesión' : 'Crear cuenta'}
+          {modo === 'entrar' ? 'Qué bueno verte.' : 'Empieza tu camino.'}
         </Text>
         <Text style={styles.subtitulo}>
           {modo === 'entrar'
-            ? 'Entra con tu correo y tu contraseña.'
-            : `Usa un correo que puedas abrir. La contraseña debe tener al menos ${PASSWORD_MIN} caracteres.`}
+            ? 'Entra a tu cuenta y nos ponemos en marcha.'
+            : `Usa un correo que puedas abrir y una contraseña de al menos ${PASSWORD_MIN} caracteres.`}
         </Text>
 
         {aviso ? (
@@ -80,7 +100,8 @@ export const LoginScreen: React.FC = () => {
         ) : null}
 
         <GlassInput
-          label="Correo"
+          label="Correo electrónico"
+          leadingIcon="mail-outline"
           placeholder="nombre@correo.com"
           keyboardType="email-address"
           autoCapitalize="none"
@@ -88,12 +109,15 @@ export const LoginScreen: React.FC = () => {
           autoComplete="email"
           textContentType="emailAddress"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(value) => { setEmail(value); setErrores((e) => ({ ...e, email: undefined, general: undefined })); }}
+          editable={!isLoading}
+          maxLength={254}
           error={errores.email}
           required
         />
         <GlassInput
           label="Contraseña"
+          leadingIcon="lock-closed-outline"
           placeholder={modo === 'crear' ? `Mínimo ${PASSWORD_MIN} caracteres` : 'Tu contraseña'}
           secureTextEntry
           autoCapitalize="none"
@@ -101,7 +125,8 @@ export const LoginScreen: React.FC = () => {
           autoComplete={modo === 'crear' ? 'new-password' : 'current-password'}
           textContentType={modo === 'crear' ? 'newPassword' : 'password'}
           value={password}
-          onChangeText={setPassword}
+          onChangeText={(value) => { setPassword(value); setErrores((e) => ({ ...e, password: undefined, general: undefined })); }}
+          editable={!isLoading}
           onSubmitEditing={enviar}
           error={errores.password}
           required
@@ -114,24 +139,24 @@ export const LoginScreen: React.FC = () => {
         ) : null}
 
         <GlassButton
-          label={modo === 'entrar' ? 'Entrar' : 'Crear cuenta'}
+          label={modo === 'entrar' ? 'Entrar a CruciDrive' : 'Crear mi cuenta'}
+          leftIcon={<Ionicons name="arrow-forward" size={20} color={COLORS.darkBg} />}
           onPress={enviar}
           variant="secondary"
           size="lg"
           loading={isLoading}
           style={styles.principal}
         />
-        <GlassButton
-          label={modo === 'entrar' ? 'No tengo cuenta' : 'Ya tengo cuenta'}
-          onPress={() => cambiarModo(modo === 'entrar' ? 'crear' : 'entrar')}
-          variant="ghost"
-          size="md"
-          style={styles.secundario}
-        />
+        <View style={styles.privacy}>
+          <Ionicons name="lock-closed-outline" size={16} color={COLORS.primaryLight} />
+          <Text style={styles.privacyText}>Tu ubicación se comparte durante el viaje. Si conduces, también cuando estás disponible.</Text>
+        </View>
+        </View>
       </GlassCard>
 
       <GlassButton
-        label="Volver al mapa"
+        label="Explorar el mapa"
+        leftIcon={<Ionicons name="map-outline" size={18} color={COLORS.glassTextDark} />}
         onPress={() => router.replace('/')}
         variant="ghost"
         size="sm"
@@ -142,6 +167,14 @@ export const LoginScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  formContent: { padding: SPACING.sm },
+  modes: { flexDirection: 'row', backgroundColor: COLORS.darkBg, borderRadius: 12, padding: SPACING.xs, marginBottom: SPACING.lg },
+  mode: { flex: 1, minHeight: 44, justifyContent: 'center', alignItems: 'center', borderRadius: 8, paddingHorizontal: SPACING.xs },
+  modeActive: { backgroundColor: COLORS.primary },
+  modeText: { color: COLORS.glassTextMutedDark, fontFamily: FONTS.body, fontSize: FONTS.sizes.sm },
+  modeTextActive: { color: COLORS.white },
+  privacy: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm, marginTop: SPACING.md },
+  privacyText: { flex: 1, color: COLORS.glassTextMutedDark, fontFamily: FONTS.body, fontSize: FONTS.sizes.xs, lineHeight: 18 },
   titulo: {
     fontSize: FONTS.sizes.xxl,
     fontFamily: FONTS.heading,
@@ -177,7 +210,6 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   principal: { marginTop: SPACING.sm, alignSelf: 'stretch' },
-  secundario: { marginTop: SPACING.sm, alignSelf: 'stretch' },
   volver: { marginTop: SPACING.md, alignSelf: 'center' },
 });
 

@@ -1,12 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authStorage } from './authStorage';
 import { SUPABASE_CONFIG } from '../constants/config';
 
 /**
  * Cliente de Supabase configurado para React Native.
  *
- * Usa AsyncStorage como mecanismo de persistencia de sesión
- * en lugar de localStorage (no disponible en mobile).
+ * La resolución de plataforma usa Keychain/Keystore en móvil, con migración de
+ * sesiones previas, y almacenamiento del navegador en web.
  */
 // Sin URL, createClient lanza al importar y la app se cierra sin explicación. Con un valor
 // inválido arranca, y el layout raíz muestra qué variables faltan (variablesFaltantes).
@@ -17,7 +17,7 @@ export const supabase = createClient(
   SUPABASE_CONFIG.anonKey || 'configuracion-faltante',
   {
     auth: {
-      storage: AsyncStorage,
+      storage: authStorage,
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: false,
