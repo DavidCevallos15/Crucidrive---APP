@@ -2,6 +2,21 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.55.0] - 2026-10-20 (Hora Local)
+
+### Diagnóstico: el APK no llega a Supabase
+- Síntoma (APK `524b8707`): el login dice "No se pudo completar la acción" y el buscador "No se pudo buscar. Revisa tu conexión". El mapa de Google sí carga.
+- En los logs de Supabase **no hay ninguna petición del APK** (ni de este build ni de los anteriores). Las variables del build están bien: URL, anon key de 208 caracteres sin comillas, URL del backend y Firebase. El error ocurre en el teléfono, antes de llegar a la red de Supabase.
+- La app ocultaba el error real. Ahora:
+  - `useSupabaseAuth` registra con `console.warn` el error de Supabase Auth (nombre, estado y mensaje), visible con `adb logcat`.
+  - El buscador de lugares registra el error real.
+  - `src/utils/mensajesAuth.ts` (puro): un error de red ahora dice "No se pudo conectar con el servidor de cuentas" en vez de parecer un error de la cuenta.
+
+### Pruebas
+- `tests/mensajesAuth.test.ts`: 7 pruebas. Frontend 274/274.
+
+---
+
 ## [1.54.0] - 2026-10-19 (Hora Local)
 
 ### Paso 004 · T16, prueba de humo ampliada (41/41 en verde)
