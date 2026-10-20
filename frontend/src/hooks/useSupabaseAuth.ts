@@ -5,6 +5,7 @@ import type { UserProfile, VerificationInfo } from '../store/useAuthStore';
 import { API_CONFIG } from '../constants/config';
 import { authFetch } from '../utils/authFetch';
 import { normalizarEmail } from '../utils/validators';
+import { mensajeDeAuth } from '../utils/mensajesAuth';
 import { registroAvisos } from '../servicios/avisos';
 import { detenerSeguimientoFondo } from '../tareas/ubicacionFondo';
 
@@ -16,16 +17,6 @@ export interface ResultadoAccion {
   requiereConfirmarCorreo?: boolean;
 }
 
-/** Traduce los errores más comunes de Supabase Auth a mensajes claros. */
-const mensajeDeAuth = (mensaje: string): string => {
-  const m = mensaje.toLowerCase();
-  if (m.includes('invalid login credentials')) return 'Correo o contraseña incorrectos.';
-  if (m.includes('email not confirmed')) return 'Falta confirmar tu correo. Revisa tu bandeja de entrada (y el spam).';
-  if (m.includes('already registered') || m.includes('already been registered')) return 'Ese correo ya tiene una cuenta. Inicia sesión.';
-  if (m.includes('password') && m.includes('characters')) return 'La contraseña debe tener al menos 8 caracteres.';
-  if (m.includes('rate limit') || m.includes('too many')) return 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.';
-  return 'No se pudo completar la acción. Inténtalo de nuevo.';
-};
 
 /**
  * Hook de autenticación con Supabase Auth (correo y contraseña, spec 002).
@@ -164,6 +155,8 @@ export const useSupabaseAuth = ({ bootstrap = false }: { bootstrap?: boolean } =
     try {
       const { data, error } = await supabase.auth.signUp({ email: normalizarEmail(email), password });
       if (error) {
+        // Al log (adb logcat en el APK): el usuario solo ve el mensaje traducido.
+        console.warn('[Auth] Supabase Auth respondió con error:', error.name, error.status, error.message);
         const mensaje = mensajeDeAuth(error.message);
         setAuthError(mensaje);
         return { ok: false, error: mensaje };
@@ -186,6 +179,8 @@ export const useSupabaseAuth = ({ bootstrap = false }: { bootstrap?: boolean } =
     try {
       const { error } = await supabase.auth.signInWithPassword({ email: normalizarEmail(email), password });
       if (error) {
+        // Al log (adb logcat en el APK): el usuario solo ve el mensaje traducido.
+        console.warn('[Auth] Supabase Auth respondió con error:', error.name, error.status, error.message);
         const mensaje = mensajeDeAuth(error.message);
         setAuthError(mensaje);
         return { ok: false, error: mensaje };

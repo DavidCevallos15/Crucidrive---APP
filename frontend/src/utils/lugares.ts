@@ -90,7 +90,9 @@ export const crearBuscadorLugares = ({
         try {
           const resultados = await buscar(q);
           if (miTurno === turno) alCambiar({ resultados, cargando: false, error: null, buscado: true });
-        } catch {
+        } catch (error) {
+          // Al log (adb logcat en el APK): el usuario solo ve el mensaje genérico.
+          console.warn('[Lugares] No se pudo buscar:', error instanceof Error ? error.message : error);
           if (miTurno === turno) {
             alCambiar({ resultados: [], cargando: false, error: 'No se pudo buscar. Revisa tu conexión.', buscado: true });
           }
