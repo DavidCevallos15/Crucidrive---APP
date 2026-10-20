@@ -7,12 +7,9 @@ import {
   type TextInputProps,
   type ViewStyle,
 } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-} from 'react-native-reanimated';
-import { COLORS, FONTS, SHAPES, SPACING, ANIMATION } from '../constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { PressableScale } from './PressableScale';
+import { COLORS, FONTS, SHAPES, SPACING } from '../constants/theme';
 
 /**
  * Props del campo de entrada Glassmorphic.
@@ -28,9 +25,8 @@ interface GlassInputProps extends Omit<TextInputProps, 'style'> {
   required?: boolean;
   /** Estilos adicionales del contenedor exterior */
   containerStyle?: ViewStyle;
+  leadingIcon?: keyof typeof Ionicons.glyphMap;
 }
-
-const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
 
 /**
  * Campo de entrada Glassmorphic con label, validación y animación de borde.
@@ -54,38 +50,34 @@ export const GlassInput: React.FC<GlassInputProps> = ({
   containerStyle,
   onFocus,
   onBlur,
+  leadingIcon,
+  secureTextEntry,
   ...inputProps
 }) => {
   const [isFocused, setIsFocused] = useState(false);
-  const borderProgress = useSharedValue(0);
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
   const handleFocus = useCallback(
     (e: any) => {
       setIsFocused(true);
-      borderProgress.value = withTiming(1, {
-        duration: ANIMATION.durationFast,
-      });
       onFocus?.(e);
     },
-    [onFocus, borderProgress]
+    [onFocus]
   );
 
   const handleBlur = useCallback(
     (e: any) => {
       setIsFocused(false);
-      borderProgress.value = withTiming(0, {
-        duration: ANIMATION.durationFast,
-      });
       onBlur?.(e);
     },
-    [onBlur, borderProgress]
+    [onBlur]
   );
 
   /**
    * Determina el color del borde según el estado del campo.
    */
   const getBorderColor = (): string => {
-    if (error) return COLORS.danger;
+    if (error) return COLORS.dangerLight;
     if (isFocused) return COLORS.primaryLight;
     return COLORS.glassBorderDark;
   };
@@ -106,6 +98,7 @@ export const GlassInput: React.FC<GlassInputProps> = ({
           isFocused && styles.inputFocused,
         ]}
       >
+        {leadingIcon && <Ionicons name={leadingIcon} size={20} color={isFocused ? COLORS.primaryLight : COLORS.glassTextMutedDark} style={styles.leadingIcon} />}
         <TextInput
           style={styles.input}
           placeholderTextColor={COLORS.glassTextMutedDark}
@@ -114,8 +107,14 @@ export const GlassInput: React.FC<GlassInputProps> = ({
           accessibilityHint={helperText}
           onFocus={handleFocus}
           onBlur={handleBlur}
+          secureTextEntry={Boolean(secureTextEntry && !passwordVisible)}
           {...inputProps}
         />
+        {secureTextEntry && <PressableScale onPress={() => setPasswordVisible((visible) => !visible)}
+          accessibilityRole="button" accessibilityLabel={passwordVisible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+          accessibilityState={{ expanded: passwordVisible }} style={styles.visibility}>
+          <Ionicons name={passwordVisible ? 'eye-off-outline' : 'eye-outline'} size={20} color={COLORS.glassTextMutedDark} />
+        </PressableScale>}
       </View>
 
       {/* Texto de error o ayuda */}
@@ -145,6 +144,8 @@ const styles = StyleSheet.create({
     color: COLORS.danger,
   },
   inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: SHAPES.glassBorderWidth,
     borderRadius: SHAPES.borderRadiusSm,
@@ -154,14 +155,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
   input: {
-    height: 48,
+    flex: 1,
+    minWidth: 0,
+    minHeight: 52,
     paddingHorizontal: SPACING.md,
     color: COLORS.glassTextDark,
     fontSize: FONTS.sizes.base,
     fontFamily: FONTS.body,
   },
   errorText: {
-    color: COLORS.danger,
+    color: COLORS.dangerLight,
     fontSize: FONTS.sizes.xs,
     fontFamily: FONTS.body,
     marginTop: SPACING.xs,
@@ -172,4 +175,6 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.body,
     marginTop: SPACING.xs,
   },
+  leadingIcon: { marginLeft: SPACING.md },
+  visibility: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
 });

@@ -12,5 +12,5 @@ const PASSENGER_TABS: TabDefinition[] = [
  * Layout de navegación por tabs para el pasajero.
  */
 export default function PassengerTabsLayout() {
-  return <AppTabLayout tabs={PASSENGER_TABS} activeColor={COLORS.primary} />;
+  return <AppTabLayout tabs={PASSENGER_TABS} activeColor={COLORS.primaryLight} />;
 }
