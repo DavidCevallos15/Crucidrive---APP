@@ -14,6 +14,7 @@
   - Backend 296/296 (6 nuevas): la de aceptar falla sin el cambio.
   - Frontend 322/322; `tsc` sin errores.
 - **Orden de despliegue:** primero la 0016 en el SQL Editor y después el backend. El backend anterior sigue funcionando con la BD nueva; al revés no.
+- **0016 aplicada en producción** (20 oct 2026, SQL Editor). Un primer intento falló porque el SQL llegó cortado (`unterminated dollar-quoted string`) y no aplicó nada: el editor lo ejecuta en una sola transacción. Verificado: índice viejo quitado, «liberada» en el check, funciones nuevas con bloqueo y permisos solo para `service_role`, y `aceptar_viaje` que libera. Linter de seguridad: solo D-10; rendimiento: sin hallazgos nuevos. Como en la 0014 y la 0015, no figura en `schema_migrations`.
 
 ---
 
