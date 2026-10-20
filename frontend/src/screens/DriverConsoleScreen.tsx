@@ -20,6 +20,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { BlurContainer } from '../components/BlurContainer';
 import { PressableScale } from '../components/PressableScale';
 import { TarjetaOferta } from '../components/TarjetaOferta';
+import { HojaDesplazable } from '../components/HojaDesplazable';
 import { esCompacta } from '../utils/compacto';
 import { useLocation } from '../hooks/useLocation';
 import { useSocket } from '../hooks/useSocket';
@@ -68,7 +69,7 @@ export const DriverConsoleScreen: React.FC = () => {
   const socket = useSocket();
   const { isConnected } = socket;
   const consola = useConsolaConductor(socket);
-  const { estado, cambiando, oferta, segundos, aceptando, parametros } = consola;
+  const { estado, cambiando, ofertas, segundosDe, aceptando, parametros } = consola;
   const disponible = estado === 'disponible';
   const seguimiento = useSeguimientoFondo(estado, parametros);
 
@@ -167,8 +168,8 @@ export const DriverConsoleScreen: React.FC = () => {
   }, [fuera.visible, fuera.cerrar, fuera.abrirAjustes, seguimiento.aviso]);
 
   // ─── Aceptar y rechazar ───────────────────────────────────
-  const handleAcceptRide = useCallback(async () => {
-    const resultado = await consola.aceptar();
+  const handleAcceptRide = useCallback(async (viajeId: string) => {
+    const resultado = await consola.aceptar(viajeId);
     if (resultado.ok) {
       Alert.alert('Viaje aceptado', 'Coordina con el pasajero desde la pestaña Chat.');
     } else {
@@ -294,26 +295,37 @@ export const DriverConsoleScreen: React.FC = () => {
         onAhoraNo={seguimiento.ahoraNo}
       />
 
-      {/* ─── MODAL: OFERTA DE VIAJE ───────────────────────── */}
+      {/* ─── MODAL: OFERTAS (una o varias, D-15) ─────────────── */}
       <Modal
-        visible={oferta !== null}
+        visible={ofertas.length > 0}
         transparent
         animationType="fade"
         statusBarTranslucent
-        onRequestClose={consola.rechazar}
+        // Atrás rechaza la que vence antes, como con una sola oferta (003, criterio 6).
+        onRequestClose={() => { if (ofertas[0]) consola.rechazar(ofertas[0].viajeId); }}
       >
         <View style={styles.modalOverlay}>
-          {oferta && (
-            <TarjetaOferta
-              oferta={oferta}
-              segundos={segundos}
-              conectado={isConnected}
-              aceptando={aceptando}
-              onAceptar={handleAcceptRide}
-              onRechazar={consola.rechazar}
-              compacta={esCompacta(alto)}
-            />
+          {ofertas.length > 1 && (
+            <Text style={styles.listaTitulo} accessibilityRole="header">
+              {ofertas.length} solicitudes · la que vence antes, arriba
+            </Text>
           )}
+          <View style={styles.lista}>
+            <HojaDesplazable maxHeight={Math.floor(alto * 0.86)} contentContainerStyle={styles.listaContenido}>
+              {ofertas.map((o) => (
+                <TarjetaOferta
+                  key={o.viajeId}
+                  oferta={o}
+                  segundos={segundosDe(o)}
+                  conectado={isConnected}
+                  aceptando={aceptando === o.viajeId}
+                  onAceptar={() => handleAcceptRide(o.viajeId)}
+                  onRechazar={() => consola.rechazar(o.viajeId)}
+                  compacta={esCompacta(alto)}
+                />
+              ))}
+            </HojaDesplazable>
+          </View>
         </View>
       </Modal>
     </View>
@@ -429,6 +441,15 @@ const styles = StyleSheet.create({
   },
 
   // ─── Modal de oferta: opaco y sin blur (regla 6) ─────────
+  lista: { width: '100%', maxWidth: 420 },
+  listaContenido: { gap: SPACING.md },
+  listaTitulo: {
+    color: COLORS.white,
+    fontSize: FONTS.sizes.base,
+    fontFamily: FONTS.body,
+    fontWeight: FONTS.weights.semibold,
+    marginBottom: SPACING.sm,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.75)',

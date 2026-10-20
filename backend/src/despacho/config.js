@@ -11,6 +11,8 @@ const LIMITES = {
   DESPACHO_MAX_SEG: [30, 600, 120],
   DESPACHO_UBICACION_MAX_SEG: [10, 600, 60],
   DESPACHO_BARRIDO_SEG: [5, 120, 15],
+  // Ofertas abiertas a la vez por conductor (D-15, spec 010). 1 vuelve al criterio 7 del 003.
+  OFERTAS_MAX_POR_CONDUCTOR: [1, 5, 3],
 };
 
 const leerEntero = (env, nombre) => {
@@ -26,7 +28,7 @@ const leerEntero = (env, nombre) => {
 
 /**
  * @param {NodeJS.ProcessEnv} [env]
- * @returns {{ secuenciales: number, ofertaSeg: number, maxSeg: number, ubicacionMaxSeg: number, barridoSeg: number }}
+ * @returns {{ secuenciales: number, ofertaSeg: number, maxSeg: number, ubicacionMaxSeg: number, barridoSeg: number, maxOfertas: number }}
  */
 const leerConfigDespacho = (env = process.env) => {
   const config = {
@@ -35,6 +37,7 @@ const leerConfigDespacho = (env = process.env) => {
     maxSeg: leerEntero(env, 'DESPACHO_MAX_SEG'),
     ubicacionMaxSeg: leerEntero(env, 'DESPACHO_UBICACION_MAX_SEG'),
     barridoSeg: leerEntero(env, 'DESPACHO_BARRIDO_SEG'),
+    maxOfertas: leerEntero(env, 'OFERTAS_MAX_POR_CONDUCTOR'),
   };
   // La fase secuencial tiene que dejar tiempo para el aviso abierto (D-11).
   if (config.secuenciales * config.ofertaSeg >= config.maxSeg) {

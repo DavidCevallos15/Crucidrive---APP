@@ -5,10 +5,10 @@ import { API_CONFIG } from '../constants/config';
 import { useAuthStore } from '../store/useAuthStore';
 import { useRideStore } from '../store/useRideStore';
 import {
-  alRecibirOferta,
-  alRetirarOferta,
+  agregarOferta,
   calcularDesfase,
   estadoTrasError,
+  quitarOferta,
   segundosRestantes,
   textoPunto,
   type EstadoTricimoto,
@@ -27,6 +27,7 @@ const SIN_CONEXION = 'Sin conexión con el servidor. Revisa tus datos móviles.'
  * Consola del conductor (paso 003, T14): disponibilidad real en el servidor (criterio 1),
  * ofertas por socket con cuenta regresiva según el reloj del servidor (15, R14), rechazo
  * (6) y retirada de la oferta cuando vence, la toma otro o el pasajero cancela (12).
+ * Desde el 010 (D-15) puede haber varias ofertas a la vez, en una lista.
  */
 export const useConsolaConductor = (
   socket: Pick<ReturnType<typeof useSocket>, 'onEvent' | 'isConnected' | 'rechazarOferta'>
@@ -36,9 +37,11 @@ export const useConsolaConductor = (
 
   const [estado, setEstado] = useState<EstadoTricimoto | null>(null);
   const [cambiando, setCambiando] = useState(false);
-  const [oferta, setOferta] = useState<OfertaViaje | null>(null);
-  const [segundos, setSegundos] = useState(0);
-  const [aceptando, setAceptando] = useState(false);
+  const [ofertas, setOfertas] = useState<OfertaViaje[]>([]);
+  // Reloj de la pantalla para las cuentas regresivas de la lista (R14).
+  const [ahora, setAhora] = useState(() => Date.now());
+  // Viaje que se está aceptando: mientras tanto no se acepta otra (criterio 9 del 010).
+  const [aceptando, setAceptando] = useState<string | null>(null);
   // Frecuencias de envío de la ubicación, del servidor (paso 004, P12).
   const [parametros, setParametros] = useState<ParametrosUbicacion>(PARAMETROS_POR_DEFECTO);
   const desfase = useRef(0);
@@ -68,35 +71,41 @@ export const useConsolaConductor = (
     const quitarHora = onEvent('hora_servidor', ({ ahora }) => {
       desfase.current = calcularDesfase(ahora, Date.now());
     });
-    const quitarOferta = onEvent('oferta_viaje', (nueva) => setOferta((actual) => alRecibirOferta(actual, nueva)));
+    const quitarNueva = onEvent('oferta_viaje', (nueva) => setOfertas((lista) => agregarOferta(lista, nueva)));
     const quitarRetirada = onEvent('oferta_retirada', ({ viajeId }) => {
-      setOferta((actual) => alRetirarOferta(actual, viajeId));
+      setOfertas((lista) => quitarOferta(lista, viajeId));
       // Si también llegó como aviso, se quita de la barra (004, criterio 8).
       void descartarAvisosDeOferta(viajeId);
     });
     return () => {
       quitarHora();
-      quitarOferta();
+      quitarNueva();
       quitarRetirada();
     };
   }, [onEvent]);
 
   // ─── Cuenta regresiva desde venceEn (R14) ─────────────────
+  const hayOfertas = ofertas.length > 0;
   useEffect(() => {
-    if (!oferta) return;
-    const tic = () => {
-      const quedan = segundosRestantes(oferta.venceEn, desfase.current, Date.now());
-      setSegundos(quedan);
-      // Vencida: se cierra aquí; el servidor también avisa con oferta_retirada.
-      if (quedan === 0) {
-        setOferta((actual) => alRetirarOferta(actual, oferta.viajeId));
-        void descartarAvisosDeOferta(oferta.viajeId);
-      }
-    };
-    tic();
-    const id = setInterval(tic, 250);
+    if (!hayOfertas) return;
+    const id = setInterval(() => setAhora(Date.now()), 250);
     return () => clearInterval(id);
-  }, [oferta]);
+  }, [hayOfertas]);
+
+  // Vencidas: se quitan aquí; el servidor también avisa con oferta_retirada.
+  useEffect(() => {
+    for (const o of ofertas) {
+      if (segundosRestantes(o.venceEn, desfase.current, ahora) === 0) {
+        setOfertas((lista) => quitarOferta(lista, o.viajeId));
+        void descartarAvisosDeOferta(o.viajeId);
+      }
+    }
+  }, [ahora, ofertas]);
+
+  const segundosDe = useCallback(
+    (o: OfertaViaje) => segundosRestantes(o.venceEn, desfase.current, ahora),
+    [ahora]
+  );
 
   // ─── Acciones ──────────────────────────────────────────────
   const cambiarDisponibilidad = useCallback(async (disponible: boolean): Promise<Resultado> => {
@@ -118,8 +127,8 @@ export const useConsolaConductor = (
       }
       setEstado((body?.data?.estado as EstadoTricimoto | undefined) ?? (disponible ? 'disponible' : 'inactivo'));
       if (body?.data?.ubicacion) setParametros(leerParametros(body.data.ubicacion));
-      // Al dejar de estar disponible, el servidor da por rechazada la oferta abierta.
-      if (!disponible) setOferta(null);
+      // Al dejar de estar disponible, el servidor da por rechazadas las ofertas abiertas.
+      if (!disponible) setOfertas([]);
       return { ok: true };
     } catch (error) {
       console.error('[Consola] Error al cambiar disponibilidad:', error);
@@ -129,22 +138,26 @@ export const useConsolaConductor = (
     }
   }, []);
 
-  const aceptar = useCallback(async (): Promise<Resultado> => {
-    if (!oferta) return { ok: true };
-    setAceptando(true);
+  const aceptar = useCallback(async (viajeId: string): Promise<Resultado> => {
+    const oferta = ofertas.find((o) => o.viajeId === viajeId);
+    if (!oferta || aceptando) return { ok: true };
+    setAceptando(viajeId);
     try {
       const response = await authFetch(API_CONFIG.endpoints.rides.accept, {
         method: 'POST',
         body: JSON.stringify({ viajeId: oferta.viajeId }),
       });
       const body = await response.json().catch(() => null);
-      // Solo la oferta aceptada: si otro ganó (409), pudo llegar una nueva mientras se esperaba.
-      setOferta((actual) => alRetirarOferta(actual, oferta.viajeId));
+      // Solo la oferta aceptada: si otro ganó (409), las demás siguen en la lista.
+      setOfertas((lista) => quitarOferta(lista, oferta.viajeId));
       void descartarAvisosDeOferta(oferta.viajeId);
       if (!response.ok) {
         // 409: ya fue tomado o la oferta venció (criterios 8 y 9).
         return { ok: false, mensaje: body?.message ?? 'No se pudo aceptar el viaje.' };
       }
+      // El servidor liberó las demás (010, criterio 9) y además avisa con oferta_retirada.
+      for (const otra of ofertas) if (otra.viajeId !== oferta.viajeId) void descartarAvisosDeOferta(otra.viajeId);
+      setOfertas([]);
       setEstado('ocupado');
       // Para el chat del viaje; las pantallas del viaje en curso son del paso 005.
       useRideStore.getState().setActiveRide({
@@ -168,9 +181,9 @@ export const useConsolaConductor = (
       console.error('[Consola] Error al aceptar:', error);
       return { ok: false, mensaje: SIN_CONEXION };
     } finally {
-      setAceptando(false);
+      setAceptando(null);
     }
-  }, [oferta]);
+  }, [ofertas, aceptando]);
 
   /** Registra la versión vigente del aviso de privacidad (004, P18). La fija el servidor. */
   const aceptarConsentimiento = useCallback(async (): Promise<Resultado> => {
@@ -207,20 +220,22 @@ export const useConsolaConductor = (
     }
     const nueva = ofertaDesdeFila(data as unknown as FilaOferta | null, Date.now() + desfase.current);
     if (!nueva) return false;
-    setOferta((actual) => alRecibirOferta(actual, nueva));
+    setOfertas((lista) => agregarOferta(lista, nueva));
     return true;
   }, [userId]);
 
-  /** Rechazar no tiene penalización (criterio 6). Sin conexión, la oferta vence sola. */
-  const rechazar = useCallback(() => {
-    if (!oferta) return;
-    rechazarOferta(oferta.viajeId);
-    void descartarAvisosDeOferta(oferta.viajeId);
-    setOferta(null);
-  }, [oferta, rechazarOferta]);
+  /**
+   * Rechazar no tiene penalización (criterio 6). Solo sale esa oferta (010, criterio 10).
+   * Sin conexión, la oferta vence sola.
+   */
+  const rechazar = useCallback((viajeId: string) => {
+    rechazarOferta(viajeId);
+    void descartarAvisosDeOferta(viajeId);
+    setOfertas((lista) => quitarOferta(lista, viajeId));
+  }, [rechazarOferta]);
 
   return {
-    estado, cambiando, oferta, segundos, aceptando, parametros,
+    estado, cambiando, ofertas, segundosDe, aceptando, parametros,
     cambiarDisponibilidad, aceptar, rechazar, abrirOfertaDeAviso, aceptarConsentimiento,
   };
 };

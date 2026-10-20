@@ -2,6 +2,21 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.64.0] - 2026-10-20 (Hora Local)
+
+### 010 · Parte B: lista de ofertas sin quitar D-11 (D-15)
+- **BD** (`0016_varias_ofertas.sql`): un conductor puede tener hasta 3 ofertas abiertas (parámetro `p_max_ofertas`). `crear_ofertas` bloquea la tricimoto antes de contar, para que dos solicitudes a la vez no superen el tope. Al aceptar, las demás ofertas del conductor quedan como **«liberada»**, un resultado nuevo, y no como «rechazada», para no ensuciar las métricas del piloto.
+- **Backend:** `OFERTAS_MAX_POR_CONDUCTOR` (1 a 5, por defecto 3; con 1, como en el 003). Al aceptar, las solicitudes liberadas se retiran de la pantalla del conductor y pasan al siguiente candidato sin esperar a que venzan.
+- **App:** la consola muestra las ofertas en una lista, primero la que vence antes, cada una con su cuenta atrás, Aceptar y Rechazar. Rechazar quita solo esa. La lista reutiliza `TarjetaOferta` y `HojaDesplazable` de la parte A.
+- Pruebas:
+  - `rls_006.sql`: 17 en verde; falla sin la 0016.
+  - `rls_003`: el criterio 7 del 003 pasa a probarse con tope 1. `rls_001` a `rls_005` siguen en verde.
+  - Backend 296/296 (6 nuevas): la de aceptar falla sin el cambio.
+  - Frontend 322/322; `tsc` sin errores.
+- **Orden de despliegue:** primero la 0016 en el SQL Editor y después el backend. El backend anterior sigue funcionando con la BD nueva; al revés no.
+
+---
+
 ## [1.63.0] - 2026-10-20 (Hora Local)
 
 ### 010 · Parte A: interfaz compacta

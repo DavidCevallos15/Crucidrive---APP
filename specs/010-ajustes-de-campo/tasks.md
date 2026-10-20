@@ -12,7 +12,8 @@ Cada tarea indica su prueba y se tilda solo al cumplirse.
 - [ ] T7 · **David:** revisar en el APK (navegación de 3 botones y con gestos) el login, el panel del mapa con sesión y una oferta real.
 
 ## B. Lista de ofertas (D-15)
-- [ ] T8 · Completar el plan B (BD, despachador y consola) antes de escribir código.
-- [ ] T9 · Migración y RLS para varias ofertas por conductor → prueba: `rls_` nuevo y concurrencia.
-- [ ] T10 · Despachador con hasta 3 ofertas por conductor y avance inmediato al aceptar → prueba: `tests/despachador.test.js`.
-- [ ] T11 · Lista de ofertas en la consola y apertura desde el aviso → prueba: `tests/` del frontend y captura.
+- [x] T8 · Plan B en `plan.md` (P7 a P10).
+- [x] T9 · `0016_varias_ofertas.sql` → prueba: `rls_006.sql` 17 en verde (hasta 3 ofertas, la cuarta no, el tope como parámetro, aceptar libera sin rechazar, las liberadas siguen buscando y pasan a otro conductor, dejar de estar disponible sigue rechazando). Falla sin la 0016. `rls_003` ajustado: la comprobación del criterio 7 del 003 pasa a usar el tope 1. `rls_001` a `rls_005` siguen en verde. La concurrencia real (dos `crear_ofertas` a la vez) necesita Docker: queda para la revisión en producción.
+- [x] T10 · Despachador → prueba: `tests/despachador.test.js` (4 pruebas nuevas: dos solicitudes al más cercano, tope 1 como el 003, aceptar retira y pasa la otra al instante, rechazar no toca las demás). La de aceptar falla sin el cambio. Backend 296/296.
+- [x] T11 · Lista en la consola → prueba: `tests/despacho.test.ts` (orden por vencimiento, sin duplicar, quitar solo una) y captura `docs/capturas/010-b/lista-360x800.jpg`. Frontend 322/322 y `tsc` sin errores en `src/` ni `app/`.
+- [ ] T12 · **David:** aplicar la 0016 en producción (SQL Editor) **antes** de reiniciar el backend; después, prueba con 2 pasajeros y 1 conductor: ver las 2 ofertas en lista, aceptar una y comprobar que la otra pasa a otro conductor.

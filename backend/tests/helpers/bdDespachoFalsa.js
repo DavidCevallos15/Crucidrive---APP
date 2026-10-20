@@ -10,22 +10,24 @@ const crearBdDespachoFalsa = ({ ahora = Date.now } = {}) => {
   const candidatosBase = new Map();
   const rechazarCreacion = new Set();
 
-  const tieneOfertaPendiente = (conductorId) => ofertas.some((o) => o.conductor_id === conductorId && o.resultado === 'pendiente');
+  // Tope de ofertas abiertas por conductor (D-15); sin parámetro, el de la BD: 3.
+  const llegoAlTope = (conductorId, max = 3) =>
+    ofertas.filter((o) => o.conductor_id === conductorId && o.resultado === 'pendiente').length >= Math.max(max, 1);
   const recibioViaje = (viajeId, conductorId) => ofertas.some((o) => o.viaje_id === viajeId && o.conductor_id === conductorId);
 
   const rpcs = {
-    candidatos_despacho: ({ p_viaje }) => {
+    candidatos_despacho: ({ p_viaje, p_max_ofertas }) => {
       const viaje = viajes.get(p_viaje);
       if (!viaje || viaje.estado !== 'solicitado') return [];
       return (candidatosBase.get(p_viaje) || [])
-        .filter((c) => !tieneOfertaPendiente(c.conductor_id) && !recibioViaje(p_viaje, c.conductor_id));
+        .filter((c) => !llegoAlTope(c.conductor_id, p_max_ofertas) && !recibioViaje(p_viaje, c.conductor_id));
     },
-    crear_ofertas: ({ p_viaje, p_conductores, p_fase, p_vence_en }) => {
+    crear_ofertas: ({ p_viaje, p_conductores, p_fase, p_vence_en, p_max_ofertas }) => {
       const viaje = viajes.get(p_viaje);
       if (!viaje || viaje.estado !== 'solicitado') return [];
       const creadas = [];
       for (const conductorId of p_conductores) {
-        if (rechazarCreacion.has(conductorId) || tieneOfertaPendiente(conductorId) || recibioViaje(p_viaje, conductorId)) continue;
+        if (rechazarCreacion.has(conductorId) || llegoAlTope(conductorId, p_max_ofertas) || recibioViaje(p_viaje, conductorId)) continue;
         const base = (candidatosBase.get(p_viaje) || []).find((c) => c.conductor_id === conductorId);
         const oferta = {
           viaje_id: p_viaje, conductor_id: conductorId, fase: p_fase, vence_en: p_vence_en,
@@ -109,12 +111,15 @@ const crearBdDespachoFalsa = ({ ahora = Date.now } = {}) => {
       viajes.get(viajeId).estado = 'cancelado';
       for (const o of ofertas) if (o.viaje_id === viajeId && o.resultado === 'pendiente') o.resultado = 'cancelada';
     },
-    /** Lo que hace aceptar_viaje. */
+    /** Lo que hace aceptar_viaje (con D-15: libera las demás ofertas del conductor). */
     aceptar(viajeId, conductorId) {
-      viajes.get(viajeId).estado = 'aceptado';
+      const viaje = viajes.get(viajeId);
+      viaje.estado = 'aceptado';
+      viaje.conductor_id = conductorId;
       for (const o of ofertas) {
-        if (o.viaje_id !== viajeId || o.resultado !== 'pendiente') continue;
-        o.resultado = o.conductor_id === conductorId ? 'aceptada' : 'tomada';
+        if (o.resultado !== 'pendiente') continue;
+        if (o.viaje_id === viajeId) o.resultado = o.conductor_id === conductorId ? 'aceptada' : 'tomada';
+        else if (o.conductor_id === conductorId) o.resultado = 'liberada';
       }
     },
   };

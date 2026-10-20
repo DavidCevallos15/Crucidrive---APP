@@ -31,8 +31,24 @@ Sin servicios nuevos ni cambios de stack. La parte A solo toca el frontend. La p
 - La tarjeta de oferta se captura con una pantalla de prueba temporal que no se sube (la consola necesita sesión), en el peor caso: textos largos, aviso abierto, distancia y sin conexión.
 
 ## B. Lista de ofertas sin quitar D-11 (D-15)
-Esquema para completar antes de implementar:
-- **BD:** permitir hasta `OFERTAS_MAX_POR_CONDUCTOR` (3) ofertas `pendiente` por conductor. Hoy el criterio 7 del 003 lo impide. `aceptar_viaje` retira las demás ofertas del conductor en la misma transacción.
-- **Despachador:** un conductor con ofertas abiertas sigue siendo candidato mientras tenga menos de 3. Al aceptar, las solicitudes retiradas avanzan al siguiente candidato sin esperar a que venzan.
-- **Consola:** lista de `TarjetaOferta`, ordenada por la que vence antes. El aviso con la app cerrada abre la lista.
-- **Pruebas:** `rls_` y prueba de concurrencia para el aceptar con varias ofertas; despachador con 2 y 3 ofertas simultáneas.
+
+**P7 · BD (`0016_varias_ofertas.sql`).**
+- Se quita el índice `uq_ofertas_una_pendiente_por_conductor`.
+- `candidatos_despacho` y `crear_ofertas` reciben `p_max_ofertas` (por defecto 3). Un conductor sigue siendo candidato mientras tenga menos pendientes, salvo para un viaje que ya recibió.
+- `crear_ofertas` bloquea la tricimoto de cada conductor (en orden, sin interbloqueos) antes de contar, para que dos solicitudes simultáneas no le dejen más del tope.
+- `aceptar_viaje` marca las otras ofertas pendientes del conductor como **«liberada»**, un resultado nuevo, antes de ponerlo ocupado. Si no, el trigger `al_dejar_disponible` las daría por «rechazada» y las métricas del piloto (criterio 17 del 003) contarían rechazos que no hubo.
+- Alternativa descartada: guardar el tope en una tabla. Un parámetro del servidor basta y se ajusta sin migración, como los de D-11.
+
+**P8 · Despachador.**
+- `OFERTAS_MAX_POR_CONDUCTOR` (de 1 a 5, por defecto 3) se lee del entorno junto con los parámetros de D-11 y se pasa a las dos funciones.
+- Al aceptar, `aceptado` busca las ofertas «liberada» de ese conductor que el proceso sigue despachando: las retira de su pantalla (socket y aviso) y avanza esas solicitudes al siguiente candidato de inmediato.
+- Con el tope en 1 se vuelve al comportamiento del 003.
+
+**P9 · Consola.**
+- `useConsolaConductor` guarda una lista (`agregarOferta`, `quitarOferta`), ordenada por la que vence antes, con un reloj común para las cuentas regresivas.
+- `aceptar` y `rechazar` reciben el viaje. Mientras se acepta uno, no se acepta otro.
+- El modal muestra la lista de `TarjetaOferta` dentro de `HojaDesplazable`, con un título si hay más de una.
+- Atrás rechaza la que vence antes, como hacía con una sola oferta.
+- Tocar un aviso agrega esa oferta a la lista.
+
+**P10 · Orden de despliegue.** Primero la 0016 en la BD y después el backend. El backend anterior funciona con la BD nueva, porque los parámetros nuevos tienen valor por defecto. Al revés no: el backend nuevo llama a funciones que todavía no existen.

@@ -73,7 +73,7 @@ const conectar = (user, db, conexiones = new RegistroConexiones()) => {
 describe('T7 · parámetros del despacho (R21)', () => {
   test('sin variables usa los valores de D-11', () => {
     expect(leerConfigDespacho({})).toEqual({
-      secuenciales: 3, ofertaSeg: 15, maxSeg: 120, ubicacionMaxSeg: 60, barridoSeg: 15,
+      secuenciales: 3, ofertaSeg: 15, maxSeg: 120, ubicacionMaxSeg: 60, barridoSeg: 15, maxOfertas: 3,
     });
   });
 
@@ -88,6 +88,8 @@ describe('T7 · parámetros del despacho (R21)', () => {
     ['DESPACHO_SECUENCIALES', '0'],
     ['DESPACHO_MAX_SEG', '1.5'],
     ['DESPACHO_UBICACION_MAX_SEG', '9999'],
+    ['OFERTAS_MAX_POR_CONDUCTOR', '0'],
+    ['OFERTAS_MAX_POR_CONDUCTOR', '6'],
   ])('un valor inválido (%s=%s) impide arrancar', (nombre, valor) => {
     expect(() => leerConfigDespacho({ [nombre]: valor })).toThrow(nombre);
   });
@@ -448,6 +450,72 @@ describe('T6 · despacho con avisos (paso 004, criterios 6, 8, 10 y 12; plan P5 
     await despachador.iniciar(VIAJE);
     expect(ofertasA(A)).toHaveLength(0);
     expect(ofertasA(B)).toHaveLength(1);
+    despachador.detener();
+  });
+});
+
+describe('010 · parte B: varias ofertas por conductor (D-15; criterios 7, 9, 11 y 12)', () => {
+  beforeEach(() => jest.useFakeTimers({ now: new Date('2026-10-20T12:00:00Z') }));
+  afterEach(() => jest.useRealTimers());
+
+  const VIAJE_2 = 'a0000000-0000-0000-0000-000000000002';
+
+  /** Dos solicitudes a la vez; A es el más cercano a las dos (D-11 intacta). */
+  const montarDos = (config = { ...CONFIG, maxOfertas: 3 }) => {
+    const bd = crearBdDespachoFalsa();
+    for (const [id, pasajero] of [[VIAJE, PASAJERO], [VIAJE_2, 'p-2']]) {
+      bd.agregarViaje({ id, pasajero_id: pasajero, pasajeros: 1, tarifa: '0.50', sector_origen_id: 'malecon', sector_destino_id: 'la_boca' });
+      bd.fijarCandidatos(id, [{ conductor_id: A, distancia_m: 100 }, { conductor_id: B, distancia_m: 300 }]);
+    }
+    const io = crearIoFalso();
+    const despachador = crearDespachador({ obtenerDb: () => bd.db, io, conexiones: { estaConectado: () => true }, config });
+    const ofertasA = (conductor) => io.emitidos.filter((e) => e.evento === 'oferta_viaje' && e.sala === `usuario:${conductor}`);
+    const retiradasA = (conductor) => io.emitidos.filter((e) => e.evento === 'oferta_retirada' && e.sala === `usuario:${conductor}`);
+    return { bd, io, despachador, ofertasA, retiradasA };
+  };
+
+  test('criterio 7: con una oferta abierta, el más cercano también recibe la otra solicitud', async () => {
+    const { despachador, ofertasA, bd } = montarDos();
+    await despachador.iniciar(VIAJE);
+    await despachador.iniciar(VIAJE_2);
+    expect(ofertasA(A).map((e) => e.datos.viajeId)).toEqual([VIAJE, VIAJE_2]);
+    expect(ofertasA(B)).toHaveLength(0);
+    // El tope se manda a la BD (crear_ofertas y candidatos_despacho lo aplican).
+    expect(bd.db.rpc).toHaveBeenCalledWith('crear_ofertas', expect.objectContaining({ p_max_ofertas: 3 }));
+    despachador.detener();
+  });
+
+  test('criterio 11: con el tope en 1 vuelve al criterio 7 del 003', async () => {
+    const { despachador, ofertasA } = montarDos({ ...CONFIG, maxOfertas: 1 });
+    await despachador.iniciar(VIAJE);
+    await despachador.iniciar(VIAJE_2);
+    expect(ofertasA(A).map((e) => e.datos.viajeId)).toEqual([VIAJE]);
+    expect(ofertasA(B).map((e) => e.datos.viajeId)).toEqual([VIAJE_2]);
+    despachador.detener();
+  });
+
+  test('criterio 9: al aceptar una, la otra se retira de su pantalla y pasa al siguiente ya', async () => {
+    const { bd, despachador, ofertasA, retiradasA } = montarDos();
+    await despachador.iniciar(VIAJE);
+    await despachador.iniciar(VIAJE_2);
+    bd.aceptar(VIAJE, A);
+    await despachador.aceptado(bd.viajes.get(VIAJE), { conductor: { nombre: 'Ana' } });
+    expect(retiradasA(A).map((e) => e.datos.viajeId)).toEqual([VIAJE_2]);
+    // Sin esperar los 15 s de la oferta liberada.
+    expect(ofertasA(B).map((e) => e.datos.viajeId)).toEqual([VIAJE_2]);
+    expect(bd.ofertas.find((o) => o.viaje_id === VIAJE_2 && o.conductor_id === A).resultado).toBe('liberada');
+    despachador.detener();
+  });
+
+  test('criterio 10: rechazar una no toca las demás', async () => {
+    const { bd, despachador, ofertasA, retiradasA } = montarDos();
+    await despachador.iniciar(VIAJE);
+    await despachador.iniciar(VIAJE_2);
+    bd.rechazar(VIAJE, A);
+    await despachador.alResponder(VIAJE);
+    expect(retiradasA(A)).toHaveLength(0);
+    expect(bd.ofertas.find((o) => o.viaje_id === VIAJE_2 && o.conductor_id === A).resultado).toBe('pendiente');
+    expect(ofertasA(B).map((e) => e.datos.viajeId)).toEqual([VIAJE]);
     despachador.detener();
   });
 });

@@ -207,9 +207,10 @@ insert into viajes (id, pasajero_id, origen, destino) values ('a0000000-0000-000
   extensions.st_geogfromtext('SRID=4326;POINT(-80.5400 -0.8701)'), extensions.st_geogfromtext('SRID=4326;POINT(-80.5300 -0.8500)'));
 reset role;
 set role service_role;
-select count(*) = 0 as carla_no_recibe_dos_ofertas_a_la_vez
-  from crear_ofertas('a0000000-0000-0000-0000-000000000002', array['22222222-2222-2222-2222-222222222222']::uuid[], 'secuencial', now() + interval '15 seconds');
-select not exists (select 1 from candidatos_despacho('a0000000-0000-0000-0000-000000000002') where conductor_id = '22222222-2222-2222-2222-222222222222') as con_oferta_abierta_no_es_candidata;
+-- Criterio 7 del 003, ahora parámetro (D-15 en el 010): con tope 1 no recibe una segunda.
+select count(*) = 0 as carla_no_recibe_dos_ofertas_con_tope_1
+  from crear_ofertas('a0000000-0000-0000-0000-000000000002', array['22222222-2222-2222-2222-222222222222']::uuid[], 'secuencial', now() + interval '15 seconds', 1);
+select not exists (select 1 from candidatos_despacho('a0000000-0000-0000-0000-000000000002', 60, 1) where conductor_id = '22222222-2222-2222-2222-222222222222') as con_oferta_abierta_no_es_candidata;
 reset role;
 
 set role authenticated;

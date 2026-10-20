@@ -104,6 +104,7 @@ const crearDespachador = ({ obtenerDb, io, conexiones, config, ahora = Date.now,
     const candidatos = await rpc('candidatos_despacho', {
       p_viaje: viajeId,
       p_ubicacion_max_seg: config.ubicacionMaxSeg,
+      p_max_ofertas: config.maxOfertas,
     });
     const sinSocket = candidatos.filter((c) => !conexiones.estaConectado(c.conductor_id)).map((c) => c.conductor_id);
     let conToken = new Set();
@@ -123,6 +124,7 @@ const crearDespachador = ({ obtenerDb, io, conexiones, config, ahora = Date.now,
       p_conductores: conductores,
       p_fase: fase,
       p_vence_en: new Date(venceEn).toISOString(),
+      p_max_ofertas: config.maxOfertas,
     });
     for (const oferta of creadas) {
       const datos = armarOferta(estado.viaje, oferta);
@@ -186,6 +188,31 @@ const crearDespachador = ({ obtenerDb, io, conexiones, config, ahora = Date.now,
     return data;
   };
 
+  /**
+   * El conductor aceptó otra oferta (D-15, spec 010, criterio 9): aceptar_viaje dejó sus demás
+   * ofertas como "liberada". Se quitan de su pantalla y esas solicitudes pasan al siguiente
+   * candidato ya, sin esperar a que venzan. Solo las que este proceso sigue despachando.
+   */
+  const liberarOtras = async (conductorId) => {
+    if (!conductorId) return;
+    try {
+      const { data, error } = await obtenerDb()
+        .from('ofertas_viaje')
+        .select('viaje_id')
+        .eq('conductor_id', conductorId)
+        .eq('resultado', 'liberada');
+      if (error) throw new Error(`ofertas_viaje: ${error.message}`);
+      for (const { viaje_id: viajeId } of data || []) {
+        if (!activos.has(viajeId)) continue;
+        emitir(conductorId, 'oferta_retirada', { viajeId });
+        avisar('retirada', conductorId, viajeId);
+        await enCola(viajeId, () => avanzar(viajeId));
+      }
+    } catch (err) {
+      console.error(`[despacho] Liberar las otras ofertas de ${conductorId}: ${err.message}`);
+    }
+  };
+
   /** Ofertas vencidas y solicitudes viejas: lo cierra la BD y aquí se avisa (criterio 14). */
   const barrer = async () => {
     try {
@@ -232,6 +259,7 @@ const crearDespachador = ({ obtenerDb, io, conexiones, config, ahora = Date.now,
       }
       emitir(viaje.pasajero_id, 'viaje_aceptado', { viajeId: viaje.id, ...datosConductor });
       avisar('aceptado', viaje.pasajero_id, viaje.id, datosConductor?.conductor);
+      await liberarOtras(viaje.conductor_id);
     },
 
     /** El pasajero canceló mientras se buscaba (criterio 12): la BD ya cerró las ofertas. */
