@@ -2,6 +2,22 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.65.0] - 2026-10-20 (Hora Local)
+
+### Plan del 005 (viaje en curso) para revisión
+- `specs/005-viaje/plan.md` y `tasks.md`.
+- **BD (0017):**
+  - Las transiciones del viaje pasan a funciones que validan quién y en qué orden (llegada, iniciar, terminar, cancelar con motivo, confirmar). Se quita el permiso de `update` directo sobre `estado`.
+  - `punto_recogida` da las coordenadas solo al conductor asignado y solo durante el viaje.
+  - Tabla `calificaciones` sin lectura directa, para que el conductor no pueda saber quién lo calificó (LOPDP), con funciones para calificar, ver las reseñas propias y ver el resumen.
+  - El chat queda en solo lectura al terminar el viaje.
+- **Backend:** endpoints por paso y avisos a la otra parte por socket y con la app cerrada, sin nombre ni teléfono.
+- **App:** tarjeta del viaje activo del conductor con «Cómo llegar» (enlace de Google Maps, sin clave ni costo), estados para el pasajero y hoja final para confirmar y calificar.
+- Entrega en 3 PRs: BD y backend; conductor; pasajero y calificaciones.
+- `specs/README.md`: el 010 queda implementado; falta revisarlo en el APK.
+
+---
+
 ## [1.64.0] - 2026-10-20 (Hora Local)
 
 ### 010 · Parte B: lista de ofertas sin quitar D-11 (D-15)
