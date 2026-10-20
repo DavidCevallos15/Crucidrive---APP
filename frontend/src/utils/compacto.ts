@@ -1,3 +1,6 @@
+import { COLORS } from '../constants/theme';
+import { COLORES_OFERTA } from './oferta';
+
 /**
  * Interfaz compacta (spec 010, parte A). En pantallas bajas (un teléfono modesto mide
  * 360 × 640) se quita lo decorativo y se aprietan los espacios para que lo importante
@@ -30,3 +33,13 @@ export const altoMaximoHoja = (alto: number, separacionInferior: number): number
  */
 export const hayMasAbajo = (visible: number, contenido: number, desplazamiento: number): boolean =>
   visible > 0 && contenido - visible - desplazamiento > 8;
+
+/**
+ * Colores de «Desliza para ver más» (010, criterio 3). `claro` para las hojas del mapa y
+ * `oscuro` para las tarjetas opacas del conductor (regla 6): el degradado termina en el color
+ * del fondo, para no pintar una franja blanca sobre una tarjeta oscura (011).
+ */
+export const COLORES_DESLIZA = {
+  claro: { fondo: COLORS.glassSurface, pastilla: COLORS.darkBg, texto: COLORS.primary },
+  oscuro: { fondo: COLORES_OFERTA.fondo, pastilla: COLORES_OFERTA.fondo, texto: COLORES_OFERTA.texto },
+} as const;

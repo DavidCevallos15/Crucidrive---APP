@@ -31,7 +31,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <ScrollView
         contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.lg }]}
         showsVerticalScrollIndicator={false}
@@ -111,7 +111,7 @@ export default function ProfileScreen() {
             {!isDriver && (
               <>
                 <View style={styles.infoRow}>
-                  <Ionicons name="star" size={20} color={COLORS.secondary} />
+                  <Ionicons name="star" size={20} color={COLORS.primary} />
                   <Text style={styles.infoLabel}>Calificación</Text>
                   <Text style={styles.infoValue}>
                     {profile?.calificacion?.toFixed(1) ?? 'Sin datos'}

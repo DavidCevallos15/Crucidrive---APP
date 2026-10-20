@@ -238,11 +238,11 @@ export const DriverConsoleScreen: React.FC = () => {
   }, []);
 
   const textoEstado = estado ? TEXTO_ESTADO[estado] : 'Cargando…';
-  const colorEstado = disponible ? COLORS.success : estado === 'ocupado' ? COLORS.secondary : COLORS.glassTextMutedDark;
+  const colorEstado = disponible ? COLORS.success : estado === 'ocupado' ? COLORS.secondaryLight : COLORS.glassTextMutedDark;
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
 
       {/* ─── MAPA DE TRACKING ─────────────────────────────── */}
       <MapView
@@ -402,7 +402,7 @@ export const DriverConsoleScreen: React.FC = () => {
             </Text>
           )}
           <View style={styles.lista}>
-            <HojaDesplazable maxHeight={Math.floor(alto * 0.86)} contentContainerStyle={styles.listaContenido}>
+            <HojaDesplazable maxHeight={Math.floor(alto * 0.86)} fondo="oscuro" contentContainerStyle={styles.listaContenido}>
               {ofertas.map((o) => (
                 <TarjetaOferta
                   key={o.viajeId}

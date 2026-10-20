@@ -3,7 +3,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { PressableScale } from './PressableScale';
 import { HojaDesplazable } from './HojaDesplazable';
-import { COLORS, FONTS, SHAPES, SPACING } from '../constants/theme';
+import { FONTS, SHAPES, SPACING } from '../constants/theme';
 import { COLORES_OFERTA, textoDistancia, textoPunto } from '../utils/oferta';
 import { puedeCancelar, siguientePaso, type PasoConductor, type ViajeConductor } from '../utils/viajeConductor';
 
@@ -51,7 +51,7 @@ export const TarjetaViajeActivo: React.FC<Props> = ({
 
   return (
     <View style={[styles.tarjeta, { padding: relleno }]}>
-      <HojaDesplazable maxHeight={Math.max(120, altoMaximo - fijo)} nestedScrollEnabled>
+      <HojaDesplazable maxHeight={Math.max(120, altoMaximo - fijo)} fondo="oscuro" nestedScrollEnabled>
         <Text style={[styles.titulo, compacta && styles.tituloCompacto]} accessibilityRole="header" accessibilityLiveRegion="polite">
           {titulo(viaje)}
         </Text>
@@ -60,7 +60,7 @@ export const TarjetaViajeActivo: React.FC<Props> = ({
         {/* Recogida y destino */}
         <View style={[styles.ruta, compacta && styles.rutaCompacta]}>
           <View style={styles.rutaFila}>
-            <Ionicons name="radio-button-on" size={16} color={COLORS.primaryLight} />
+            <Ionicons name="radio-button-on" size={16} color={COLORES_OFERTA.origen} />
             <Text style={styles.rutaTexto} numberOfLines={compacta ? 1 : 2} accessibilityLabel={`Recogida: ${textoPunto(viaje.origen)}`}>
               {textoPunto(viaje.origen)}
             </Text>

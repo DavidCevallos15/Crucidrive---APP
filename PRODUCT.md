@@ -24,6 +24,8 @@ Expo Router y React Native, con versión web/PWA. Backend Express, Socket.IO y S
 
 Nombre CruciDrive. El usuario confirmó el 20 de octubre de 2026 una identidad costera, moderna y tecnológica, y solicitó sustituir logo, iconos y fondo del login.
 
+En la ampliación 010 pidió sustituir la apariencia oscura/turquesa por su paleta crema #FEE8C1, vino #7F1139 y azul #88AEE0, con superficies claras, tricimotos propias y una bienvenida de logo y espuma. Confirmó que solo se muestre la primera vez; las siguientes entradas van directamente al mapa. La animación es breve, omitible y sin sonido; la reducción de movimiento conserva una presentación estática.
+
 ## Operating Context
 
 Movilidad local, pantallas pequeñas y conectividad variable. Conservar accesibilidad, desplazamiento con teclado y reducción de movimiento.

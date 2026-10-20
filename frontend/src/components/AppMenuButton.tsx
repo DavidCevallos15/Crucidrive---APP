@@ -8,6 +8,7 @@ import { useServiceStore, type ServiceType } from '../store/useServiceStore';
 import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
 import { rutaInicial } from '../utils/routing';
 import { COLORS, FONTS, SPACING } from '../constants/theme';
+import { TricimotoIcon } from './TricimotoIcon';
 import { BrandLockup } from './BrandLockup';
 import { PressableScale } from './PressableScale';
 
@@ -26,7 +27,7 @@ export function AppMenuButton() {
   const choose = (next: ServiceType) => { selectService(next); go(home); };
   const row = (label: string, icon: keyof typeof Ionicons.glyphMap, action: () => void, selected = false) => (
     <PressableScale onPress={action} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ selected }} style={[styles.row, selected && styles.selected]}>
-      <Ionicons name={icon} size={22} color={selected ? COLORS.primaryLight : COLORS.glassTextMutedDark} />
+      {label === 'Viajar en tricimoto' ? <TricimotoIcon size={26} color={selected ? COLORS.wine : COLORS.glassTextMutedDark} /> : <Ionicons name={icon} size={22} color={selected ? COLORS.primaryLight : COLORS.glassTextMutedDark} />}
       <Text style={[styles.rowText, selected && styles.selectedText]}>{label}</Text>
       <Ionicons name="chevron-forward" size={16} color={COLORS.glassTextMutedDark} />
     </PressableScale>
@@ -68,12 +69,12 @@ export function AppMenuButton() {
 
 const styles = StyleSheet.create({
   trigger: { width: 48, height: 48, borderRadius: 16, backgroundColor: COLORS.darkBg, alignItems: 'center', justifyContent: 'center' },
-  overlay: { flex: 1, backgroundColor: 'rgba(0, 12, 18, 0.65)' },
+  overlay: { flex: 1, backgroundColor: COLORS.overlay },
   drawer: { flex: 1, backgroundColor: COLORS.darkBg, paddingHorizontal: SPACING.md },
   heading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.lg },
   close: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   row: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: SPACING.md, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, borderRadius: 12, marginBottom: SPACING.xs },
-  selected: { backgroundColor: 'rgba(97, 227, 207, 0.10)' },
+  selected: { backgroundColor: COLORS.wineSoft },
   rowText: { flex: 1, color: COLORS.glassTextDark, fontFamily: FONTS.body, fontSize: FONTS.sizes.sm },
   selectedText: { color: COLORS.primaryLight },
   group: { fontFamily: 'Outfit-SemiBold', fontSize: FONTS.sizes.sm, color: COLORS.glassTextMutedDark, marginTop: SPACING.lg, marginBottom: SPACING.sm, paddingLeft: SPACING.md },

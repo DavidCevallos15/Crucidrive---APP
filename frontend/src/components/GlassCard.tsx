@@ -59,7 +59,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
     >
       <BlurView
         intensity={blurIntensity}
-        tint="dark"
+        tint="light"
         style={[
           styles.blurView,
           { borderRadius },

@@ -1,240 +1,102 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-20T00:00:00-05:00",
+  "generatedAt": "2026-10-20T21:48:50.111Z",
   "title": "Design System: CruciDrive",
   "extensions": {
     "colorMeta": {
-      "primary": {
+      "wine": {
         "role": "primary",
-        "displayName": "Marino turquesa",
-        "tonalRamp": [
-          "oklch(15.00% 0.0913 188.90)",
-          "oklch(26.43% 0.0913 188.90)",
-          "oklch(37.86% 0.0913 188.90)",
-          "oklch(49.29% 0.0913 188.90)",
-          "oklch(60.71% 0.0913 188.90)",
-          "oklch(72.14% 0.0913 188.90)",
-          "oklch(83.57% 0.0913 188.90)",
-          "oklch(95.00% 0.0913 188.90)"
-        ]
+        "displayName": "Neon Candy"
       },
-      "primaryLight": {
-        "role": "primary",
-        "displayName": "Agua luminosa",
-        "tonalRamp": [
-          "oklch(15.00% 0.1184 181.62)",
-          "oklch(26.43% 0.1184 181.62)",
-          "oklch(37.86% 0.1184 181.62)",
-          "oklch(49.29% 0.1184 181.62)",
-          "oklch(60.71% 0.1184 181.62)",
-          "oklch(72.14% 0.1184 181.62)",
-          "oklch(83.57% 0.1184 181.62)",
-          "oklch(95.00% 0.1184 181.62)"
-        ]
-      },
-      "secondary": {
+      "sand": {
         "role": "secondary",
-        "displayName": "Arena cálida",
-        "tonalRamp": [
-          "oklch(15.00% 0.0756 82.35)",
-          "oklch(26.43% 0.0756 82.35)",
-          "oklch(37.86% 0.0756 82.35)",
-          "oklch(49.29% 0.0756 82.35)",
-          "oklch(60.71% 0.0756 82.35)",
-          "oklch(72.14% 0.0756 82.35)",
-          "oklch(83.57% 0.0756 82.35)",
-          "oklch(95.00% 0.0756 82.35)"
-        ]
+        "displayName": "Silk Mango"
       },
-      "secondaryLight": {
-        "role": "secondary",
-        "displayName": "Arena clara",
-        "tonalRamp": [
-          "oklch(15.00% 0.0447 82.60)",
-          "oklch(26.43% 0.0447 82.60)",
-          "oklch(37.86% 0.0447 82.60)",
-          "oklch(49.29% 0.0447 82.60)",
-          "oklch(60.71% 0.0447 82.60)",
-          "oklch(72.14% 0.0447 82.60)",
-          "oklch(83.57% 0.0447 82.60)",
-          "oklch(95.00% 0.0447 82.60)"
-        ]
+      "blue": {
+        "role": "tertiary",
+        "displayName": "Wild Navy"
       },
-      "danger": {
-        "role": "error",
-        "displayName": "Alerta",
-        "tonalRamp": [
-          "oklch(15.00% 0.2078 25.33)",
-          "oklch(26.43% 0.2078 25.33)",
-          "oklch(37.86% 0.2078 25.33)",
-          "oklch(49.29% 0.2078 25.33)",
-          "oklch(60.71% 0.2078 25.33)",
-          "oklch(72.14% 0.2078 25.33)",
-          "oklch(83.57% 0.2078 25.33)",
-          "oklch(95.00% 0.2078 25.33)"
-        ]
-      },
-      "dangerLight": {
-        "role": "error",
-        "displayName": "Alerta clara",
-        "tonalRamp": [
-          "oklch(15.00% 0.1661 22.22)",
-          "oklch(26.43% 0.1661 22.22)",
-          "oklch(37.86% 0.1661 22.22)",
-          "oklch(49.29% 0.1661 22.22)",
-          "oklch(60.71% 0.1661 22.22)",
-          "oklch(72.14% 0.1661 22.22)",
-          "oklch(83.57% 0.1661 22.22)",
-          "oklch(95.00% 0.1661 22.22)"
-        ]
-      },
-      "success": {
-        "role": "success",
-        "displayName": "Disponible",
-        "tonalRamp": [
-          "oklch(15.00% 0.1491 162.48)",
-          "oklch(26.43% 0.1491 162.48)",
-          "oklch(37.86% 0.1491 162.48)",
-          "oklch(49.29% 0.1491 162.48)",
-          "oklch(60.71% 0.1491 162.48)",
-          "oklch(72.14% 0.1491 162.48)",
-          "oklch(83.57% 0.1491 162.48)",
-          "oklch(95.00% 0.1491 162.48)"
-        ]
-      },
-      "successLight": {
-        "role": "success",
-        "displayName": "Éxito claro",
-        "tonalRamp": [
-          "oklch(15.00% 0.1535 163.22)",
-          "oklch(26.43% 0.1535 163.22)",
-          "oklch(37.86% 0.1535 163.22)",
-          "oklch(49.29% 0.1535 163.22)",
-          "oklch(60.71% 0.1535 163.22)",
-          "oklch(72.14% 0.1535 163.22)",
-          "oklch(83.57% 0.1535 163.22)",
-          "oklch(95.00% 0.1535 163.22)"
-        ]
-      },
-      "darkBg": {
+      "paper": {
         "role": "neutral",
-        "displayName": "Marino profundo",
-        "tonalRamp": [
-          "oklch(15.00% 0.0311 221.67)",
-          "oklch(26.43% 0.0311 221.67)",
-          "oklch(37.86% 0.0311 221.67)",
-          "oklch(49.29% 0.0311 221.67)",
-          "oklch(60.71% 0.0311 221.67)",
-          "oklch(72.14% 0.0311 221.67)",
-          "oklch(83.57% 0.0311 221.67)",
-          "oklch(95.00% 0.0311 221.67)"
-        ]
+        "displayName": "Papel"
       },
-      "glassSurface": {
+      "surface": {
         "role": "neutral",
-        "displayName": "Superficie marina",
-        "tonalRamp": [
-          "oklch(15.00% 0.0311 221.67)",
-          "oklch(26.43% 0.0311 221.67)",
-          "oklch(37.86% 0.0311 221.67)",
-          "oklch(49.29% 0.0311 221.67)",
-          "oklch(60.71% 0.0311 221.67)",
-          "oklch(72.14% 0.0311 221.67)",
-          "oklch(83.57% 0.0311 221.67)",
-          "oklch(95.00% 0.0311 221.67)"
-        ]
+        "displayName": "Superficie"
       },
-      "glassBgDark": {
+      "ink": {
         "role": "neutral",
-        "displayName": "Velo de cristal",
-        "tonalRamp": [
-          "oklch(15.00% 0.0000 89.88)",
-          "oklch(26.43% 0.0000 89.88)",
-          "oklch(37.86% 0.0000 89.88)",
-          "oklch(49.29% 0.0000 89.88)",
-          "oklch(60.71% 0.0000 89.88)",
-          "oklch(72.14% 0.0000 89.88)",
-          "oklch(83.57% 0.0000 89.88)",
-          "oklch(95.00% 0.0000 89.88)"
-        ]
-      },
-      "glassBorderDark": {
-        "role": "neutral",
-        "displayName": "Borde de cristal",
-        "tonalRamp": [
-          "oklch(15.00% 0.0000 89.88)",
-          "oklch(26.43% 0.0000 89.88)",
-          "oklch(37.86% 0.0000 89.88)",
-          "oklch(49.29% 0.0000 89.88)",
-          "oklch(60.71% 0.0000 89.88)",
-          "oklch(72.14% 0.0000 89.88)",
-          "oklch(83.57% 0.0000 89.88)",
-          "oklch(95.00% 0.0000 89.88)"
-        ]
-      },
-      "glassTextDark": {
-        "role": "neutral",
-        "displayName": "Espuma",
-        "tonalRamp": [
-          "oklch(15.00% 0.0065 185.27)",
-          "oklch(26.43% 0.0065 185.27)",
-          "oklch(37.86% 0.0065 185.27)",
-          "oklch(49.29% 0.0065 185.27)",
-          "oklch(60.71% 0.0065 185.27)",
-          "oklch(72.14% 0.0065 185.27)",
-          "oklch(83.57% 0.0065 185.27)",
-          "oklch(95.00% 0.0065 185.27)"
-        ]
+        "displayName": "Tinta"
       },
       "glassTextMutedDark": {
         "role": "neutral",
-        "displayName": "Bruma",
-        "tonalRamp": [
-          "oklch(15.00% 0.0209 192.89)",
-          "oklch(26.43% 0.0209 192.89)",
-          "oklch(37.86% 0.0209 192.89)",
-          "oklch(49.29% 0.0209 192.89)",
-          "oklch(60.71% 0.0209 192.89)",
-          "oklch(72.14% 0.0209 192.89)",
-          "oklch(83.57% 0.0209 192.89)",
-          "oklch(95.00% 0.0209 192.89)"
-        ]
+        "displayName": "Texto secundario"
       },
-      "white": {
+      "glassBgDark": {
         "role": "neutral",
-        "displayName": "Blanco",
-        "tonalRamp": [
-          "oklch(15.00% 0.0000 89.88)",
-          "oklch(26.43% 0.0000 89.88)",
-          "oklch(37.86% 0.0000 89.88)",
-          "oklch(49.29% 0.0000 89.88)",
-          "oklch(60.71% 0.0000 89.88)",
-          "oklch(72.14% 0.0000 89.88)",
-          "oklch(83.57% 0.0000 89.88)",
-          "oklch(95.00% 0.0000 89.88)"
-        ]
+        "displayName": "Apoyo cálido"
+      },
+      "outline": {
+        "role": "neutral",
+        "displayName": "Borde"
+      },
+      "blueLight": {
+        "role": "tertiary",
+        "displayName": "Azul suave"
+      },
+      "blueInk": {
+        "role": "tertiary",
+        "displayName": "Azul tinta"
+      },
+      "wineSoft": {
+        "role": "primary",
+        "displayName": "Vino suave"
+      },
+      "secondaryLight": {
+        "role": "secondary",
+        "displayName": "Marrón cálido"
+      },
+      "danger": {
+        "role": "error",
+        "displayName": "Peligro"
+      },
+      "dangerLight": {
+        "role": "error",
+        "displayName": "Error sobre claro"
+      },
+      "success": {
+        "role": "success",
+        "displayName": "Disponible"
+      },
+      "overlay": {
+        "role": "neutral",
+        "displayName": "Velo tinta"
+      },
+      "onBrand": {
+        "role": "neutral",
+        "displayName": "Sobre marca"
       }
     },
     "typographyMeta": {
       "display": {
         "displayName": "Display",
-        "purpose": "Total destacado del viaje; no corresponde al titular grande del acceso."
+        "purpose": "Total destacado; no define el titular de bienvenida."
       },
       "headline": {
         "displayName": "Headline",
-        "purpose": "Jerarquía principal y marca regular."
+        "purpose": "Título principal y marca regular."
       },
       "title": {
         "displayName": "Title",
-        "purpose": "Títulos de formulario, nombre de perfil y contenido."
+        "purpose": "Encabezados de sección."
       },
       "body": {
         "displayName": "Body",
-        "purpose": "Texto, mensajes y campos."
+        "purpose": "Campos y lectura."
       },
       "label": {
         "displayName": "Label",
-        "purpose": "Etiquetas visibles y estados."
+        "purpose": "Etiquetas y estados."
       },
       "caption": {
         "displayName": "Caption",
@@ -244,147 +106,170 @@
     "shadows": [
       {
         "name": "shadowDark",
-        "value": "0 8px 32px rgba(0,0,0,0.37)",
-        "purpose": "Sombra compartida oscura. React Native: offset (0,8), radius 32, opacity 1 sobre shadowColor rgba, elevation 12."
+        "value": "0 8px 24px rgba(41,27,37,0.08)",
+        "purpose": "GlassCard claro. Traducción CSS aproximada; React Native usa tinta, offset (0,8), radius 24, opacity 0.08, elevation Android 4. El nombre legacy no indica modo oscuro."
       },
       {
         "name": "shadowLight",
-        "value": "0 8px 32px rgba(31,38,135,0.08)",
-        "purpose": "Variante clara del tema. React Native: offset (0,8), radius 32, opacity 1 sobre shadowColor rgba, elevation 8."
+        "value": "0 8px 24px rgba(41,27,37,0.06)",
+        "purpose": "Variante suave. Traducción CSS aproximada; React Native usa offset (0,8), radius 24, opacity 0.06, elevation Android 3."
       }
     ],
     "motion": [
       {
+        "name": "press-in",
+        "value": "scale(0.97) 100ms cubic-bezier(0.23,1,0.32,1)",
+        "purpose": "PressableScale con ReduceMotion.System."
+      },
+      {
+        "name": "press-out",
+        "value": "scale(1) 140ms cubic-bezier(0.23,1,0.32,1)",
+        "purpose": "Restitución al soltar; deshabilitar restablece escala."
+      },
+      {
         "name": "panel-enter",
-        "value": "220ms cubic-bezier(0.23, 1, 0.32, 1)",
-        "purpose": "PANEL_IN sin retraso y con ReduceMotion.System."
+        "value": "220ms cubic-bezier(0.23,1,0.32,1)",
+        "purpose": "Entrada compartida sin retardos encadenados y con ReduceMotion.System."
       },
       {
         "name": "panel-exit",
         "value": "140ms",
-        "purpose": "PANEL_OUT con ReduceMotion.System."
+        "purpose": "Salida compartida con ReduceMotion.System."
       },
       {
-        "name": "press-in",
-        "value": "scale(0.97) 100ms cubic-bezier(0.23, 1, 0.32, 1)",
-        "purpose": "PressableScale, reducido según preferencia del sistema."
-      },
-      {
-        "name": "press-out",
-        "value": "scale(1) 160ms cubic-bezier(0.23, 1, 0.32, 1)",
-        "purpose": "Restitución compartida al soltar."
+        "name": "coastal-intro",
+        "value": "2400ms ease-in-out cubic",
+        "purpose": "Una pasada espacial sin sonido y omisible desde el inicio. Reduced Motion muestra estado estático y onPresented registra presentación desde efecto."
       },
       {
         "name": "panic-hold",
         "value": "2000ms linear",
-        "purpose": "Duración funcional para activar SOS; al soltar el progreso revierte en 200ms."
+        "purpose": "Duración funcional de SOS mientras mantiene pulsado; no bucle ornamental."
       }
     ],
     "breakpoints": [
       {
-        "name": "auth-welcome-wide",
+        "name": "welcome-wide",
         "value": "900px"
       }
     ]
   },
   "components": [
     {
-      "name": "Botón primario",
+      "name": "Botón principal",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "GlassButton md: radio 16, altura mínima 48 y respuesta táctil compartida.",
+      "description": "GlassButton md: mínimo 48, radio 16, pulsación 100/140 ms y foco azul tinta. Hover conserva color; disabled 0,45. Loading conserva nombre y bloquea reenvío.",
       "html": "<button class=\"ds-button-primary\" type=\"button\">Continuar</button>",
-      "css": ".ds-button-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:120px;min-height:48px;padding:8px 24px;border:0;border-radius:16px;background:#087E78;color:#FFFFFF;font:600 16px Outfit,sans-serif;cursor:pointer;transition:transform 160ms cubic-bezier(.23,1,.32,1)}.ds-button-primary:hover:not(:disabled){filter:brightness(1.03)}.ds-button-primary:focus-visible{outline:2px solid #61E3CF;outline-offset:3px}.ds-button-primary:active:not(:disabled){transform:scale(.97);transition-duration:100ms}.ds-button-primary:disabled{opacity:.4;cursor:default}@media(prefers-reduced-motion:reduce){.ds-button-primary{transition:none}.ds-button-primary:active:not(:disabled){transform:none}}"
+      "css": ".ds-button-primary{display:inline-flex;align-items:center;justify-content:center;min-width:120px;min-height:48px;padding:8px 24px;border:0;border-radius:16px;background:#7F1139;color:#FFFFFF;font:600 16px Outfit,sans-serif;cursor:pointer;transition:transform 140ms cubic-bezier(.23,1,.32,1)}.ds-button-primary:hover:not(:disabled){background:#7F1139}.ds-button-primary:focus-visible{outline:3px solid #294A75;outline-offset:3px}.ds-button-primary:active:not(:disabled){transform:scale(.97);transition-duration:100ms}.ds-button-primary:disabled{opacity:.45;cursor:default}.ds-button-primary[aria-busy=\"true\"]{opacity:1}@media(prefers-reduced-motion:reduce){.ds-button-primary{transition:none}.ds-button-primary:active:not(:disabled){transform:none}}"
     },
     {
-      "name": "Botón arena",
+      "name": "Botón Silk Mango",
       "kind": "button",
       "refersTo": "button-secondary",
-      "description": "GlassButton md: radio 16, altura mínima 48 y respuesta táctil compartida.",
-      "html": "<button class=\"ds-button-secondary\" type=\"button\"><svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M5 12h14M12 5l7 7-7 7\"/></svg>Entrar a CruciDrive</button>",
-      "css": ".ds-button-secondary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:120px;min-height:48px;padding:8px 24px;border:0;border-radius:16px;background:#F3D6A1;color:#061C23;font:600 16px Outfit,sans-serif;cursor:pointer;transition:transform 160ms cubic-bezier(.23,1,.32,1)}.ds-button-secondary:hover:not(:disabled){filter:brightness(1.03)}.ds-button-secondary:focus-visible{outline:2px solid #61E3CF;outline-offset:3px}.ds-button-secondary:active:not(:disabled){transform:scale(.97);transition-duration:100ms}.ds-button-secondary:disabled{opacity:.4;cursor:default}@media(prefers-reduced-motion:reduce){.ds-button-secondary{transition:none}.ds-button-secondary:active:not(:disabled){transform:none}}"
+      "description": "GlassButton md: mínimo 48, radio 16, pulsación 100/140 ms y foco azul tinta. Hover conserva color; disabled 0,45. Loading conserva nombre y bloquea reenvío.",
+      "html": "<button class=\"ds-button-secondary\" type=\"button\">Acción secundaria</button>",
+      "css": ".ds-button-secondary{display:inline-flex;align-items:center;justify-content:center;min-width:120px;min-height:48px;padding:8px 24px;border:0;border-radius:16px;background:#FEE8C1;color:#291B25;font:600 16px Outfit,sans-serif;cursor:pointer;transition:transform 140ms cubic-bezier(.23,1,.32,1)}.ds-button-secondary:hover:not(:disabled){background:#FEE8C1}.ds-button-secondary:focus-visible{outline:3px solid #294A75;outline-offset:3px}.ds-button-secondary:active:not(:disabled){transform:scale(.97);transition-duration:100ms}.ds-button-secondary:disabled{opacity:.45;cursor:default}.ds-button-secondary[aria-busy=\"true\"]{opacity:1}@media(prefers-reduced-motion:reduce){.ds-button-secondary{transition:none}.ds-button-secondary:active:not(:disabled){transform:none}}"
     },
     {
-      "name": "Botón de cierre / peligro",
+      "name": "Botón de peligro",
       "kind": "button",
       "refersTo": "button-danger",
-      "description": "GlassButton md: radio 16, altura mínima 48 y respuesta táctil compartida.",
-      "html": "<button class=\"ds-button-danger\" type=\"button\">Cerrar sesión</button>",
-      "css": ".ds-button-danger{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:120px;min-height:48px;padding:8px 24px;border:0;border-radius:16px;background:#EF4444;color:#FFFFFF;font:600 16px Outfit,sans-serif;cursor:pointer;transition:transform 160ms cubic-bezier(.23,1,.32,1)}.ds-button-danger:hover:not(:disabled){filter:brightness(1.03)}.ds-button-danger:focus-visible{outline:2px solid #61E3CF;outline-offset:3px}.ds-button-danger:active:not(:disabled){transform:scale(.97);transition-duration:100ms}.ds-button-danger:disabled{opacity:.4;cursor:default}@media(prefers-reduced-motion:reduce){.ds-button-danger{transition:none}.ds-button-danger:active:not(:disabled){transform:none}}"
+      "description": "GlassButton md: mínimo 48, radio 16, pulsación 100/140 ms y foco azul tinta. Hover conserva color; disabled 0,45. Loading conserva nombre y bloquea reenvío.",
+      "html": "<button class=\"ds-button-danger\" type=\"button\">Acción irreversible</button>",
+      "css": ".ds-button-danger{display:inline-flex;align-items:center;justify-content:center;min-width:120px;min-height:48px;padding:8px 24px;border:0;border-radius:16px;background:#BB2635;color:#FFFFFF;font:600 16px Outfit,sans-serif;cursor:pointer;transition:transform 140ms cubic-bezier(.23,1,.32,1)}.ds-button-danger:hover:not(:disabled){background:#BB2635}.ds-button-danger:focus-visible{outline:3px solid #294A75;outline-offset:3px}.ds-button-danger:active:not(:disabled){transform:scale(.97);transition-duration:100ms}.ds-button-danger:disabled{opacity:.45;cursor:default}.ds-button-danger[aria-busy=\"true\"]{opacity:1}@media(prefers-reduced-motion:reduce){.ds-button-danger{transition:none}.ds-button-danger:active:not(:disabled){transform:none}}"
     },
     {
-      "name": "Botón ghost",
+      "name": "Botón discreto",
       "kind": "button",
       "refersTo": "button-ghost",
-      "description": "GlassButton md: radio 16, altura mínima 48 y respuesta táctil compartida.",
+      "description": "GlassButton md: mínimo 48, radio 16, pulsación 100/140 ms y foco azul tinta. Hover conserva color; disabled 0,45. Loading conserva nombre y bloquea reenvío.",
       "html": "<button class=\"ds-button-ghost\" type=\"button\">Explorar el mapa</button>",
-      "css": ".ds-button-ghost{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:120px;min-height:48px;padding:8px 24px;border:1px solid rgba(255,255,255,.12);border-radius:16px;background:rgba(255,255,255,.07);color:#F2F8F7;font:600 16px Outfit,sans-serif;cursor:pointer;transition:transform 160ms cubic-bezier(.23,1,.32,1)}.ds-button-ghost:hover:not(:disabled){border-color:#61E3CF}.ds-button-ghost:focus-visible{outline:2px solid #61E3CF;outline-offset:3px}.ds-button-ghost:active:not(:disabled){transform:scale(.97);transition-duration:100ms}.ds-button-ghost:disabled{opacity:.4;cursor:default}@media(prefers-reduced-motion:reduce){.ds-button-ghost{transition:none}.ds-button-ghost:active:not(:disabled){transform:none}}"
+      "css": ".ds-button-ghost{display:inline-flex;align-items:center;justify-content:center;min-width:120px;min-height:48px;padding:8px 24px;border:1px solid #E3D8D4;border-radius:16px;background:#F5EFEA;color:#291B25;font:600 16px Outfit,sans-serif;cursor:pointer;transition:transform 140ms cubic-bezier(.23,1,.32,1)}.ds-button-ghost:hover:not(:disabled){background:#F5EFEA}.ds-button-ghost:focus-visible{outline:3px solid #294A75;outline-offset:3px}.ds-button-ghost:active:not(:disabled){transform:scale(.97);transition-duration:100ms}.ds-button-ghost:disabled{opacity:.45;cursor:default}.ds-button-ghost[aria-busy=\"true\"]{opacity:1}@media(prefers-reduced-motion:reduce){.ds-button-ghost{transition:none}.ds-button-ghost:active:not(:disabled){transform:none}}"
     },
     {
       "name": "Campo de correo",
       "kind": "input",
       "refersTo": "input",
-      "description": "Etiqueta persistente y borde de foco turquesa; el error usa rojo claro.",
-      "html": "<label class=\"ds-input-label\" for=\"ds-email\">Correo electrónico</label><input class=\"ds-input\" id=\"ds-email\" type=\"email\" placeholder=\"nombre@correo.com\" autocomplete=\"email\" /><span class=\"ds-input-help\">Usa el correo de tu cuenta.</span>",
-      "css": ".ds-input-label{display:block;margin-bottom:4px;color:#F2F8F7;font:500 14px Inter,sans-serif}.ds-input{display:block;min-height:52px;max-width:100%;padding:0 16px;border:1px solid rgba(255,255,255,.12);border-radius:8px;background:rgba(255,255,255,.05);color:#F2F8F7;font:400 16px Inter,sans-serif;caret-color:#61E3CF}.ds-input::placeholder{color:#ACBFBE}.ds-input:hover{border-color:#ACBFBE}.ds-input:focus-visible{outline:none;border-color:#61E3CF;background:rgba(255,255,255,.08)}.ds-input[aria-invalid=\"true\"]{border-color:#F87171}.ds-input-help{display:block;margin-top:4px;color:#ACBFBE;font:400 12px Inter,sans-serif}"
+      "description": "GlassInput: etiqueta persistente, mínimo 52, foco vino sobre vino suave y error anunciado. El error tiene prioridad de borde.",
+      "html": "<label class=\"ds-input-label\" for=\"ds-email\">Correo electrónico</label><input class=\"ds-input\" id=\"ds-email\" type=\"email\" placeholder=\"nombre@correo.com\" autocomplete=\"email\" aria-describedby=\"ds-email-help\" /><span class=\"ds-input-help\" id=\"ds-email-help\">Usa el correo de tu cuenta.</span>",
+      "css": ".ds-input-label{display:block;margin-bottom:4px;color:#291B25;font:500 14px Inter,sans-serif}.ds-input{display:block;min-height:52px;max-width:100%;padding:0 16px;border:1px solid #E3D8D4;border-radius:8px;background:#FFFCF7;color:#291B25;font:400 16px Inter,sans-serif;caret-color:#7F1139}.ds-input::placeholder{color:#74636D}.ds-input:hover{background:#FFFCF7}.ds-input:focus-visible{outline:none;border-color:#7F1139;background:#F7EAF0}.ds-input[aria-invalid=\"true\"]{border-color:#A51D2D}.ds-input-help{display:block;margin-top:4px;color:#74636D;font:400 12px Inter,sans-serif}"
     },
     {
-      "name": "Tarjeta marina",
+      "name": "Tarjeta clara",
       "kind": "card",
       "refersTo": "card",
-      "description": "GlassCard: contenido legible con superficie al 94 %, borde y desenfoque.",
+      "description": "GlassCard: blanco opaco, borde outline, radio 16, padding 16 y blur compartido 0. La sombra CSS aproxima shadowDark nativo; una tarjeta no es una acción.",
       "html": "<article class=\"ds-card\"><h3 class=\"ds-card-title\">Tu viaje</h3><p class=\"ds-card-text\">Elige tu destino para continuar.</p></article>",
-      "css": ".ds-card{padding:16px;border:1px solid rgba(255,255,255,.12);border-radius:16px;background:rgba(6,28,35,.94);color:#F2F8F7;backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,.37);font:400 16px Inter,sans-serif}.ds-card-title{margin:0 0 8px;font:600 18px Outfit,sans-serif}.ds-card-text{margin:0;color:#ACBFBE;line-height:1.5}"
+      "css": ".ds-card{padding:16px;border:1px solid #E3D8D4;border-radius:16px;background:#FFFFFF;color:#291B25;box-shadow:0 8px 24px rgba(41,27,37,.08);font:400 16px Inter,sans-serif}.ds-card-title{margin:0 0 8px;font:600 18px Outfit,sans-serif}.ds-card-text{margin:0;color:#74636D;line-height:1.5}"
     },
     {
       "name": "Navegación inferior",
       "kind": "nav",
       "refersTo": "navigation",
-      "description": "Representación web de AppTabLayout; el color activo depende del rol.",
+      "description": "Traducción web de AppTabLayout: superficie blanca, altura 85, etiquetas Inter y activo vino para pasajero; conductor usa success. Blur propio 25; 0 en GlassCard.",
       "html": "<nav class=\"ds-nav\" aria-label=\"Navegación\"><a class=\"ds-nav-link\" href=\"#mapa\" aria-current=\"page\"><svg aria-hidden=\"true\" width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\"><path d=\"m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2V5Zm6-2v16M15 5v16\"/></svg>Mapa</a><a class=\"ds-nav-link\" href=\"#chat\"><svg aria-hidden=\"true\" width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\"><path d=\"M21 11a8 8 0 0 1-8 8H7l-5 3 2-6a8 8 0 1 1 17-5Z\"/></svg>Chat</a></nav>",
-      "css": ".ds-nav{display:flex;min-height:85px;padding-top:8px;border-top:.5px solid rgba(255,255,255,.12);background:rgba(6,28,35,.94);backdrop-filter:blur(25px)}.ds-nav-link{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:44px;padding:8px;color:#ACBFBE;text-decoration:none;font:500 12px Inter,sans-serif}.ds-nav-link[aria-current=\"page\"]{color:#087E78}.ds-nav-link:hover{color:#61E3CF}.ds-nav-link:focus-visible{outline:2px solid #61E3CF;outline-offset:-3px}"
+      "css": ".ds-nav{display:flex;min-height:85px;padding-top:8px;border-top:.5px solid #E3D8D4;background:#FFFFFF;backdrop-filter:blur(25px)}.ds-nav-link{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:44px;padding:8px;color:#74636D;text-decoration:none;font:500 12px Inter,sans-serif}.ds-nav-link[aria-current=\"page\"]{color:#7F1139}.ds-nav-link:hover{background:#FFFFFF}.ds-nav-link:focus-visible{outline:3px solid #294A75;outline-offset:-3px}"
     },
     {
-      "name": "Selector de modo de acceso",
+      "name": "Selector de acceso",
       "kind": "chip",
       "refersTo": "auth-mode",
-      "description": "Dos controles del acceso con selección explícita; no es navegación global.",
+      "description": "Segmentos de acceso con selección explícita y mínimo 44; cambia entrar/crear cuenta sin navegación global. Los botones reales se bloquean durante envío.",
       "html": "<div class=\"ds-modes\" role=\"group\" aria-label=\"Acceso\"><button type=\"button\" class=\"ds-mode\" aria-pressed=\"true\">Iniciar sesión</button><button type=\"button\" class=\"ds-mode\" aria-pressed=\"false\">Crear cuenta</button></div>",
-      "css": ".ds-modes{display:flex;padding:4px;border-radius:12px;background:#061C23;gap:0}.ds-mode{flex:1;min-height:44px;padding:0 4px;border:0;border-radius:8px;background:transparent;color:#ACBFBE;font:400 14px Inter,sans-serif;cursor:pointer}.ds-mode[aria-pressed=\"true\"]{background:#087E78;color:#FFFFFF}.ds-mode:hover:not(:disabled){color:#FFFFFF}.ds-mode:focus-visible{outline:2px solid #61E3CF;outline-offset:-2px}.ds-mode:active:not(:disabled){transform:scale(.97)}.ds-mode:disabled{cursor:default;opacity:.4}@media(prefers-reduced-motion:reduce){.ds-mode:active:not(:disabled){transform:none}}"
+      "css": ".ds-modes{display:flex;padding:4px;border-radius:12px;background:#FFFCF7}.ds-mode{flex:1;min-height:44px;padding:0 4px;border:0;border-radius:8px;background:transparent;color:#74636D;font:400 14px Inter,sans-serif;cursor:pointer;transition:transform 140ms cubic-bezier(.23,1,.32,1)}.ds-mode[aria-pressed=\"true\"]{background:#7F1139;color:#FFFFFF}.ds-mode:hover:not(:disabled){cursor:pointer}.ds-mode:focus-visible{outline:3px solid #294A75;outline-offset:3px}.ds-mode:active:not(:disabled){transform:scale(.97);transition-duration:100ms}.ds-mode:disabled{cursor:default}@media(prefers-reduced-motion:reduce){.ds-mode{transition:none}.ds-mode:active:not(:disabled){transform:none}}"
+    },
+    {
+      "name": "Consentimiento",
+      "kind": "custom",
+      "refersTo": "checkbox",
+      "description": "CheckboxRow: fila mínima 48, casilla gráfica 24 con radio 6, etiqueta Inter; no preseleccionar consentimiento. El navegador controla el estado de esta muestra.",
+      "html": "<label class=\"ds-check-row\"><input class=\"ds-check-input\" type=\"checkbox\" /><span class=\"ds-check-box\" aria-hidden=\"true\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"m5 12 4 4 10-10\"/></svg></span><span class=\"ds-check-label\">Autorización de muestra</span></label>",
+      "css": ".ds-check-row{display:flex;align-items:center;min-height:48px;position:relative;cursor:pointer}.ds-check-input{position:absolute;width:24px;height:24px;margin:0;opacity:0}.ds-check-box{display:flex;align-items:center;justify-content:center;width:20px;height:20px;flex-shrink:0;border:2px solid #74636D;border-radius:6px;margin-right:8px;background:transparent;color:transparent}.ds-check-input:checked+.ds-check-box{background:#7F1139;border-color:#7F1139;color:#FFFFFF}.ds-check-label{color:#291B25;font:400 14px/21px Inter,sans-serif}.ds-check-row:hover{background:transparent}.ds-check-input:focus-visible+.ds-check-box{outline:3px solid #294A75;outline-offset:3px}.ds-check-row:active{transform:scale(.98)}@media(prefers-reduced-motion:reduce){.ds-check-row:active{transform:none}}"
+    },
+    {
+      "name": "Tricimoto propia",
+      "kind": "custom",
+      "refersTo": "tricimoto",
+      "description": "Traducción SVG de la geometría 48×48 de TricimotoIcon. Predeterminado 32, vino/arena, parabrisas azul suave y ruedas tinta. Icono decorativo acompañado de texto accesible.",
+      "html": "<span class=\"ds-tricimoto-sample\"><svg class=\"ds-tricimoto\" aria-hidden=\"true\" width=\"32\" height=\"32\" viewBox=\"0 0 48 48\"><path fill=\"#7F1139\" d=\"M8 13V13a9 9 0 0 1 9-9h14a9 9 0 0 1 9 9Z\"/><rect x=\"6\" y=\"13\" width=\"36\" height=\"26\" rx=\"8\" fill=\"#7F1139\"/><rect x=\"12.75\" y=\"13.75\" width=\"22.5\" height=\"11.5\" rx=\"3.25\" fill=\"#E9F1FB\" stroke=\"#FEE8C1\" stroke-width=\"1.5\"/><path stroke=\"#FEE8C1\" stroke-width=\"2\" d=\"M9 29h30\"/><rect x=\"10\" y=\"32\" width=\"6\" height=\"4\" rx=\"2\" fill=\"#FEE8C1\"/><rect x=\"32\" y=\"32\" width=\"6\" height=\"4\" rx=\"2\" fill=\"#FEE8C1\"/><rect x=\"5\" y=\"31\" width=\"5\" height=\"12\" rx=\"2\" fill=\"#291B25\"/><rect x=\"38\" y=\"31\" width=\"5\" height=\"12\" rx=\"2\" fill=\"#291B25\"/><rect x=\"20.5\" y=\"33.5\" width=\"7\" height=\"13\" rx=\"3.5\" fill=\"#291B25\" stroke=\"#FEE8C1\"/></svg><span>Tricimoto</span></span>",
+      "css": ".ds-tricimoto-sample{display:inline-flex;align-items:center;gap:8px;color:#291B25;font:400 14px Inter,sans-serif}.ds-tricimoto{display:block;flex-shrink:0}"
     }
   ],
   "narrative": {
     "northStar": "Crucita costera, moderna y tecnológica",
-    "overview": "Una identidad de movilidad local: marino profundo, turquesa luminoso y arena cálida sitúan CruciDrive en Crucita sin convertir cada pantalla en una postal. La marca acompaña las tareas de pedir, coordinar y realizar viajes en tricimoto.\n\nLos controles conservan la familiaridad de una aplicación nativa. La imagen costera aporta atmósfera al acceso; las superficies marinas de alta opacidad sostienen la lectura sobre imágenes y mapas. Outfit e Inter se conservan intencionalmente para mantener continuidad con la aplicación existente.",
+    "overview": "El sistema 011 expresa la dirección clara y premium elegida por David: papel cálido, arena Silk Mango, vino Neon Candy y azul Wild Navy. La tricimoto propia y la costa reconocible sitúan la marca en Crucita. Outfit construye la identidad; Inter sostiene lectura y acciones de una aplicación móvil.\n\nLa bienvenida concentra la ilustración y la pasada de espuma. Los controles operativos priorizan contenido legible, superficies blancas, tinta oscura y estados explícitos. La profundidad es contenida y no depende de transparencia o animación.",
     "keyCharacteristics": [
-      "Marino para estructura, turquesa para marca y foco, arena para acciones destacadas.",
-      "Controles familiares, texto legible y jerarquía directa.",
-      "Profundidad contenida con superficies de alta opacidad.",
-      "Marca local mediante activos propios y mensajes en español."
+      "Lienzo claro, vino para actuar, arena para calidez y azul para paisaje.",
+      "Tricimoto geométrica propia e iconos de acción en contorno.",
+      "Etiquetas persistentes y respuesta táctil breve.",
+      "Composición móvil adaptable, áreas seguras y contenido desplazable."
     ],
     "rules": [
       {
         "name": "The Contrast Before Glass Rule",
-        "body": "La legibilidad gobierna la superficie; conservar el fondo marino de alta opacidad al colocar texto sobre imágenes o mapas y verificar el contraste de cada combinación.",
+        "body": "La superficie sostiene la lectura por sí misma. No colocar blanco pequeño sobre arena o azul; comprobar estados y fondos variables. Pruebas de combinaciones normativas no certifican todas las pantallas o plataformas.",
         "section": "colors"
       },
       {
         "name": "The Control Shape Rule",
-        "body": "Los botones GlassButton conservan esquinas de tarjeta; reservar el radio completo para geometrías circulares, avatares o estados compactos, sin convertirlo en el estilo global de acciones.",
+        "body": "Conservar la forma compartida al ampliar acciones; el radio circular de un avatar no define los botones.",
         "section": "elevation"
       }
     ],
     "dos": [
-      "**Do** usar los tokens de theme.ts para extender pantallas y controles.",
-      "**Do** conservar etiquetas visibles, foco perceptible, semántica accesible y mensajes de error anunciados.",
-      "**Do** respetar áreas seguras, teclado, desplazamiento y reducción de movimiento.",
-      "**Do** mantener las acciones del mapa, SOS y conductor legibles sobre fondos variables."
+      "Do extender tema y componentes con roles claros.",
+      "Do conservar etiquetas, nombres accesibles, foco, errores anunciados y carga sin doble envío.",
+      "Do permitir texto ampliado, desplazamiento, teclado y áreas seguras.",
+      "Do respetar Reduce Motion y persistir también la bienvenida estática.",
+      "Do revisar estados reales y fondos variables además de colores aislados."
     ],
     "donts": [
-      "**Don't** inventar calificaciones, verificaciones o estados de cuenta para llenar espacios.",
-      "**Don't** sustituir el acceso real por SMS ni mezclar consentimiento y perfil con el registro inicial.",
-      "**Don't** heredar el titular grande del acceso o botones totalmente redondos como reglas globales.",
-      "**Don't** copiar colores antiguos o animaciones heredadas como nuevas decisiones del sistema."
+      "Don't reintroducir turquesa/oscuro por nombres legacy ni prometer modo oscuro automático.",
+      "Don't usar blanco pequeño sobre azul/arena, blur para sostener contraste o brillos de color.",
+      "Don't sustituir tricimoto por automóvil ni inventar personas, verificaciones, valoraciones, rutas o tiempos de llegada.",
+      "Don't convertir escena, títulos grandes o animación de bienvenida en requisito global.",
+      "Don't atribuir rendimiento o accesibilidad nativa a capturas web y bundles."
     ]
   }
 }

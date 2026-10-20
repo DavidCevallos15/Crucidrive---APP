@@ -142,7 +142,7 @@ export const LoginScreen: React.FC = () => {
 
         <GlassButton
           label={modo === 'entrar' ? 'Entrar a CruciDrive' : 'Crear mi cuenta'}
-          leftIcon={<Ionicons name="arrow-forward" size={20} color={COLORS.darkBg} />}
+          leftIcon={<Ionicons name="arrow-forward" size={20} color={COLORS.ink} />}
           onPress={enviar}
           variant="secondary"
           size="lg"

@@ -146,13 +146,13 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: COLORS.paper,
     borderWidth: SHAPES.glassBorderWidth,
     borderRadius: SHAPES.borderRadiusSm,
     overflow: 'hidden',
   },
   inputFocused: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: COLORS.wineSoft,
   },
   input: {
     flex: 1,
