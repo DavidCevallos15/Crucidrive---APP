@@ -30,7 +30,7 @@ interface BlurContainerProps extends ViewProps {
 export const BlurContainer: React.FC<BlurContainerProps> = ({
   children,
   intensity = EFFECTS.blurIntensity,
-  tint = 'dark',
+  tint = 'light',
   transparent = false,
   style,
   ...rest

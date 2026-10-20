@@ -1,0 +1,136 @@
+{
+  "COLORS": {
+    "primary": "#7F1139",
+    "primaryLight": "#7F1139",
+    "secondary": "#FEE8C1",
+    "secondaryLight": "#704B20",
+    "danger": "#BB2635",
+    "dangerLight": "#A51D2D",
+    "success": "#27634D",
+    "successLight": "#27634D",
+    "darkBg": "#FFFCF7",
+    "lightBg": "#FFFCF7",
+    "glassBgDark": "#F5EFEA",
+    "glassSurface": "#FFFFFF",
+    "glassBgLight": "#F5EFEA",
+    "glassBorderDark": "#E3D8D4",
+    "glassBorderLight": "#E3D8D4",
+    "glassTextDark": "#291B25",
+    "glassTextLight": "#291B25",
+    "glassTextMutedDark": "#74636D",
+    "glassTextMutedLight": "#74636D",
+    "ink": "#291B25",
+    "paper": "#FFFCF7",
+    "surface": "#FFFFFF",
+    "sand": "#FEE8C1",
+    "wine": "#7F1139",
+    "blue": "#88AEE0",
+    "blueLight": "#E9F1FB",
+    "blueInk": "#294A75",
+    "wineSoft": "#F7EAF0",
+    "outline": "#E3D8D4",
+    "overlay": "rgba(41, 27, 37, 0.38)",
+    "onBrand": "#FFFFFF",
+    "white": "#FFFFFF",
+    "black": "#000000",
+    "transparent": "transparent"
+  },
+  "FONTS": {
+    "heading": "Outfit",
+    "body": "Inter",
+    "sizes": {
+      "xs": 12,
+      "sm": 14,
+      "base": 16,
+      "lg": 18,
+      "xl": 20,
+      "xxl": 24,
+      "title": 32,
+      "display": 40
+    },
+    "weights": {
+      "regular": "400",
+      "medium": "500",
+      "semibold": "600",
+      "bold": "700"
+    },
+    "lineHeights": {
+      "tight": 1.2,
+      "normal": 1.5,
+      "relaxed": 1.75
+    }
+  },
+  "SPACING": {
+    "xs": 4,
+    "sm": 8,
+    "md": 16,
+    "lg": 24,
+    "xl": 32,
+    "xxl": 48
+  },
+  "SHAPES": {
+    "borderRadiusSm": 8,
+    "borderRadiusMd": 16,
+    "borderRadiusLg": 24,
+    "borderRadiusFull": 9999,
+    "glassBorderWidth": 1
+  },
+  "EFFECTS": {
+    "blurIntensity": 0,
+    "shadowLight": {
+      "shadowColor": "#291B25",
+      "shadowOffset": {
+        "width": 0,
+        "height": 8
+      },
+      "shadowOpacity": 0.06,
+      "shadowRadius": 24,
+      "elevation": 3
+    },
+    "shadowDark": {
+      "shadowColor": "#291B25",
+      "shadowOffset": {
+        "width": 0,
+        "height": 8
+      },
+      "shadowOpacity": 0.08,
+      "shadowRadius": 24,
+      "elevation": 4
+    }
+  },
+  "ANIMATION": {
+    "pressScale": 0.97,
+    "durationFast": 150,
+    "durationNormal": 250,
+    "durationSlow": 400,
+    "enterDuration": 220,
+    "welcomeDuration": 2400,
+    "pressInDuration": 100,
+    "pressOutDuration": 140,
+    "exitDuration": 140,
+    "easeOut": [
+      0.23,
+      1,
+      0.32,
+      1
+    ],
+    "easingEnter": "easeOut",
+    "easingExit": "easeIn",
+    "spring": {
+      "damping": 15,
+      "stiffness": 150,
+      "mass": 1
+    },
+    "panicHoldDuration": 2000,
+    "rideAcceptTimeout": 15000
+  },
+  "Z_INDEX": {
+    "base": 0,
+    "card": 10,
+    "searchBar": 20,
+    "bottomSheet": 40,
+    "panicButton": 50,
+    "modal": 100,
+    "toast": 1000
+  }
+}

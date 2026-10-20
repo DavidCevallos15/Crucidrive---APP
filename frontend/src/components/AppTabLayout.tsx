@@ -56,7 +56,7 @@ export const AppTabLayout: React.FC<AppTabLayoutProps> = ({ tabs, activeColor })
         tabBarBackground: () => (
           <BlurView
             intensity={25}
-            tint="dark"
+            tint="light"
             style={StyleSheet.absoluteFill}
           />
         ),

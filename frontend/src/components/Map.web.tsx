@@ -1,12 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { COLORS } from '../constants/theme';
 import { regionToBbox, type MapRegionLike } from '../utils/mapBbox';
 
 /**
  * Versión web del mapa (solo para previsualizar; la app real usa Google Maps en Android).
- * Incrusta OpenStreetMap, sin API de pago, y le pone un velo oscuro para que combine
- * con el cristal de la interfaz. Se usa un velo y no un filtro CSS porque invertir un
- * iframe a pantalla completa es muy caro de pintar en teléfonos modestos.
+ * Incrusta OpenStreetMap con atribución legible y mantiene el mapa claro.
  * Los marcadores no se dibujan en web.
  */
 export const Marker = (_props: any) => null;
@@ -46,7 +45,7 @@ const MapView = ({ children, style, initialRegion }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B0F19',
+    backgroundColor: COLORS.blueLight,
     overflow: 'hidden',
   },
   scrim: {
@@ -55,7 +54,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(11, 15, 25, 0.5)',
+    backgroundColor: 'transparent',
   },
   // La licencia ODbL exige atribución visible; el aviso del propio mapa queda tapado por las fichas.
   attribution: {
@@ -63,7 +62,10 @@ const styles = StyleSheet.create({
     left: 16,
     top: 76,
     fontSize: 11,
-    color: '#94A3B8',
+    color: COLORS.ink,
+    backgroundColor: COLORS.surface,
+    padding: 4,
+    borderRadius: 4,
   },
 });
 

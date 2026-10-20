@@ -197,7 +197,7 @@ export const ChatScreen: React.FC = () => {
   if (!threadId) {
     return (
       <View style={styles.emptyContainer}>
-        <StatusBar style="light" />
+        <StatusBar style="dark" />
         <Ionicons name="chatbubbles-outline" size={64} color={COLORS.glassTextMutedDark} />
         <Text style={styles.emptyTitle}>Sin chat activo</Text>
         <Text style={styles.emptySubtitle}>
@@ -209,7 +209,7 @@ export const ChatScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
 
       {/* ─── HEADER DEL CHAT ──────────────────────────────── */}
       <BlurContainer intensity={25} style={styles.chatHeader}>
@@ -340,12 +340,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
   },
   bubbleSelfBg: {
-    backgroundColor: 'rgba(13, 148, 136, 0.4)',
+    backgroundColor: COLORS.wineSoft,
     borderWidth: 0.5,
     borderColor: COLORS.primary,
   },
   bubbleOtherBg: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: COLORS.surface,
     borderWidth: 0.5,
     borderColor: COLORS.glassBorderDark,
   },

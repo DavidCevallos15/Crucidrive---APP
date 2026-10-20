@@ -42,7 +42,7 @@ function ConfiguracionFaltante({ faltantes }: { faltantes: string[] }) {
   }, []);
   return (
     <View style={styles.loadingContainer} accessibilityRole="alert">
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <Text style={styles.configTitulo}>Falta configurar esta versión de la app</Text>
       <Text style={styles.configTexto}>
         Estas variables de entorno faltan o tienen un valor inválido (por ejemplo, una clave copiada con puntos ••• de un panel). Corrígelas en EAS (entorno de este perfil) y vuelve a compilar:
@@ -109,7 +109,7 @@ function AppRaiz() {
   if (mostrarCargaInicial(isInitialized, fontsLoaded, Boolean(fontError))) {
     return (
       <View style={styles.loadingContainer}>
-        <StatusBar style="light" />
+        <StatusBar style="dark" />
         <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
@@ -117,7 +117,7 @@ function AppRaiz() {
 
   return (
     <GestureHandlerRootView style={styles.root}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <Slot />
     </GestureHandlerRootView>
   );
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.darkBg,
   },
   configTitulo: {
-    color: COLORS.white,
+    color: COLORS.ink,
     fontSize: 20,
     fontWeight: '700',
     textAlign: 'center',

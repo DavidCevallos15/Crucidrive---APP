@@ -2,6 +2,49 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.68.0] - 2026-10-20 (Hora Local)
+
+### 011 · Diseño costero y bienvenida (PR #56, integrado sobre el 005)
+- **Por qué se renumeró:** el trabajo empezó como «010», pero `main` ya tenía `010-ajustes-de-campo`; pasa a **011** (`specs/011-diseno-motion/`). Los commits originales conservan el número viejo en su mensaje.
+- **Paleta de David:** crema `#FEE8C1` (Silk Mango), vino `#7F1139` (Neon Candy) y azul `#88AEE0` (Wild Navy), con papel `#FFFCF7` y tinta `#291B25`. La app pasa a un tema claro.
+  - Los nombres viejos (`darkBg`, `glass*`, `primaryLight`, `secondary`) se mantienen como alias para no renombrar en masa, pero **ahora apuntan a colores claros**: `darkBg` es papel y `secondary` es crema. No hay modo oscuro automático.
+  - Adaptados: componentes base, mapa, acceso, menú, ajustes, chat, botón SOS e iconos de instalación.
+- **Marca:** logo adaptado y una tricimoto propia para la interfaz y los marcadores del mapa. Los recursos, con procedencia y prompts, están en `frontend/assets/premium/`.
+- **Bienvenida:** animación de 2,4 s solo la primera vez (logo, agua y espuma), con «Omitir» y sin sonido.
+  - Con movimiento reducido se muestra una versión estática.
+  - Si no se puede leer la preferencia guardada, se entra directo al mapa.
+- **Accesibilidad:** respuesta táctil de 100/140 ms, foco visible en web y botón pequeño de 48 dp en Android (44 en iOS y web). El SOS conserva el progreso de la pulsación sostenida.
+- **Dependencia nueva:** `react-native-svg`, compatible con Expo, para las curvas. No se agrega librería de animación.
+- **Documentación:**
+  - guía en `docs/sistema-diseno-crucidrive.md`;
+  - catálogo en `/diseno` y reproducción manual de la bienvenida en `/bienvenida`;
+  - tokens exportables con `frontend/scripts/export-design-tokens.mjs`.
+
+### Integración con el 005 (pantallas del conductor, #55)
+El #56 se armó sobre `bbb5e71`, antes de fusionar el #55, y los dos usaban la versión 1.67.0. Por eso GitHub no lo dejaba fusionar. Se integró `main` (`1aa864a`): el 005 queda como 1.67.0 y el 011 como 1.68.0.
+
+La oferta y la tarjeta del viaje siguen oscuras y opacas (regla 6). Con los alias nuevos, cinco colores dejaron de leerse y se corrigieron:
+
+| Dónde | Antes | Ahora |
+| --- | --- | --- |
+| Ícono de recogida en la oferta y en la tarjeta del viaje | vino sobre oscuro, 1,72:1 | azul `#88AEE0`, 7,75:1 |
+| Estrellas y promedio de «Tus reseñas» | crema sobre blanco, 1,20:1 | vino, 10,29:1 |
+| «Desliza para ver más» sobre las tarjetas oscuras | franja blanca | variante oscura, con el degradado del color de la tarjeta |
+| Estado «En un viaje» en la consola | crema sobre blanco, 1,20:1 | marrón `secondaryLight`, 7,73:1 |
+| Estrella de «Calificación» en el perfil del pasajero | crema sobre blanco | vino |
+
+- Pruebas: `tests/contraste011.test.ts` (5) falla con los colores anteriores. Frontend 359/359, backend 363/363, `tsc` sin errores.
+- Capturas en 360 × 640 en `docs/capturas/011-integracion-005/`: tarjeta del viaje, oferta y reseñas.
+- `npm audit --omit=dev` del frontend: 32 alertas, las mismas que ya tiene `main` y que vienen de dependencias de Expo. El 011 no agrega ninguna. El CI solo audita el backend: 0 alertas.
+
+### Evidencia del PR #56 (antes de integrar el #55)
+- Frontend 335/335, backend 363/363, TypeScript sin errores y exportación web y Android (Hermes) correctas. Auditoría de dependencias del backend: 0 alertas.
+- Ocho combinaciones de color pasan contraste AA. Cinco pruebas cubren la preferencia de bienvenida y los fallos de almacenamiento.
+- Revisión visual web (390 × 844 y 1440 × 900): aprobada después de corregir dos hallazgos, la persistencia de la variante estática y el mínimo de 48 dp en Android. Capturas en `.impeccable/review/premium/`.
+- **Pendiente en teléfono:** APK nuevo y prueba de movimiento reducido, tipografía ampliada, lector de pantalla, marcador nativo y fluidez en un teléfono modesto. Que el empaquetado funcione no demuestra esos resultados.
+
+---
+
 ## [1.67.0] - 2026-10-20 (Hora Local)
 
 ### 005 · Viaje en curso: pantallas del conductor (PR 3)
@@ -63,7 +106,7 @@
 
 ## [1.64.0] - 2026-10-20 (Hora Local)
 
-### 010 · Parte B: lista de ofertas sin quitar D-11 (D-15)
+### 011 · Parte B: lista de ofertas sin quitar D-11 (D-15)
 - **BD** (`0016_varias_ofertas.sql`): un conductor puede tener hasta 3 ofertas abiertas (parámetro `p_max_ofertas`). `crear_ofertas` bloquea la tricimoto antes de contar, para que dos solicitudes a la vez no superen el tope. Al aceptar, las demás ofertas del conductor quedan como **«liberada»**, un resultado nuevo, y no como «rechazada», para no ensuciar las métricas del piloto.
 - **Backend:** `OFERTAS_MAX_POR_CONDUCTOR` (1 a 5, por defecto 3; con 1, como en el 003). Al aceptar, las solicitudes liberadas se retiran de la pantalla del conductor y pasan al siguiente candidato sin esperar a que venzan.
 - **App:** la consola muestra las ofertas en una lista, primero la que vence antes, cada una con su cuenta atrás, Aceptar y Rechazar. Rechazar quita solo esa. La lista reutiliza `TarjetaOferta` y `HojaDesplazable` de la parte A.
@@ -79,7 +122,7 @@
 
 ## [1.63.0] - 2026-10-20 (Hora Local)
 
-### 010 · Parte A: interfaz compacta
+### 011 · Parte A: interfaz compacta
 - Modo compacto por debajo de **880 px** de alto (`utils/compacto.ts`). Cubre 360 × 640, 360 × 800 (el teléfono de David) y 393 × 852; deja fuera 412 × 915. David aprobó subir el umbral desde 720.
 - **Login** (criterio 1): sin bienvenida ni pie, marca compacta y espacios apretados. En 360 × 640 el contenido pasó de 929 px a 640 y el botón Entrar queda en y = 448; en 360 × 800, en y = 528.
 - **Panel del mapa** (criterios 2 y 3): el panel de destino u origen deja al menos un 35 % del mapa, también con la barra de pestañas. `HojaDesplazable` avisa «Desliza para ver más» mientras queda contenido abajo; en la prueba del 20 oct, el buscador y los sectores pasaron desapercibidos.

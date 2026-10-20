@@ -31,7 +31,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <ScrollView
         contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.lg }]}
         showsVerticalScrollIndicator={false}

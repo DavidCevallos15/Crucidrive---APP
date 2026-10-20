@@ -50,31 +50,12 @@ export const PanicButton: React.FC<PanicButtonProps> = ({
   const buttonScale = useSharedValue(1);
   const hold = useSharedValue(0);
   const ringScale = useSharedValue(1);
-  const ringOpacity = useSharedValue(0.45);
+  const ringOpacity = useSharedValue(0.12);
 
-  useEffect(() => {
-    ringScale.value = withRepeat(
-      withTiming(1.9, {
-        duration: 2200,
-        easing: Easing.bezier(...ANIMATION.easeOut),
-        reduceMotion: ReduceMotion.System,
-      }),
-      -1,
-      false,
-      undefined,
-      ReduceMotion.System
-    );
-    ringOpacity.value = withRepeat(
-      withTiming(0, { duration: 2200, reduceMotion: ReduceMotion.System }),
-      -1,
-      false,
-      undefined,
-      ReduceMotion.System
-    );
-    return () => {
-      cancelAnimation(ringScale);
-      cancelAnimation(ringOpacity);
-    };
+  // El progreso solo se anima durante la pulsación; sin anillo ornamental infinito.
+  useEffect(() => () => {
+    cancelAnimation(ringScale);
+    cancelAnimation(ringOpacity);
   }, [ringScale, ringOpacity]);
 
   const handleActivation = useCallback(() => {

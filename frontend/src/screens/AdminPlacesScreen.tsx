@@ -109,7 +109,7 @@ export const AdminPlacesScreen: React.FC = () => {
           onPress={() => router.push(`/(app)/(admin)/lugares/${ID_NUEVO}` as never)}
           variant="secondary"
           size="sm"
-          leftIcon={<Ionicons name="add" size={18} color={COLORS.darkBg} />}
+          leftIcon={<Ionicons name="add" size={18} color={COLORS.ink} />}
         />
       </View>
 

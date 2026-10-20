@@ -242,7 +242,7 @@ export const DriverConsoleScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
 
       {/* ─── MAPA DE TRACKING ─────────────────────────────── */}
       <MapView

@@ -6,6 +6,7 @@ import {
   type ViewStyle,
   ActivityIndicator,
   View,
+  Platform,
 } from 'react-native';
 import { COLORS, FONTS, SHAPES, SPACING } from '../constants/theme';
 import { PressableScale } from './PressableScale';
@@ -57,7 +58,7 @@ const VARIANT_COLORS: Record<ButtonVariant, string> = {
  */
 const VARIANT_TEXT_COLORS: Record<ButtonVariant, string> = {
   primary: COLORS.white,
-  secondary: COLORS.darkBg,
+  secondary: COLORS.ink,
   danger: COLORS.white,
   ghost: COLORS.glassTextDark,
 };
@@ -66,7 +67,7 @@ const VARIANT_TEXT_COLORS: Record<ButtonVariant, string> = {
  * Mapeo de dimensiones por tamaño.
  */
 const SIZE_CONFIG: Record<ButtonSize, { height: number; paddingHorizontal: number; fontSize: number }> = {
-  sm: { height: 44, paddingHorizontal: SPACING.md, fontSize: FONTS.sizes.sm },
+  sm: { height: Platform.OS === 'android' ? 48 : 44, paddingHorizontal: SPACING.md, fontSize: FONTS.sizes.sm },
   md: { height: 48, paddingHorizontal: SPACING.lg, fontSize: FONTS.sizes.base },
   lg: { height: 56, paddingHorizontal: SPACING.xl, fontSize: FONTS.sizes.lg },
 };
@@ -104,7 +105,7 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
     paddingHorizontal: sizeConfig.paddingHorizontal,
     backgroundColor: VARIANT_COLORS[variant],
     borderRadius: SHAPES.borderRadiusMd,
-    opacity: disabled ? 0.4 : 1,
+    opacity: disabled ? 0.45 : 1,
     ...(variant === 'ghost' && {
       borderWidth: SHAPES.glassBorderWidth,
       borderColor: COLORS.glassBorderDark,
@@ -112,6 +113,8 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
   };
 
   const textStyle: TextStyle = {
+    flexShrink: 1,
+    textAlign: 'center',
     color: VARIANT_TEXT_COLORS[variant],
     fontSize: sizeConfig.fontSize,
     fontFamily: FONTS.heading,
