@@ -65,7 +65,8 @@ insert into viajes (id, pasajero_id, origen, destino, pasajeros, destino_descrip
 select tarifa = 1.50 as tarifa_tres_pasajeros_ok from viajes where id = 'aaaaaaaa-0000-0000-0000-000000000002';
 select pg_temp.debe_fallar($q$insert into viajes (pasajero_id, origen, destino, pasajeros) values ('11111111-1111-1111-1111-111111111111', extensions.st_geogfromtext('SRID=4326;POINT(0 0)'), extensions.st_geogfromtext('SRID=4326;POINT(0 0)'), 0)$q$, 'viaje con 0 pasajeros');
 select pg_temp.debe_fallar($q$update viajes set pasajeros=1 where id='aaaaaaaa-0000-0000-0000-000000000002'$q$, 'pasajero cambia el numero de pasajeros');
-update viajes set estado='cancelado', finalizado_en=now() where id='aaaaaaaa-0000-0000-0000-000000000002';
+-- Desde el 005 el estado cambia solo por funciones (cancelar mientras busca: sin motivo).
+select cancelar_viaje('aaaaaaaa-0000-0000-0000-000000000002');
 -- El cliente intenta fijar su propia tarifa (9.99): la BD la recalcula a 0,50 x 1 pasajero.
 insert into viajes (id, pasajero_id, origen, destino, tarifa) values ('aaaaaaaa-0000-0000-0000-000000000001','11111111-1111-1111-1111-111111111111', extensions.st_geogfromtext('SRID=4326;POINT(-80.5375 -0.8706)'), extensions.st_geogfromtext('SRID=4326;POINT(-80.5428 -0.8728)'), 9.99);
 select tarifa = 0.50 and pasajeros = 1 as tarifa_un_pasajero_ok from viajes where id = 'aaaaaaaa-0000-0000-0000-000000000001';
@@ -103,7 +104,7 @@ select count(*) = 0 as tercero_no_ve_perfil_conductor from perfiles where id='22
 
 \echo '--- estados y trigger ---'
 select pg_temp.como('22222222-2222-2222-2222-222222222222');
-update viajes set estado='en_curso' where id='aaaaaaaa-0000-0000-0000-000000000001';
+select iniciar_viaje('aaaaaaaa-0000-0000-0000-000000000001');
 select updated_at > creado_en as trigger_updated_at_ok from viajes where id='aaaaaaaa-0000-0000-0000-000000000001';
 
 \echo '--- anon ---'
