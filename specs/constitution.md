@@ -29,6 +29,10 @@ Reglas no negociables. Cambiarlas requiere editar este archivo y registrarlo en 
 
 - D-13 (9 oct 2026): **Frecuencia de ubicación adaptativa.** Cada 5 s con la app abierta. En segundo plano, cada 10 s en movimiento y cada 30 s detenido, dentro de la ventana de 60 s del despacho. Los valores son parámetros del servidor. Se especifica en `004-tracking-push`.
 
+## Ampliación solicitada (20 oct 2026)
+
+- D-14: **Encomiendas en tricimoto, con precio acordado con el conductor**, según instrucciones directas de David. D-08 conserva su vigencia para pasajeros; una encomienda no tiene tarifa por persona ni se representa como gratuita. La app no fija ni registra el importe negociado. Se formaliza en `009-experiencia-encomiendas`, con revisión documental y validaciones pendientes descritas allí; no cambia los vehículos admitidos por D-03.
+
 ## Decisiones abiertas
 - D-10: **Protección contra contraseñas filtradas** de Supabase Auth (aviso del linter). Hoy requiere un plan de pago; se pospone para no gastar. Mitigación mientras tanto: revisar la longitud mínima de contraseña en Supabase Auth. Reevaluar antes del piloto.
 - D-01: el backend es JavaScript (CommonJS). ¿Migrar a TypeScript o mantener JS con JSDoc? Se decide en `007-hardening`.
