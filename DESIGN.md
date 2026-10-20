@@ -1,22 +1,25 @@
 ---
 name: CruciDrive
-description: Movilidad en tricimoto con identidad costera, moderna y tecnológica de Crucita.
+description: Sistema 010 claro de movilidad en tricimoto y encomiendas en Crucita.
 colors:
-  primary: "#087E78"
-  primaryLight: "#61E3CF"
-  secondary: "#F3D6A1"
-  secondaryLight: "#F9E8C9"
-  danger: "#EF4444"
-  dangerLight: "#F87171"
-  success: "#10B981"
-  successLight: "#34D399"
-  darkBg: "#061C23"
-  glassSurface: "rgba(6, 28, 35, 0.94)"
-  glassBgDark: "rgba(255, 255, 255, 0.07)"
-  glassBorderDark: "rgba(255, 255, 255, 0.12)"
-  glassTextDark: "#F2F8F7"
-  glassTextMutedDark: "#ACBFBE"
-  white: "#FFFFFF"
+  wine: "#7F1139"
+  sand: "#FEE8C1"
+  blue: "#88AEE0"
+  paper: "#FFFCF7"
+  surface: "#FFFFFF"
+  ink: "#291B25"
+  glassTextMutedDark: "#74636D"
+  glassBgDark: "#F5EFEA"
+  outline: "#E3D8D4"
+  blueLight: "#E9F1FB"
+  blueInk: "#294A75"
+  wineSoft: "#F7EAF0"
+  secondaryLight: "#704B20"
+  danger: "#BB2635"
+  dangerLight: "#A51D2D"
+  success: "#27634D"
+  overlay: "rgba(41, 27, 37, 0.38)"
+  onBrand: "#FFFFFF"
 typography:
   display:
     fontFamily: "Outfit, sans-serif"
@@ -29,7 +32,7 @@ typography:
   title:
     fontFamily: "Outfit, sans-serif"
     fontSize: "24px"
-    fontWeight: 700
+    fontWeight: 600
   body:
     fontFamily: "Inter, sans-serif"
     fontSize: "16px"
@@ -57,44 +60,56 @@ spacing:
   xxl: "48px"
 components:
   button-primary:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.white}"
+    backgroundColor: "{colors.wine}"
+    textColor: "{colors.onBrand}"
     rounded: "{rounded.borderRadiusMd}"
     padding: "8px 24px"
   button-secondary:
-    backgroundColor: "{colors.secondary}"
-    textColor: "{colors.darkBg}"
+    backgroundColor: "{colors.sand}"
+    textColor: "{colors.ink}"
     rounded: "{rounded.borderRadiusMd}"
     padding: "8px 24px"
   button-danger:
     backgroundColor: "{colors.danger}"
-    textColor: "{colors.white}"
+    textColor: "{colors.onBrand}"
     rounded: "{rounded.borderRadiusMd}"
     padding: "8px 24px"
   button-ghost:
     backgroundColor: "{colors.glassBgDark}"
-    textColor: "{colors.glassTextDark}"
+    textColor: "{colors.ink}"
     rounded: "{rounded.borderRadiusMd}"
     padding: "8px 24px"
   input:
-    backgroundColor: "rgba(255, 255, 255, 0.05)"
-    textColor: "{colors.glassTextDark}"
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
     rounded: "{rounded.borderRadiusSm}"
-    height: "52px"
+    padding: "0px 16px"
+  input-focus:
+    backgroundColor: "{colors.wineSoft}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.borderRadiusSm}"
   card:
-    backgroundColor: "{colors.glassSurface}"
-    textColor: "{colors.glassTextDark}"
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink}"
     rounded: "{rounded.borderRadiusMd}"
     padding: "{spacing.md}"
   navigation:
-    backgroundColor: "{colors.glassSurface}"
+    backgroundColor: "{colors.surface}"
     textColor: "{colors.glassTextMutedDark}"
     height: "85px"
   auth-mode:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.white}"
+    backgroundColor: "{colors.wine}"
+    textColor: "{colors.onBrand}"
     rounded: "{rounded.borderRadiusSm}"
     padding: "0px 4px"
+  checkbox:
+    backgroundColor: "{colors.wine}"
+    textColor: "{colors.onBrand}"
+    size: "24px"
+  tricimoto:
+    backgroundColor: "{colors.sand}"
+    textColor: "{colors.wine}"
+    size: "32px"
 ---
 
 # Design System: CruciDrive
@@ -103,133 +118,165 @@ components:
 
 **Creative North Star: "Crucita costera, moderna y tecnológica"**
 
-Una identidad de movilidad local: marino profundo, turquesa luminoso y arena cálida sitúan CruciDrive en Crucita sin convertir cada pantalla en una postal. La marca acompaña las tareas de pedir, coordinar y realizar viajes en tricimoto.
+El sistema 010 expresa la dirección clara y premium elegida por David: papel cálido, arena Silk Mango, vino Neon Candy y azul Wild Navy. La tricimoto propia y la costa reconocible sitúan la marca en Crucita. Outfit construye la identidad; Inter sostiene lectura y acciones de una aplicación móvil.
 
-Los controles conservan la familiaridad de una aplicación nativa. La imagen costera aporta atmósfera al acceso; las superficies marinas de alta opacidad sostienen la lectura sobre imágenes y mapas. Outfit e Inter se conservan intencionalmente para mantener continuidad con la aplicación existente.
+La bienvenida concentra la ilustración y la pasada de espuma. Los controles operativos priorizan contenido legible, superficies blancas, tinta oscura y estados explícitos. La profundidad es contenida y no depende de transparencia o animación.
 
 **Key Characteristics:**
 
-- Marino para estructura, turquesa para marca y foco, arena para acciones destacadas.
-- Controles familiares, texto legible y jerarquía directa.
-- Profundidad contenida con superficies de alta opacidad.
-- Marca local mediante activos propios y mensajes en español.
+- Lienzo claro, vino para actuar, arena para calidez y azul para paisaje.
+- Tricimoto geométrica propia e iconos de acción en contorno.
+- Etiquetas persistentes y respuesta táctil breve.
+- Composición móvil adaptable, áreas seguras y contenido desplazable.
 
-La fuente única de tokens es `frontend/src/constants/theme.ts`; este documento registra sus valores reutilizados. El contexto de producto vive en `PRODUCT.md` y la composición del acceso en `.impeccable/surfaces/login.md`.
+La fuente de implementación es `frontend/src/constants/theme.ts`; el frontmatter registra tokens reutilizados y `.impeccable/design.json` añade estados, sombras y movimiento. La guía ampliada está en `docs/sistema-diseno-crucidrive.md`. Catálogo vivo: `/diseno`; bienvenida manual: `/bienvenida`. Esta documentación reemplaza la identidad turquesa/oscura anterior con autorización del propietario.
 
 ## Colors
 
-La paleta combina el carácter del mar con un acento de arena cálida; los valores normativos están en el frontmatter.
+Los tres colores solicitados conservan sus valores exactos en el frontmatter; los apoyos proceden del tema, sin rampas generadas.
 
 ### Primary
 
-- **Marino turquesa** (`primary`): botones primarios y selección activa del acceso.
-- **Agua luminosa** (`primaryLight`): foco, selección de texto, acentos de la marca y énfasis sobre marino.
+- **Neon Candy** (`wine`, alias de código `primary` y `primaryLight`): acción principal, selección, enlaces, marca y foco de campos. `wineSoft` sostiene selección suave y campo enfocado.
 
 ### Secondary
 
-- **Arena cálida** (`secondary`): acción principal del acceso mediante la variante secundaria y énfasis de viaje.
-- **Arena clara** (`secondaryLight`): variación de apoyo, incluida la indicación de ubicación pendiente.
+- **Silk Mango** (`sand`, alias `secondary`): arena costera, botón secundario y fondo del icono instalado; usar tinta encima.
+- **Marrón cálido** (`secondaryLight`): indicaciones cálidas legibles; el nombre histórico no significa superficie clara.
+
+### Tertiary
+
+- **Wild Navy** (`blue`): agua y paisaje; usar tinta para contenido encima. `blueLight` acompaña espuma, apoyos y parabrisas; `blueInk` define foco web de controles compartidos.
 
 ### Neutral
 
-- **Marino profundo** (`darkBg`): lienzo general y texto oscuro sobre arena.
-- **Superficie marina** (`glassSurface`): paneles sobre mapas o ilustración.
-- **Velo y borde de cristal** (`glassBgDark`, `glassBorderDark`): controles secundarios y separación sutil.
-- **Espuma y bruma** (`glassTextDark`, `glassTextMutedDark`): contenido principal y secundario.
-- **Blanco** (`white`): marca y texto de botones sólidos.
+- **Papel** (`paper`): lienzo general.
+- **Superficie** (`surface`): tarjetas y fichas sobre mapas.
+- **Tinta** (`ink`) y **texto secundario** (`glassTextMutedDark`): contenido, ayuda y placeholders.
+- **Apoyo cálido** (`glassBgDark`) y **borde** (`outline`): controles discretos y separadores.
+- **Velo tinta** (`overlay`): atenuación detrás del menú modal.
+- **Sobre marca** (`onBrand`): texto y detalles blancos sobre vino o peligro.
 
-Rojo y verde son semánticos: `danger` y `dangerLight` comunican emergencia, error o una acción de cierre; `success` y `successLight` disponibilidad y éxito. El rojo no es un acento decorativo del acceso.
+`danger` comunica emergencia o acción irreversible; `dangerLight`, error de campo sobre claro; `success`, disponibilidad y resultado confirmado. Acompañar el color con texto o símbolo.
 
-**The Contrast Before Glass Rule.** La legibilidad gobierna la superficie; conservar el fondo marino de alta opacidad al colocar texto sobre imágenes o mapas y verificar el contraste de cada combinación.
+Los nombres heredados `darkBg`/`lightBg`, `glassSurface`, `glassBgDark`/`glassBgLight`, `glassBorderDark`/`glassBorderLight`, `glassTextDark`/`glassTextLight` y los dos `glassTextMuted*` resuelven a los roles claros. `successLight` coincide con `success`; `white`, con `onBrand`. Son compatibilidad de API, sin alternancia automática claro/oscuro. Preferir nombres semánticos al ampliar la interfaz.
+
+**The Contrast Before Glass Rule.** La superficie sostiene la lectura por sí misma. No colocar blanco pequeño sobre arena o azul; comprobar cada estado y fondo variable. Las pruebas de combinaciones normativas no certifican accesibilidad de todas las pantallas o plataformas.
 
 ## Typography
 
-**Display Font:** Outfit, con fallback sans-serif.
-**Body Font:** Inter, con fallback sans-serif.
+**Display Font:** Outfit, fallback sans-serif en las muestras web.
+**Body Font:** Inter, fallback sans-serif en las muestras web.
 
-Outfit da identidad a títulos y acciones; Inter mantiene claridad en campos, mensajes y etiquetas. Las familias y pesos cargados por Expo gobiernan la representación nativa; el lockup utiliza la variante `Outfit-SemiBold`.
+Expo carga las familias; lockup y varios títulos usan `Outfit-SemiBold`. No introducir una tercera familia. React Native mide en puntos lógicos; el frontmatter y las muestras HTML expresan el mismo número en px para representación web.
 
 ### Hierarchy
 
-- **Display:** total destacado del viaje; usar numerales tabulares para precios y contadores.
-- **Headline:** jerarquía principal y marca de tamaño regular.
-- **Title:** títulos de formulario, nombre del perfil y encabezados de contenido.
-- **Body:** contenido, mensajes y campos. La escala de apoyo usa también tamaños de 18 y 20 de `FONTS.sizes`.
-- **Label / Caption:** etiquetas visibles, estado, ayuda y contexto breve. Evitar texto fino sobre fondos variables.
+- **Display:** precio o total destacado; numerales tabulares para precios y contadores.
+- **Headline:** título principal y marca regular.
+- **Title:** encabezados de sección; la escala también ofrece 18 y 20 para títulos pequeños y acciones.
+- **Body:** campos y contenido con altura de lectura.
+- **Label / Caption:** etiquetas, estado, ayuda y contexto breve.
 
-El titular grande de escritorio del acceso es una decisión de esa superficie, no una nueva escala global. No reutilizar su tamaño en pantallas operativas por defecto.
+La bienvenida tiene titular propio de 36/41 en móvil y 56/60 desde 900 puntos, tracking −0,9/−1,4. El catálogo tiene titular 42/46. Son decisiones de superficie, no tamaños predeterminados para operación. Permitir crecimiento del texto y desplazamiento; no recortar etiquetas para cumplir un alto fijo.
 
 ## Layout
 
-El ritmo reutilizado sigue pasos de 4 y 8, con padding habitual `md` y separación entre secciones `lg` o `xl`. Adaptar el espacio al área segura y permitir desplazamiento cuando el teclado reduce el viewport.
+El ritmo compartido usa la escala 4/8 del frontmatter: padding habitual `md`, separación de secciones `lg`/`xl` y bloques mayores `xxl`. Incorporar safe area, teclado y desplazamiento.
 
-En el acceso, una columna limita el formulario a 440 px; a partir de 900 px la composición de bienvenida pasa a marca/contexto y formulario dentro de un máximo de 1200 px. Esos límites pertenecen al acceso. El perfil centra contenido hasta 560 px. Los fondos del acceso cubren el viewport mediante posicionamiento absoluto y recorte, sin imponer su tamaño intrínseco al documento.
+La bienvenida centra una columna hasta 520 puntos; desde 900 coloca escena y acciones en dos columnas, separación 72 y máximo 1200. El contenedor exterior llega a 1248 con padding horizontal 24. El catálogo centra hasta 1040, con muestras en filas ajustables y formulario hasta 480. El acceso limita formulario a 440; ajustes, lectura a 680. Estos límites pertenecen a sus superficies.
 
-El mapa conserva el lienzo completo, estado de ubicación arriba a la izquierda y ficha de origen/destino abajo. La ubicación no es un campo de búsqueda; el destino se elige en la ficha. Mantener total, selector de personas y estado de solicitud visibles según el flujo. Las barras y fichas deben dejar espacio a la navegación y al SOS.
+El mapa conserva su lienzo y ficha inferior; ubicación, menú, cuenta y SOS siguen accesibles. Fichas y barras dejan visible la atribución. La bienvenida no solicita permisos de ubicación ni notificaciones.
 
 ## Elevation & Depth
 
-La profundidad combina capas tonales, bordes finos y desenfoque de Expo. `GlassCard` usa una superficie marina al 94 %, borde fino y blur de intensidad 20; su contenido sigue siendo legible cuando el desenfoque no aporta separación. `BlurContainer` permite componer sin imponer sombra. No exigir transparencia intensa ni blur en todos los elementos.
+Superficie blanca opaca, borde fino y sombra tinta suave. `GlassCard` conserva su nombre, usa blur compartido **0** y `tint="light"`. La sombra compartida `shadowDark` tiene offset (0,8), radio 24, opacidad 0,08 y elevación Android 4; `shadowLight` reduce opacidad a 0,06 y elevación a 3. Las traducciones CSS del sidecar aproximan la muestra web; no garantizan el mismo rasterizado nativo.
 
-La sombra oscura compartida desplaza 8 px, tiene radio 32 y elevación Android 12; la variante clara conserva desplazamiento y radio con elevación 8. Los valores completos y sus traducciones para el panel están en el sidecar. El modal de oferta al conductor es opaco y sin blur para priorizar lectura y respuesta.
+`AppTabLayout` conserva blur propio 25 sobre superficie blanca. No extenderlo a todas las tarjetas. El menú modal usa velo tinta y panel de papel. No añadir brillos de color ni sombras negras duras.
 
-Las entradas compartidas de panel duran 220 ms, las salidas 140 ms, y respetan reducción de movimiento. La pulsación compartida escala a 0.97 en 100 ms y regresa en 160 ms con la curva del tema, también respetando la preferencia del sistema. No añadir esperas encadenadas.
+Paneles compartidos: entrada/salida 220/140 ms. `PressableScale`: escala 0,97 en 100 ms y regreso en 140 ms, curva del tema y `ReduceMotion.System`. Los tiempos genéricos 150/250/400 del tema no sustituyen estos valores concretos.
 
 ## Shapes
 
-Tarjetas y botones compartidos usan `borderRadiusMd`; los campos usan `borderRadiusSm` y las fichas amplias pueden usar `borderRadiusLg`. El borde de cristal compartido es fino (1 px).
+Campos: `borderRadiusSm`; tarjetas y botones: `borderRadiusMd`; fichas amplias: `borderRadiusLg`. Borde compartido: 1 punto. Reservar radio completo para avatares y geometrías circulares.
 
-**The Control Shape Rule.** Los botones GlassButton conservan esquinas de tarjeta; reservar el radio completo para geometrías circulares, avatares o estados compactos, sin convertirlo en el estilo global de acciones.
+La escena tiene radio 32 y proporción 1,3 como excepción de marca. Selector de acceso: envoltorio 12 y segmentos 8; filas de menú: 12; casilla gráfica: 6. Son valores locales, no otra escala.
+
+**The Control Shape Rule.** Conservar la forma compartida al ampliar acciones; el radio circular de un avatar no define los botones.
 
 ## Components
 
 ### Buttons
 
-`GlassButton` ofrece primary, secondary, danger y ghost. Primary usa turquesa marino con blanco; secondary arena con texto marino; danger rojo con blanco; ghost velo claro, borde sutil y texto claro. La acción principal del acceso usa secondary.
+`GlassButton`: `primary` vino/blanco, `secondary` arena/tinta, `ghost` apoyo cálido/tinta con borde y `danger` rojo/blanco. Predeterminados: primary, md y radio estándar. Props: `label`, `onPress`, `variant`, `size`, `disabled`, `loading`, `leftIcon`, `style`.
 
-Los tamaños sm/md/lg tienen alturas mínimas de 44/48/56 px, padding horizontal de 16/24/32 px y padding vertical `sm`. Son mínimos: permitir que texto ampliado aumente la altura. La carga sustituye el contenido por un indicador del color de texto y bloquea reenvíos; disabled reduce opacidad. `PressableScale` aporta interacción de toque, clic y teclado y conserva los estados accesibles.
+Mínimos sm/md/lg: 44/48/56 en iOS y web; Android eleva sm a 48. Padding horizontal 16/24/32 y vertical 8. Permitir crecimiento. Disabled usa opacidad 0,45. Loading sustituye contenido por spinner, conserva nombre accesible, anuncia busy y bloquea reenvíos; no aplica por sí solo la opacidad disabled.
+
+`PressableScale` aporta pulsación y foco web: contorno `blueInk` de 3, separado 3. Restablece escala al deshabilitarse y respeta reducción de movimiento. El tema no define un color hover compartido; el sidecar no inventa uno.
 
 ### Cards / Containers
 
-`GlassCard` agrupa contenido con padding `md`, radio estándar, superficie marina, borde y sombra compartida. Puede omitir padding o ajustar radio explícitamente. Las variantes highlight y danger cambian el borde; no convierten la tarjeta en una acción por sí mismas.
+`GlassCard`: superficie blanca, borde, padding estándar y sombra de Elevation. Variantes default/highlight/danger cambian borde a outline/vino/rojo. Props `noPadding`, `borderRadius`, `blurIntensity` permiten excepciones. Una tarjeta no implica interacción. No envolver cada fila de ajustes en otra tarjeta.
 
 ### Inputs / Fields
 
-`GlassInput` mantiene etiqueta visible, texto Inter, altura mínima de 52 px y fondo blanco muy sutil. El foco cambia borde y selección a agua luminosa; el error tiene prioridad con rojo claro y mensaje anunciado como alerta. El fondo enfocado aumenta ligeramente su presencia.
+`GlassInput` conserva etiqueta, Inter y mínimo 52. Papel y borde outline en reposo; foco vino sobre `wineSoft`; error tiene prioridad de borde `dangerLight` y mensaje alert. La ayuda aparece cuando no hay error. Props `label`, `helperText`, `error`, `required`, `leadingIcon` y las de TextInput.
 
-Correo y contraseña son los datos de acceso. La visibilidad de contraseña tiene control propio de 48 px con nombre accesible que cambia según el estado. Conservar autocomplete, teclado apropiado, texto de ayuda y edición bloqueada durante el envío.
+Contraseña: control propio 48×48 con nombre Mostrar/Ocultar contraseña y estado expanded. Conservar teclado y autocomplete del formulario. `CheckboxRow` hace pulsable toda la fila de mínimo 48, comunica checked y error; casilla gráfica 24. No presupone consentimiento.
 
 ### Navigation
 
-`AppTabLayout` comparte barra inferior marina con blur, borde superior fino y etiquetas Inter de escala caption. El color activo lo recibe del rol; el inactivo usa bruma. Conservar etiquetas junto a iconos y espacio inferior suficiente para que el contenido no quede oculto.
+`AppMenuButton`: modal lateral papel, ancho hasta 360 dejando 36 exteriores, cierre visible y opciones según sesión/rol. Filas mínimo 56, selección vino suave, iconos con etiqueta. Disparador 48; cierre mínimo 44. Estas medidas existentes no garantizan 48 para todos los iconos Android.
 
-El selector del acceso usa dos controles con estado seleccionado y altura mínima de 44 px; cambia entre entrar y crear cuenta conservando los campos. No permite cambiar de modo durante el envío.
+`AppTabLayout`: barra inferior 85, borde superior fino, etiquetas Inter caption; activo según rol (vino pasajero, éxito conductor). Selector de acceso: segmentos mínimo 44 y selección vino/blanco, estado explícito y sin cambio durante envío; no es navegación global.
 
-### Brand and Assets
+### Brand and Icons
 
-`BrandLockup` combina `frontend/assets/brand-mark.png` con Cruci en blanco y Drive en agua luminosa. El tamaño regular muestra el lema; el compacto acompaña el perfil. No sustituirlo por un emoji o icono genérico.
+`BrandLockup` usa `frontend/assets/brand-mark.png` tintado vino, nombre tinta y Drive vino. Regular: marca 64, nombre 32 y lema «Tu camino por Crucita.»; compacto: marca 44, nombre 24, sin lema. No sustituir por emoji.
 
-El acceso usa `frontend/assets/coast-login.jpg` con velo marino. Es ilustración de marca, no fotografía documental. Los originales generados y prompts están en `frontend/assets/brand/`. `frontend/app.json` conecta icono, splash, favicon y variantes adaptativas de Android.
+`TricimotoIcon` acepta size/color/background, por defecto 32/vino/arena. Techo, parabrisas azul suave, carrocería y tres ruedas; decorativo para accesibilidad, necesita el nombre del control que acompaña. Usos: 26–32 en servicios/mapa; 48 en catálogo. Vector: `frontend/assets/premium/tricimoto-front.svg`.
 
-### Operational Surfaces
+Ionicons en contorno para acciones: `cube-outline`, `map-outline`, `chatbubble-outline`, `person-outline`, `settings-outline`, `shield-checkmark-outline`, `location-outline`, `log-in-outline`. Habitual 20–24; catálogo 28. Navegación conserva texto; botones de solo icono, nombre accesible.
 
-- **Mapa y SOS:** preservar mapa nocturno nativo y vista web de OpenStreetMap con atribución visible. La web es una previsualización sin marcadores. SOS permanece arriba a la derecha, por encima de la ficha; requiere mantener 2 segundos, muestra progreso y revierte al soltar. Su anillo ambiental respeta reducción de movimiento.
-- **Conductor:** disponibilidad mediante Switch nativo, estados explícitos y aviso de desconexión. La oferta usa modal opaco, cuenta según el servidor, tarifa real, y acciones grandes de al menos 64 px. No reintroducir la antigua regla de modal de cristal.
-- **Chat:** distinguir mensajes propios a la derecha y recibidos a la izquierda; limitar el ancho de burbuja y conservar el compositor junto al teclado. Habilitar el chat según el viaje activo.
-- **Perfil:** mostrar rol, estado y calificación desde datos reales; `Sin datos` representa ausencia de calificación. Una cuenta registrada no implica identidad verificada. El cierre de sesión muestra carga y comunica errores.
+`CoastalScene` combina arena, agua azul, espuma y `frontend/assets/premium/tricimoto-hero.png`. Es arte de marca sin coordenadas ni datos de servicio. Originales y prompts: `frontend/assets/premium/`; derivados de instalación: `frontend/app.json`. El JSON exportable de tokens deriva del tema, sin editarlo como otra fuente.
+
+### Welcome and Motion
+
+`CoastalIntro`: una pasada de agua/espuma de 2400 ms, sin sonido; Omitir desde el inicio. La raíz pública recuerda presentación con `crucidrive:welcome:v1 = seen`; terminar, omitir o continuar registra preferencia. Al volver abre mapa. `/bienvenida` permite reproducción manual.
+
+Con Reduce Motion, `WelcomeScreen` muestra contenido estático y llama `onPresented` desde un efecto para registrar esa presentación. Durante intro oculta contenido operativo a tecnologías de asistencia y deshabilita sus acciones. Fallos de almacenamiento no bloquean el mapa. Sin bucles ornamentales ni retardos encadenados para acciones frecuentes. SOS conserva pulsación funcional 2000 ms.
+
+### Screen Models
+
+| Modelo | Composición y comportamiento |
+| --- | --- |
+| Bienvenida | Marca, escena, saludo, servicios y acceso; una columna móvil, dos en escritorio. |
+| Acceso / registro | Contexto, selector, campos, errores y acción. Correo/contraseña; perfil y consentimiento conservan su flujo. |
+| Mapa / encomienda | Lienzo y ficha de servicio con origen/destino. Encomienda añade contenido, destinatario y autorización; precio a convenir por chat. |
+| Buscando / aceptado | Estado real y cancelar mientras busca; datos reales del conductor y chat al aceptar. |
+| Conductor | Conexión, disponibilidad y oferta real con aceptar/rechazar. |
+| Ajustes / ayuda / cuenta | Volver, título y grupos de filas; acciones destructivas separadas. |
+| Chat | Participante real, burbujas y compositor junto al teclado; habilitado según servicio activo. |
+| Catálogo | Paleta, estados, campos, iconos y reglas; muestras sin solicitudes. |
+
+La previsualización web de OpenStreetMap mantiene atribución y no dibuja marcadores; la tricimoto del mapa nativo depende de datos reales. No inferir rutas calculadas ni tiempos estimados de una escena o un bundle.
+
+Evidencia visual en `.impeccable/review/premium/`: welcome y catalog móvil/escritorio; login, map, menu y settings móvil. Confirma apariencia web; no demuestra FPS, permisos, aspecto de marcadores ni accesibilidad completa en dispositivos nativos. Un bundle Android tampoco lo demuestra.
 
 ## Do's and Don'ts
 
 ### Do:
 
-- **Do** usar los tokens de theme.ts para extender pantallas y controles.
-- **Do** conservar etiquetas visibles, foco perceptible, semántica accesible y mensajes de error anunciados.
-- **Do** respetar áreas seguras, teclado, desplazamiento y reducción de movimiento.
-- **Do** mantener las acciones del mapa, SOS y conductor legibles sobre fondos variables.
+- **Do** extender tema y componentes con roles claros.
+- **Do** conservar etiquetas, nombres accesibles, foco, errores anunciados y carga sin doble envío.
+- **Do** permitir texto ampliado, desplazamiento, teclado y áreas seguras.
+- **Do** respetar Reduce Motion y persistir también la bienvenida estática.
+- **Do** revisar estados reales y fondos variables además de colores aislados.
 
 ### Don't:
 
-- **Don't** inventar calificaciones, verificaciones o estados de cuenta para llenar espacios.
-- **Don't** sustituir el acceso real por SMS ni mezclar consentimiento y perfil con el registro inicial.
-- **Don't** heredar el titular grande del acceso o botones totalmente redondos como reglas globales.
-- **Don't** copiar colores antiguos o animaciones heredadas como nuevas decisiones del sistema.
+- **Don't** reintroducir turquesa/oscuro por nombres legacy ni prometer modo oscuro automático.
+- **Don't** usar blanco pequeño sobre azul/arena, blur para sostener contraste o brillos de color.
+- **Don't** sustituir tricimoto por automóvil ni inventar personas, verificaciones, valoraciones, rutas o tiempos de llegada.
+- **Don't** convertir escena, títulos grandes o animación de bienvenida en requisito global.
+- **Don't** atribuir rendimiento o accesibilidad nativa a capturas web y bundles.

@@ -2,6 +2,24 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.60.0] - 2026-10-20 (Hora Local)
+
+### Paso 010 · Sistema claro y bienvenida costera
+- Commits locales de trazabilidad: `7b523b5` (spec/plan/tareas) y `2fb0309` (implementación, recursos y pruebas), en `codex/010-diseno-premium-motion`.
+- Alcance, plan y tareas documentados antes de implementar en `specs/010-diseno-motion/`. David pidió diseño premium con su paleta y confirmó la bienvenida solo la primera vez.
+- Paleta Silk Mango `#FEE8C1`, Neon Candy `#7F1139`, Wild Navy `#88AEE0`, papel y tinta; componentes, mapa, acceso, menú, ajustes, chat e iconos de instalación adaptados. Los alias `darkBg` y `glass*` preservan compatibilidad; no implican modo oscuro automático.
+- Logo adaptado, tricimoto propia para UI/marcadores, ilustración generada y vector exportable. Recursos con procedencia y prompts en `frontend/assets/premium/`; máscara adaptativa con padding reproducible. No se incorporaron los videos de referencia a la distribución.
+- Intro Reanimated de 2,4 s: logo, agua y espuma, con Omitir y sin sonido. Primera visita recordada por bandera local no sensible; lectura fallida permite entrar al mapa. Variante estática con Reduce Motion también registra presentación. No se alteran guardias por rol ni servicios.
+- Respuesta táctil 100/140 ms, foco web, mínimo del botón pequeño Android 48 dp (iOS/web 44). SOS conserva progreso de pulsación sostenida, sin anillo ornamental infinito. Se añade `react-native-svg` compatible con Expo para las curvas, sin librería de motion adicional.
+- Guía completa en `docs/sistema-diseno-crucidrive.md`, catálogo interactivo `/diseno`, reproducción manual `/bienvenida` y exportador `frontend/scripts/export-design-tokens.mjs`.
+
+### Evidencia y límites
+- Frontend **327/327**, TypeScript sin errores y exportaciones Expo web y Android/Hermes correctas. Ocho combinaciones normativas pasan contraste AA; cinco pruebas cubren preferencia de bienvenida y fallos de almacenamiento. El backend no cambia en esta ampliación.
+- Revisión visual independiente web: disposición «ship» tras puntuar resueltos los dos hallazgos (persistencia reducida y mínimo Android). Capturas en `.impeccable/review/premium/`, móvil 390 × 844 y escritorio 1440 × 900.
+- Pendientes: APK nuevo y prueba física de Reduced Motion, tipografía ampliada, lector de pantalla, marcador nativo y FPS en teléfono modesto. El empaquetado no acredita esos resultados. No se publicó ni desplegó esta ampliación desde esta tarea.
+
+---
+
 ## [1.59.0] - 2026-10-20 (Hora Local)
 
 ### T8 cerrada: el APK registra el token de avisos

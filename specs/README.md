@@ -23,3 +23,4 @@ Cada carpeta contiene `spec.md` (qué y por qué), `plan.md` (cómo) y `tasks.md
 | Carpeta | Estado |
 | --- | --- |
 | `009-experiencia-encomiendas` | Identidad, seguridad de sesión, navegación, configuración y encomiendas solicitadas por David el 20 oct 2026. Implementación local y formalización posterior, documentada como desviación de «spec primero». PR en borrador: pendientes revisión formal, RLS 0015 y teléfono. No completa ni renumera 005–008. |
+| `010-diseno-motion` | Paleta y motion premium solicitados por David; bienvenida una sola vez, tricimoto propia, componentes y guía de sistema. Spec/plan antes de código. Validación web y empaquetado; teléfono pendiente. |
