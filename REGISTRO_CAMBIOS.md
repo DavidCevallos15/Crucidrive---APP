@@ -2,6 +2,18 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.61.0] - 2026-10-20 (Hora Local)
+
+### Specs 005 y 010 en borrador, tras la prueba de las encomiendas
+- David probó con dos teléfonos hasta las encomiendas: salieron bien y los avisos llegan rápido con la app cerrada.
+- Pidió lo que falta del viaje: cancelar después de aceptar, seguimiento de la tricimoto y el lugar donde está el pasajero. Es el paso 005, que el 003 y el 004 dejaron fuera a propósito. `specs/005-viaje/spec.md`: recogida con «Cómo llegar», «Llegué», viaje en curso, cierre, cancelación con motivo y chat en solo lectura al terminar. Con 3 preguntas abiertas: calificaciones, motivos y «Llegué» manual o automático.
+- El seguimiento en el mapa de Android depende de la clave de Google Maps (D-02); sin ella se ve la distancia, como hoy.
+- Pidió que el diseño quepa en pantallas pequeñas y una lista de solicitudes para el conductor. Decidió compactar la interfaz (sin ajuste de tamaño) y la lista sin quitar D-11. `specs/010-ajustes-de-campo/spec.md`, con la medida del login: 929 px en una pantalla de 640 (versión web, 360 × 640) y D-15 propuesta (hasta 3 ofertas abiertas por conductor).
+- El origen que solo mostraba «Usar mi ubicación (La Loma)» era el panel tapado por la barra de pestañas (corregido en el #48) y sin señal de que se podía desplazar: lo cubre el criterio 3 del 010.
+- Sin cambios de código. Esperan la aprobación de David.
+
+---
+
 ## [1.60.0] - 2026-10-20 (Hora Local)
 
 ### Prueba del APK del 009: el viaje funciona, pero la barra de pestañas tapaba cosas
