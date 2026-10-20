@@ -2,6 +2,23 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.60.0] - 2026-10-20 (Hora Local)
+
+### Prueba del APK del 009: el viaje funciona, pero la barra de pestañas tapaba cosas
+- Prueba de David con 2 teléfonos (hora local 12:43 a 12:49; logs de Supabase en UTC). El flujo completo respondió bien:
+  - 17:43:13 y 17:45:00: login de conductor y pasajero. A los 5 s, `registrar_dispositivo` 204 en cada uno (T8 confirmada también en el APK del 009).
+  - 17:45:29: primer pedido sin conductor disponible, que se cerró como `sin_conductor` (el conductor aún no estaba disponible).
+  - 17:45:51: segundo pedido. El backend leyó el token del conductor (`dispositivos_push`) para avisarle, y a los 10 s `aceptar_viaje` 200 y se leyó el token del pasajero para el aviso de aceptado. Tarifa 1,00 USD con 2 personas, `tipo_servicio = viaje`.
+  - 17:48:32 y 17:48:33: los dos cerraron sesión. `olvidar_dispositivo` 200 en ambos y luego `logout` 204, por eso `dispositivos_push` quedó en 0.
+- Sin pruebas todavía: una encomienda (0 filas en `encomiendas`) y la sesión migrada de SecureStore (en ambos teléfonos se inició sesión de nuevo).
+- Se corrige lo que se ve en las capturas, antes de la 009 también:
+  - La barra de pestañas mide 85 fijos y es `absolute`: con navegación de 3 botones de Android quedaban sus etiquetas debajo del sistema; además no reserva espacio y tapaba el botón «Abrir chat» de la hoja del viaje del pasajero y la caja de escribir del chat.
+  - Ahora la barra crece lo que ocupa el sistema abajo, las hojas del mapa suben lo que mide la barra (solo con sesión; sin sesión no hay barra) y la caja del chat también.
+- Código: `src/utils/barraPestanas.ts` (medidas, con prueba), `AppTabLayout`, `MapScreen` y `ChatScreen`. Frontend 317/317, `tsc` sin errores en `src/` ni `app/`. Sin revisión en el teléfono: el cambio es de diseño y hay que verlo en el APK.
+- Backend de David: `[despacho] Recuperación: column viajes.tipo_servicio does not exist` salía de arrancar el código del 009 antes de aplicar la 0015; ya no sale. El `ValidationError: X-Forwarded-For` es de ngrok: en `backend/.env` falta `TRUST_PROXY=1`.
+
+---
+
 ## [1.59.0] - 2026-10-20 (Hora Local)
 
 ### T8 cerrada: el APK registra el token de avisos
