@@ -3,12 +3,12 @@
 Cada tarea indica su prueba y se tilda solo al cumplirse.
 
 ## BD y backend (PR 2)
-- [ ] T1 · `0017_viaje_en_curso.sql`: columnas, funciones de transición, `punto_recogida`, `calificaciones` con sus funciones y chat en solo lectura (P1 a P5) → prueba: `rls_007.sql`. `rls_001` a `rls_006` siguen en verde y se revisan los advisors. *(SQL en verde en local; falta revisar los advisors cuando David aplique la 0017, T5).*
+- [x] T1 · `0017_viaje_en_curso.sql`: columnas, funciones de transición, `punto_recogida`, `calificaciones` con sus funciones y chat en solo lectura (P1 a P5) → prueba: `rls_007.sql`. `rls_001` a `rls_006` siguen en verde y se revisan los advisors. Advisors con la 0017 aplicada (20 oct): seguridad solo D-10; rendimiento sin hallazgos nuevos salvo los índices recién creados, aún sin uso.
 - [x] T2 · Validación de motivo, confirmación, estrellas y comentario en `utils/validation.js`, con los mismos patrones que los CHECK → prueba: `tests/viaje005.test.js`.
 - [x] T3 · Endpoints de P6 y `PATCH /:id/estado` sobre `cancelar_viaje` → prueba: `tests/viaje005.test.js` (códigos 400, 403, 409 y 200; sin detalles internos en la respuesta).
 - [x] T4 · Avisos a la otra parte por socket y con la app cerrada (P7) y reseñas en los datos del conductor (P8) → prueba: `tests/viaje005.test.js` y `tests/avisos.test.js` (sin nombre ni teléfono).
 - [x] T4b · Finalizar por el pasajero con sanción: `terminar_viaje` para el pasajero en curso y bloqueo en `solicitarViaje` (P5b; criterios 5b y 5c) → prueba: `rls_007.sql` y `tests/viaje005.test.js` (2 no bloquean, 3 sí, se libera a las 24 h, los parámetros se validan).
-- [ ] T5 · **David:** aplicar la 0017 en producción antes de desplegar el backend.
+- [x] T5 · **David:** aplicar la 0017 en producción antes de desplegar el backend.
 
 ## Conductor (PR 3)
 - [ ] T6 · `TarjetaViajeActivo`, botón según el estado, «Cómo llegar» y cancelar con motivo (P9; criterios 1 a 9) → prueba: utilidades en `tests/` y capturas en 360 × 640 y 360 × 800.
