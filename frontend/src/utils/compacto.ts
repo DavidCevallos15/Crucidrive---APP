@@ -12,6 +12,9 @@ export const MAPA_VISIBLE_MIN = 0.35;
 /** Hojas del mapa: no bajan de este alto aunque la pantalla sea muy baja. */
 export const HOJA_ALTO_MIN = 220;
 
+/** Borde y relleno de la tarjeta alrededor de la hoja, que también tapan mapa. */
+export const BORDE_HOJA = 6;
+
 export const esCompacta = (alto: number): boolean => alto < ALTO_COMPACTO;
 
 /**
@@ -19,4 +22,11 @@ export const esCompacta = (alto: number): boolean => alto < ALTO_COMPACTO;
  * zona superior, dejando a la vista al menos `MAPA_VISIBLE_MIN` del alto para el mapa.
  */
 export const altoMaximoHoja = (alto: number, separacionInferior: number): number =>
-  Math.max(HOJA_ALTO_MIN, Math.floor(alto * (1 - MAPA_VISIBLE_MIN) - separacionInferior));
+  Math.max(HOJA_ALTO_MIN, Math.floor(alto * (1 - MAPA_VISIBLE_MIN) - separacionInferior - BORDE_HOJA));
+
+/**
+ * Si una hoja desplazable esconde contenido abajo (criterio 2): lo que mide el contenido
+ * supera lo visible más lo ya desplazado. Un margen de 8 px evita parpadeos al llegar al fondo.
+ */
+export const hayMasAbajo = (visible: number, contenido: number, desplazamiento: number): boolean =>
+  visible > 0 && contenido - visible - desplazamiento > 8;

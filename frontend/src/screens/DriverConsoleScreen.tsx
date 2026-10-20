@@ -8,6 +8,7 @@ import {
   Alert,
   ActivityIndicator,
   AppState,
+  useWindowDimensions,
 } from 'react-native';
 import MapView from '../components/Map';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -18,6 +19,8 @@ import { AppMenuButton } from '../components/AppMenuButton';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { BlurContainer } from '../components/BlurContainer';
 import { PressableScale } from '../components/PressableScale';
+import { TarjetaOferta } from '../components/TarjetaOferta';
+import { esCompacta } from '../utils/compacto';
 import { useLocation } from '../hooks/useLocation';
 import { useSocket } from '../hooks/useSocket';
 import { useMapRegion } from '../hooks/useMapRegion';
@@ -36,8 +39,6 @@ import { COLORS, FONTS, SPACING, SHAPES } from '../constants/theme';
 import { nombreSector } from '../utils/solicitud';
 import {
   COLORES_OFERTA,
-  textoDistancia,
-  textoPunto,
   type EstadoTricimoto,
 } from '../utils/oferta';
 
@@ -61,6 +62,7 @@ const TEXTO_ESTADO: Record<EstadoTricimoto, string> = {
  */
 export const DriverConsoleScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
+  const { height: alto } = useWindowDimensions();
   const profile = useAuthStore((s) => s.profile);
   const { userCoords, currentSectorId } = useLocation(true);
   const socket = useSocket();
@@ -302,84 +304,15 @@ export const DriverConsoleScreen: React.FC = () => {
       >
         <View style={styles.modalOverlay}>
           {oferta && (
-            <View style={styles.requestCard} accessibilityViewIsModal>
-              {/* Cuenta regresiva según el servidor */}
-              <View style={styles.countdownContainer}>
-                <Text
-                  style={styles.countdownText}
-                  accessibilityLabel={`Quedan ${segundos} segundos`}
-                >
-                  {segundos}
-                </Text>
-                <Text style={styles.countdownLabel}>segundos</Text>
-              </View>
-
-              <Text style={styles.requestTitle} accessibilityRole="header">{oferta.tipoServicio === 'encomienda' ? 'Nueva encomienda' : '¡Nuevo viaje!'}</Text>
-              {oferta.fase === 'abierta' && (
-                <Text style={styles.requestSubtitle}>Aviso a varios: gana el primero que acepte</Text>
-              )}
-              {textoDistancia(oferta.distanciaM) !== '' && (
-                <Text style={styles.requestSubtitle}>
-                  El pasajero está {textoDistancia(oferta.distanciaM)}
-                </Text>
-              )}
-
-              {/* Detalles de la ruta */}
-              <View style={styles.requestRoute}>
-                <View style={styles.requestRouteRow}>
-                  <Ionicons name="radio-button-on" size={16} color={COLORS.primaryLight} />
-                  <Text style={styles.requestRouteText}>{textoPunto(oferta.origen)}</Text>
-                </View>
-                <View style={styles.requestRouteLine} />
-                <View style={styles.requestRouteRow}>
-                  <Ionicons name="location" size={16} color={COLORES_OFERTA.cuenta} />
-                  <Text style={styles.requestRouteText}>{textoPunto(oferta.destino)}</Text>
-                </View>
-              </View>
-
-              {/* Total (lo fija la BD) y personas */}
-              <Text style={styles.requestPrice}>{oferta.tipoServicio === 'encomienda' ? 'Precio a convenir' : `$${oferta.tarifa?.toFixed(2) ?? '—'}`}</Text>
-              <Text style={styles.requestSubtitle}>
-                {oferta.tipoServicio === 'encomienda' ? 'Encomienda · acuerda el precio por chat' : `${oferta.pasajeros} ${oferta.pasajeros === 1 ? 'persona' : 'personas'}`}
-              </Text>
-
-              {!isConnected && (
-                <View style={[styles.offlineBanner, styles.offlineInModal]} accessibilityRole="alert">
-                  <Ionicons name="cloud-offline" size={18} color={COLORES_OFERTA.avisoTexto} />
-                  <Text style={styles.offlineText}>Sin conexión: no se puede aceptar</Text>
-                </View>
-              )}
-
-              {/* Botones grandes para tocarlos sin mirar dos veces */}
-              <View style={styles.actionButtons}>
-                <PressableScale
-                  onPress={consola.rechazar}
-                  accessibilityRole="button"
-                  accessibilityLabel="Rechazar viaje"
-                  style={[styles.actionButton, styles.rejectButton]}
-                >
-                  <Ionicons name="close" size={24} color={COLORES_OFERTA.rechazarTexto} />
-                  <Text style={[styles.actionText, { color: COLORES_OFERTA.rechazarTexto }]}>Rechazar</Text>
-                </PressableScale>
-                <PressableScale
-                  onPress={handleAcceptRide}
-                  disabled={aceptando || !isConnected}
-                  accessibilityRole="button"
-                  accessibilityLabel="Aceptar viaje"
-                  accessibilityState={{ disabled: aceptando || !isConnected, busy: aceptando }}
-                  style={[styles.actionButton, styles.acceptButton, !isConnected && styles.actionDisabled]}
-                >
-                  {aceptando ? (
-                    <ActivityIndicator color={COLORES_OFERTA.aceptarTexto} />
-                  ) : (
-                    <>
-                      <Ionicons name="checkmark" size={24} color={COLORES_OFERTA.aceptarTexto} />
-                      <Text style={[styles.actionText, { color: COLORES_OFERTA.aceptarTexto }]}>Aceptar</Text>
-                    </>
-                  )}
-                </PressableScale>
-              </View>
-            </View>
+            <TarjetaOferta
+              oferta={oferta}
+              segundos={segundos}
+              conectado={isConnected}
+              aceptando={aceptando}
+              onAceptar={handleAcceptRide}
+              onRechazar={consola.rechazar}
+              compacta={esCompacta(alto)}
+            />
           )}
         </View>
       </Modal>
@@ -487,11 +420,6 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.body,
     fontWeight: FONTS.weights.bold,
   },
-  offlineInModal: {
-    alignSelf: 'stretch',
-    marginTop: 0,
-    marginBottom: SPACING.md,
-  },
   offlineText: {
     flex: 1,
     color: COLORES_OFERTA.avisoTexto,
@@ -507,102 +435,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: SPACING.md,
-  },
-  requestCard: {
-    width: '100%',
-    maxWidth: 420,
-    alignItems: 'center',
-    padding: SPACING.lg,
-    borderRadius: SHAPES.borderRadiusLg,
-    borderWidth: 2,
-    borderColor: COLORES_OFERTA.cuenta,
-    backgroundColor: COLORES_OFERTA.fondo,
-  },
-  countdownContainer: {
-    alignItems: 'center',
-    marginBottom: SPACING.sm,
-  },
-  countdownText: {
-    fontSize: 56,
-    fontFamily: FONTS.heading,
-    fontWeight: FONTS.weights.bold,
-    color: COLORES_OFERTA.cuenta,
-    fontVariant: ['tabular-nums'],
-  },
-  countdownLabel: {
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONTS.body,
-    color: COLORES_OFERTA.textoSuave,
-  },
-  requestTitle: {
-    fontSize: FONTS.sizes.xxl,
-    fontFamily: FONTS.heading,
-    fontWeight: FONTS.weights.bold,
-    color: COLORES_OFERTA.texto,
-  },
-  requestSubtitle: {
-    fontSize: FONTS.sizes.base,
-    fontFamily: FONTS.body,
-    color: COLORES_OFERTA.textoSuave,
-    marginTop: SPACING.xs,
-    textAlign: 'center',
-  },
-  requestRoute: {
-    marginVertical: SPACING.md,
-    alignSelf: 'stretch',
-  },
-  requestRouteRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: SPACING.xs,
-  },
-  requestRouteLine: {
-    width: 2,
-    height: 14,
-    backgroundColor: COLORES_OFERTA.textoSuave,
-    marginLeft: 7,
-  },
-  requestRouteText: {
-    flex: 1,
-    fontSize: FONTS.sizes.lg,
-    fontFamily: FONTS.body,
-    color: COLORES_OFERTA.texto,
-    marginLeft: SPACING.sm,
-  },
-  requestPrice: {
-    fontSize: FONTS.sizes.title,
-    fontFamily: FONTS.heading,
-    fontWeight: FONTS.weights.bold,
-    color: COLORES_OFERTA.cuenta,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: SPACING.md,
-    alignSelf: 'stretch',
-    marginTop: SPACING.lg,
-  },
-  actionButton: {
-    flex: 1,
-    minHeight: 64,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.xs,
-    borderRadius: SHAPES.borderRadiusFull,
-  },
-  rejectButton: {
-    backgroundColor: COLORES_OFERTA.rechazarFondo,
-  },
-  acceptButton: {
-    backgroundColor: COLORES_OFERTA.aceptarFondo,
-  },
-  actionDisabled: {
-    opacity: 0.5,
-  },
-  actionText: {
-    fontSize: FONTS.sizes.xl,
-    fontFamily: FONTS.heading,
-    fontWeight: FONTS.weights.bold,
   },
 });
 
