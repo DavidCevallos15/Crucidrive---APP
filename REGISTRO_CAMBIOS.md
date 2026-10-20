@@ -2,6 +2,20 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.63.0] - 2026-10-20 (Hora Local)
+
+### 010 · Parte A: interfaz compacta
+- Modo compacto por debajo de **880 px** de alto (`utils/compacto.ts`). Cubre 360 × 640, 360 × 800 (el teléfono de David) y 393 × 852; deja fuera 412 × 915. David aprobó subir el umbral desde 720.
+- **Login** (criterio 1): sin bienvenida ni pie, marca compacta y espacios apretados. En 360 × 640 el contenido pasó de 929 px a 640 y el botón Entrar queda en y = 448; en 360 × 800, en y = 528.
+- **Panel del mapa** (criterios 2 y 3): el panel de destino u origen deja al menos un 35 % del mapa, también con la barra de pestañas. `HojaDesplazable` avisa «Desliza para ver más» mientras queda contenido abajo; en la prueba del 20 oct, el buscador y los sectores pasaron desapercibidos.
+- **Oferta del conductor** (criterio 4): pasa a `components/TarjetaOferta.tsx`, que también usará la lista de la parte B. En el peor caso (textos largos, aviso abierto, sin conexión) cabe entera en 360 × 640, con Aceptar y Rechazar de 64 px.
+- Capturas en 360 × 640, 360 × 800 y 412 × 915 en `docs/capturas/010-a/`, más el login de antes.
+- Deuda encontrada: el modo ligero sin blur de la regla 6 no existe en el código. Se propone para `007-hardening`. Lo nuevo no usa blur.
+- `specs/010-ajustes-de-campo/plan.md` y `tasks.md`: parte A hecha (T1 a T6); falta que David la revise en el APK (T7). La parte B empieza por completar su plan.
+- Pruebas: frontend 321/321 (4 nuevas en `tests/compacto.test.ts`) y `tsc` sin errores en `src/` ni `app/`.
+
+---
+
 ## [1.62.0] - 2026-10-20 (Hora Local)
 
 ### Specs 005 y 010 aprobadas; decisiones de David para el 005

@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AuthScaffold } from '../components/AuthScaffold';
 import { GlassCard } from '../components/GlassCard';
@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
 import { COLORS, FONTS, SPACING } from '../constants/theme';
 import { validarEmail, validarPassword, PASSWORD_MIN } from '../utils/validators';
+import { esCompacta } from '../utils/compacto';
 
 type Modo = 'entrar' | 'crear';
 
@@ -23,6 +24,7 @@ type Modo = 'entrar' | 'crear';
 export const LoginScreen: React.FC = () => {
   const router = useRouter();
   const { isLoading, signIn, signUp } = useSupabaseAuth();
+  const compacta = esCompacta(useWindowDimensions().height);
 
   const [modo, setModo] = useState<Modo>('entrar');
   const [email, setEmail] = useState('');
@@ -75,7 +77,7 @@ export const LoginScreen: React.FC = () => {
     <AuthScaffold welcome>
       <GlassCard>
         <View style={styles.formContent}>
-        <View style={styles.modes}>
+        <View style={[styles.modes, compacta && styles.modesCompact]}>
           {(['entrar', 'crear'] as const).map((item) => (
             <PressableScale key={item} onPress={() => cambiarModo(item)} disabled={isLoading}
               accessibilityRole="button" accessibilityState={{ selected: modo === item, disabled: isLoading }}
@@ -84,14 +86,14 @@ export const LoginScreen: React.FC = () => {
             </PressableScale>
           ))}
         </View>
-        <Text style={styles.titulo} accessibilityRole="header">
+        <Text style={[styles.titulo, compacta && styles.tituloCompact]} accessibilityRole="header">
           {modo === 'entrar' ? 'Qué bueno verte.' : 'Empieza tu camino.'}
         </Text>
-        <Text style={styles.subtitulo}>
+        {(!compacta || modo === 'crear') && <Text style={[styles.subtitulo, compacta && styles.subtituloCompact]}>
           {modo === 'entrar'
             ? 'Entra a tu cuenta y nos ponemos en marcha.'
             : `Usa un correo que puedas abrir y una contraseña de al menos ${PASSWORD_MIN} caracteres.`}
-        </Text>
+        </Text>}
 
         {aviso ? (
           <View style={styles.aviso} accessibilityRole="alert">
@@ -147,7 +149,7 @@ export const LoginScreen: React.FC = () => {
           loading={isLoading}
           style={styles.principal}
         />
-        <View style={styles.privacy}>
+        <View style={[styles.privacy, compacta && styles.privacyCompact]}>
           <Ionicons name="lock-closed-outline" size={16} color={COLORS.primaryLight} />
           <Text style={styles.privacyText}>Tu ubicación se comparte durante el viaje. Si conduces, también cuando estás disponible.</Text>
         </View>
@@ -160,7 +162,7 @@ export const LoginScreen: React.FC = () => {
         onPress={() => router.replace('/')}
         variant="ghost"
         size="sm"
-        style={styles.volver}
+        style={StyleSheet.flatten([styles.volver, compacta && styles.volverCompact])}
       />
     </AuthScaffold>
   );
@@ -171,6 +173,11 @@ const styles = StyleSheet.create({
   modes: { flexDirection: 'row', backgroundColor: COLORS.darkBg, borderRadius: 12, padding: SPACING.xs, marginBottom: SPACING.lg },
   mode: { flex: 1, minHeight: 44, justifyContent: 'center', alignItems: 'center', borderRadius: 8, paddingHorizontal: SPACING.xs },
   modeActive: { backgroundColor: COLORS.primary },
+  modesCompact: { marginBottom: SPACING.md },
+  tituloCompact: { fontSize: FONTS.sizes.xl, marginBottom: SPACING.sm },
+  subtituloCompact: { marginBottom: SPACING.md },
+  privacyCompact: { marginTop: SPACING.sm },
+  volverCompact: { marginTop: SPACING.xs },
   modeText: { color: COLORS.glassTextMutedDark, fontFamily: FONTS.body, fontSize: FONTS.sizes.sm },
   modeTextActive: { color: COLORS.white },
   privacy: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm, marginTop: SPACING.md },
