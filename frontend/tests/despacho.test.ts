@@ -38,8 +38,8 @@ import {
 import { useRideStore, type ActiveRide } from '../src/store/useRideStore';
 import {
   COLORES_OFERTA,
-  alRecibirOferta,
-  alRetirarOferta,
+  agregarOferta,
+  quitarOferta,
   calcularDesfase,
   contraste,
   estadoTrasError,
@@ -442,20 +442,28 @@ describe('T14 · cuenta regresiva desde venceEn (R14)', () => {
   });
 });
 
-describe('T14 · ofertas en pantalla (criterios 6, 7 y 12)', () => {
-  test('una oferta a la vez: la nueva reemplaza a la anterior', () => {
-    const nueva = oferta({ viajeId: 'viaje-2' });
-    expect(alRecibirOferta(oferta(), nueva)).toBe(nueva);
+describe('T14 · ofertas en pantalla (criterio 12 del 003; 010, criterios 7, 8 y 10)', () => {
+  test('varias ofertas a la vez, la que vence antes primero (D-15)', () => {
+    const tarde = oferta({ viajeId: 'viaje-2', venceEn: 2_000 });
+    const pronto = oferta({ viajeId: 'viaje-3', venceEn: 1_000 });
+    expect(agregarOferta(agregarOferta([], tarde), pronto).map((o) => o.viajeId)).toEqual(['viaje-3', 'viaje-2']);
   });
 
-  test('oferta_retirada cierra la oferta de ese viaje', () => {
-    expect(alRetirarOferta(oferta(), 'viaje-1')).toBeNull();
+  test('otra oferta del mismo viaje reemplaza a la anterior, sin duplicar', () => {
+    const lista = agregarOferta([oferta()], oferta({ fase: 'abierta' }));
+    expect(lista).toHaveLength(1);
+    expect(lista[0].fase).toBe('abierta');
   });
 
-  test('una retirada de otro viaje no cierra la oferta actual', () => {
-    const actual = oferta();
-    expect(alRetirarOferta(actual, 'viaje-viejo')).toBe(actual);
-    expect(alRetirarOferta(null, 'viaje-1')).toBeNull();
+  test('oferta_retirada o un rechazo quitan solo esa oferta', () => {
+    const lista = [oferta(), oferta({ viajeId: 'viaje-2' })];
+    expect(quitarOferta(lista, 'viaje-1').map((o) => o.viajeId)).toEqual(['viaje-2']);
+  });
+
+  test('una retirada de un viaje que no está no cambia la lista', () => {
+    const lista = [oferta()];
+    expect(quitarOferta(lista, 'viaje-viejo')).toBe(lista);
+    expect(quitarOferta([], 'viaje-1')).toEqual([]);
   });
 
   test('un 409 al cambiar la disponibilidad significa viaje en curso', () => {
