@@ -2,6 +2,25 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.59.0] - 2026-10-20 (Hora Local)
+
+### T8 cerrada: el APK registra el token de avisos
+- Prueba de David con el APK `preview` recompilado con la anon key correcta. Logs de Supabase (UTC):
+  - 05:50:52 `auth/v1/token?grant_type=password` 200 desde `okhttp/4.9.2` (login en el teléfono).
+  - 05:50:56 `rpc/registrar_dispositivo` 204 desde el backend (`node`), vía ngrok. Para llegar ahí el teléfono tuvo que obtener permiso y token de Expo, lo que exige Firebase en el APK.
+  - 05:51:31 `rpc/olvidar_dispositivo` 200 y luego `auth/v1/logout` 204: al cerrar sesión el token se borra antes del logout (criterio 11, ahora también en el teléfono real).
+- `dispositivos_push` queda con 0 filas por ese cierre de sesión. Es lo esperado.
+- El buscador (`rpc/buscar_lugares` 200) y la lectura de perfil y tricimoto también funcionan en el APK.
+- Pendiente fuera de la T8: el `EXPO_ACCESS_TOKEN` del backend desplegado se configura con el despliegue del piloto (008). Hoy el único backend es el del PC de David, que ya lo tiene.
+- Sin cambios de código. Siguiente paso: T17 (prueba de campo con dos teléfonos).
+
+### 0015 aplicada en producción (009, T6)
+- David la ejecutó completa desde el SQL Editor tras fusionar el #47; no se usó `apply_migration` (con la 0014 se cortó a los 60 s). Verificado en producción: `viajes.tipo_servicio` y su check de precio, tabla `encomiendas` con RLS y las políticas `encomiendas_select` e `encomiendas_insert`, los triggers `viajes_encomienda_completa` y `viajes_tipo_inmutable`, y las funciones con los permisos esperados. Los 14 viajes existentes siguen como `viaje`.
+- Linter de seguridad: solo D-10. Rendimiento: sin hallazgos nuevos. La 0015 no figura en `supabase_migrations.schema_migrations`, igual que la 0014.
+- Con esto el backend del 009 ya puede desplegarse. Siguen pendientes de la 009: Auth y Storage reales en la T9, la revisión formal (T1) y el teléfono (T12).
+
+---
+
 ## [1.58.0] - 2026-10-20 (Hora Local)
 
 ### Identidad, seguridad, navegación y encomiendas · ampliación 009
