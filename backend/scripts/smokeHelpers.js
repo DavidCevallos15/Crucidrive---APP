@@ -80,8 +80,11 @@ const cerrarViajesDePrueba = async (pas, con, http) => {
     }
   }
   for (const viaje of viajes.values()) {
-    const estado = viaje.estado === 'en_curso' ? 'finalizado' : 'cancelado';
-    const respuesta = await http(pas.token, 'PATCH', `/api/viajes/${viaje.id}/estado`, { estado });
+    // Paso 005: en curso lo termina el conductor (si lo terminara el pasajero, contaría para su
+    // sanción); aceptado, el pasajero cancela con motivo; buscando, sin motivo.
+    const respuesta = viaje.estado === 'en_curso'
+      ? await http(con.token, 'POST', `/api/viajes/${viaje.id}/terminar`)
+      : await http(pas.token, 'POST', `/api/viajes/${viaje.id}/cancelar`, viaje.estado === 'aceptado' ? { motivo: 'otro' } : {});
     if (respuesta.status === 200) continue;
     // Puede haber vencido entre el SELECT y la cancelación.
     const { data, error } = await pas.sb.from('viajes').select('estado').eq('id', viaje.id).single();
