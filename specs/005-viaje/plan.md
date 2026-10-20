@@ -55,7 +55,7 @@ Sin coordenadas nuevas: la cancelación queda registrada sin ubicación (criteri
 - `PATCH /:id/estado` queda solo para la cancelación del 003 y llama a `cancelar_viaje`; se retira cuando la app ya no lo use.
 
 **P7 · Avisos a la otra parte (criterios 3, 4, 5 y 8).**
-- Por socket (`viaje_estado` con `{ viajeId, estado, llegadoEn?, canceladoPor?, motivo? }`) y por aviso con la app cerrada.
+- Por socket (`viaje_estado` con `{ viajeId, cambio, encomienda }`) y por aviso con la app cerrada. `cambio` es `llegada`, `en_curso`, `finalizado`, `finalizado_por_pasajero`, `cancelado_por_pasajero` o `cancelado_por_conductor`; el detalle (hora, motivo) la app lo lee del viaje.
 - Textos nuevos en `avisos/mensajes.js`, sin nombre ni teléfono: «Tu tricimoto llegó», «Tu viaje terminó: confirma y califica» y «El conductor canceló el viaje». En encomienda: «Recogimos tu paquete» y «Tu paquete fue entregado».
 
 **P8 · Datos del conductor para el pasajero (criterio 18).** `datosDelConductor` añade promedio y número de reseñas con `resumen_conductor`.
