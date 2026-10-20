@@ -17,7 +17,7 @@ import {
 } from '@expo-google-fonts/inter';
 import { useSupabaseAuth } from '../src/hooks/useSupabaseAuth';
 import { COLORS } from '../src/constants/theme';
-import { rutaInicial, rutaPermitida } from '../src/utils/routing';
+import { destinoGuardia, mostrarCargaInicial } from '../src/utils/routing';
 import { useRespuestaAvisos } from '../src/hooks/useRespuestaAvisos';
 import { variablesFaltantes } from '../src/constants/config';
 
@@ -64,7 +64,7 @@ function ConfiguracionFaltante({ faltantes }: { faltantes: string[] }) {
  */
 function AppRaiz() {
   const {
-    isLoading, isInitialized, session, profile, profileChecked, verification, verificationChecked,
+    isInitialized, session, profile, profileChecked, verification, verificationChecked,
   } = useSupabaseAuth({ bootstrap: true });
   const segments = useSegments() as string[];
   const router = useRouter();
@@ -94,41 +94,19 @@ function AppRaiz() {
 
   // ─── Guardia de navegación por sesión, perfil y rol (spec 002) ─────
   useEffect(() => {
-    if (!isInitialized) return;
-
-    const inAuthGroup = segments[0] === '(auth)';
-    const inAppGroup = segments[0] === '(app)';
-
-    // Sin sesión: el mapa y el login son públicos; el resto vuelve al mapa.
-    if (!session) {
-      if (inAppGroup) router.replace('/');
-      return;
-    }
-
-    // Con sesión: esperar a saber si ya tiene perfil.
-    if (!profileChecked) return;
-
-    // Cuenta creada pero sin perfil: debe completarlo (con el consentimiento).
-    if (!profile) {
-      if (!(inAuthGroup && segments[1] === 'perfil')) router.replace('/(auth)/perfil');
-      return;
-    }
-
-    // Un conductor necesita conocer el estado de su verificación para saber adónde ir.
-    if (profile.rol === 'conductor' && !verificationChecked) return;
-
-    const estado = verification?.estado ?? null;
-    const destino = rutaInicial(profile.rol, estado);
-
-    if (inAuthGroup) {
-      router.replace(destino as never);
-    } else if (inAppGroup && !rutaPermitida(segments, profile.rol, estado)) {
-      router.replace(destino as never);
-    }
-  }, [isInitialized, session, profile, profileChecked, verification, verificationChecked, segments]);
+    const destino = destinoGuardia(segments, {
+      isInitialized,
+      hasSession: Boolean(session),
+      profileChecked,
+      rol: profile?.rol ?? null,
+      verificationChecked,
+      verificacion: verification?.estado ?? null,
+    });
+    if (destino) router.replace(destino as never);
+  }, [isInitialized, session, profile, profileChecked, verification, verificationChecked, segments, router]);
 
   // ─── Pantalla de carga mientras se verifica la sesión o cargan fuentes ─────
-  if (!isInitialized || isLoading || (!fontsLoaded && !fontError)) {
+  if (mostrarCargaInicial(isInitialized, fontsLoaded, Boolean(fontError))) {
     return (
       <View style={styles.loadingContainer}>
         <StatusBar style="light" />
