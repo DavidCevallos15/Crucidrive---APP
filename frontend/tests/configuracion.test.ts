@@ -29,6 +29,21 @@ describe('configuración de la app', () => {
       .toEqual(['EXPO_PUBLIC_SUPABASE_URL', 'EXPO_PUBLIC_SOCKET_URL']);
   });
 
+  test('una clave copiada enmascarada (con puntos •) cuenta como mal configurada', () => {
+    const enmascarada = `eyJhbGci${'\u2022'.repeat(200)}`;
+    expect(variablesFaltantes({ ...COMPLETAS, EXPO_PUBLIC_SUPABASE_ANON_KEY: enmascarada }))
+      .toEqual(['EXPO_PUBLIC_SUPABASE_ANON_KEY']);
+  });
+
+  test('espacios, saltos de línea o comillas tipográficas también cuentan como mal configuradas', () => {
+    expect(variablesFaltantes({
+      ...COMPLETAS,
+      EXPO_PUBLIC_SUPABASE_URL: 'https://x.supabase.co\r',
+      EXPO_PUBLIC_API_BASE_URL: ' https://api.example',
+      EXPO_PUBLIC_SOCKET_URL: '\u201chttps://api.example\u201d',
+    })).toEqual(['EXPO_PUBLIC_SUPABASE_URL', 'EXPO_PUBLIC_API_BASE_URL', 'EXPO_PUBLIC_SOCKET_URL']);
+  });
+
   test('config.ts lee las variables con acceso literal, el único que Expo incrusta', () => {
     const fuente = fs.readFileSync(path.join(__dirname, '../src/constants/config.ts'), 'utf8');
     const codigo = fuente.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '');
