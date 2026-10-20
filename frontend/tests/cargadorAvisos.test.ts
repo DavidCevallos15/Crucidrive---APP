@@ -64,7 +64,7 @@ describe('avisos: carga de expo-notifications', () => {
     archivos.push(path.join(raiz, 'index.ts'));
 
     const estaticos = archivos
-      .filter((ruta) => !ruta.endsWith('servicios/notificaciones.ts'))
+      .filter((ruta) => ruta !== path.join(raiz, 'src', 'servicios', 'notificaciones.ts'))
       .filter((ruta) => {
         const codigo = fs.readFileSync(ruta, 'utf8');
         // `import type` se borra al compilar y no ejecuta el módulo.

@@ -25,6 +25,19 @@ const solicitarViaje = asyncHandler(async (req, res) => {
   const destinoDescripcion = normalizarDescripcion(req.body.destinoDescripcion);
   const pasajeroId = req.user.id;
   const db = req.supabase;
+  const tipoServicio = req.body.tipoServicio ?? 'viaje';
+  let encomienda = null;
+  if (!['viaje', 'encomienda'].includes(tipoServicio)) return errorResponse(res, 400, 'Elige viaje en tricimoto o encomienda.');
+  if (tipoServicio === 'encomienda') {
+    const input = req.body.encomienda;
+    const descripcion = normalizarDescripcion(input?.descripcion);
+    const destinatario = normalizarDescripcion(input?.destinatario);
+    if (descripcion.length < 2 || descripcion.length > 200 || destinatario.length < 2 || destinatario.length > 100 || input?.autorizado !== true) {
+      return errorResponse(res, 400, 'Completa el contenido, quién recibe y la autorización de la encomienda.');
+    }
+    if (pasajeros !== 1) return errorResponse(res, 400, 'Una encomienda se solicita como un solo servicio.');
+    encomienda = { descripcion, destinatario, autorizado: true };
+  } else if (req.body.encomienda != null) return errorResponse(res, 400, 'Los datos de encomienda requieren ese tipo de servicio.');
 
   for (const lugar of [lugarOrigenId, lugarDestinoId]) {
     if (lugar != null && !isUuid(lugar)) {
@@ -56,10 +69,7 @@ const solicitarViaje = asyncHandler(async (req, res) => {
     return errorResponse(res, 400, `La descripción no puede superar ${MAX_DESCRIPCION} caracteres.`);
   }
 
-  const { data: viaje, error } = await db
-    .from('viajes')
-    .insert([
-      {
+  const registro = {
         pasajero_id: pasajeroId,
         // Con lugar, la BD reemplaza el punto por el del lugar (el cliente no puede moverlo).
         origen: tieneCoordenadas(origen) ? toWKT(origen.lng, origen.lat) : null,
@@ -72,10 +82,11 @@ const solicitarViaje = asyncHandler(async (req, res) => {
         origen_descripcion: origenDescripcion || null,
         destino_descripcion: destinoDescripcion || null,
         estado: 'solicitado'
-      }
-    ])
-    .select()
-    .single();
+      };
+  // La RPC crea la solicitud y sus datos privados en una sola transacción.
+  const { data: viaje, error } = encomienda
+    ? await db.rpc('solicitar_encomienda', { p_solicitud: registro, p_descripcion: encomienda.descripcion, p_destinatario: encomienda.destinatario, p_autorizado: true }).single()
+    : await db.from('viajes').insert([registro]).select().single();
 
   if (error) {
     // Índice único de 0012: un viaje activo por pasajero (criterio 13).
@@ -91,7 +102,7 @@ const solicitarViaje = asyncHandler(async (req, res) => {
   // El despacho corre aparte: la respuesta no espera la primera oferta (errores al log).
   obtenerDespachador()?.iniciar(viaje);
 
-  successResponse(res, viaje, 'Viaje solicitado correctamente.', 201);
+  successResponse(res, viaje, encomienda ? 'Encomienda solicitada. Acuerda el precio por chat con el conductor.' : 'Viaje solicitado correctamente.', 201);
 });
 
 // Errores de aceptar_viaje (0012) → respuesta para el conductor.
@@ -148,8 +159,14 @@ const aceptarViaje = asyncHandler(async (req, res) => {
     await obtenerDespachador()?.aceptado(viaje, { conductor, chat: { threadId } });
   }
 
+  let encomienda = null;
+  if (viaje?.tipo_servicio === 'encomienda') {
+    const result = await db.from('encomiendas').select('descripcion, destinatario').eq('viaje_id', viajeId).maybeSingle();
+    encomienda = result.data ?? null;
+  }
   successResponse(res, {
     viaje: viaje ?? { id: viajeId, estado: 'aceptado', conductor_id: conductorId },
+    ...(viaje?.tipo_servicio === 'encomienda' ? { encomienda } : {}),
     chat: { threadId }
   }, 'Viaje aceptado correctamente e hilo de chat inicializado.');
 });

@@ -52,4 +52,6 @@ const getAdminClient = () => {
   return adminClient;
 };
 
-module.exports = { supabase, createUserClient, getAdminClient };
+// Cliente aislado: reautenticar una eliminación nunca cambia la sesión del cliente global.
+const createAuthClient = () => createClient(supabaseUrl, supabaseAnonKey, { auth: SERVER_AUTH_OPTIONS });
+module.exports = { supabase, createUserClient, getAdminClient, createAuthClient };

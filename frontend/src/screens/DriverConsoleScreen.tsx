@@ -14,6 +14,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import { AppMenuButton } from '../components/AppMenuButton';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { BlurContainer } from '../components/BlurContainer';
 import { PressableScale } from '../components/PressableScale';
@@ -196,6 +197,7 @@ export const DriverConsoleScreen: React.FC = () => {
       >
         <BlurContainer intensity={30} style={styles.header}>
           <View style={styles.headerContent}>
+            <AppMenuButton />
             {/* Info del conductor */}
             <View style={styles.driverInfo}>
               <Text style={styles.driverName}>
@@ -236,7 +238,7 @@ export const DriverConsoleScreen: React.FC = () => {
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>
-                {profile?.calificacion?.toFixed(1) ?? '5.0'}
+                {profile?.calificacion?.toFixed(1) ?? 'Sin datos'}
               </Text>
               <Text style={styles.statLabel}>Rating</Text>
             </View>
@@ -312,7 +314,7 @@ export const DriverConsoleScreen: React.FC = () => {
                 <Text style={styles.countdownLabel}>segundos</Text>
               </View>
 
-              <Text style={styles.requestTitle} accessibilityRole="header">¡Nuevo viaje!</Text>
+              <Text style={styles.requestTitle} accessibilityRole="header">{oferta.tipoServicio === 'encomienda' ? 'Nueva encomienda' : '¡Nuevo viaje!'}</Text>
               {oferta.fase === 'abierta' && (
                 <Text style={styles.requestSubtitle}>Aviso a varios: gana el primero que acepte</Text>
               )}
@@ -336,9 +338,9 @@ export const DriverConsoleScreen: React.FC = () => {
               </View>
 
               {/* Total (lo fija la BD) y personas */}
-              <Text style={styles.requestPrice}>${oferta.tarifa.toFixed(2)}</Text>
+              <Text style={styles.requestPrice}>{oferta.tipoServicio === 'encomienda' ? 'Precio a convenir' : `$${oferta.tarifa?.toFixed(2) ?? '—'}`}</Text>
               <Text style={styles.requestSubtitle}>
-                {oferta.pasajeros} {oferta.pasajeros === 1 ? 'persona' : 'personas'}
+                {oferta.tipoServicio === 'encomienda' ? 'Encomienda · acuerda el precio por chat' : `${oferta.pasajeros} ${oferta.pasajeros === 1 ? 'persona' : 'personas'}`}
               </Text>
 
               {!isConnected && (

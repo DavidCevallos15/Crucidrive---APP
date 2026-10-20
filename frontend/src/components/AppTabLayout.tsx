@@ -44,7 +44,7 @@ export const AppTabLayout: React.FC<AppTabLayoutProps> = ({ tabs, activeColor })
         },
         tabBarStyle: {
           position: 'absolute',
-          backgroundColor: 'rgba(11, 15, 25, 0.85)',
+          backgroundColor: COLORS.glassSurface,
           borderTopWidth: 0.5,
           borderTopColor: COLORS.glassBorderDark,
           paddingTop: 8,

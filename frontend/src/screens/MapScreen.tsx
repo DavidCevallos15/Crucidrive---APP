@@ -7,6 +7,7 @@ import {
   Alert,
   Linking,
   ScrollView,
+  useWindowDimensions,
 } from 'react-native';
 import MapView, { Marker } from '../components/Map';
 import Animated from 'react-native-reanimated';
@@ -18,6 +19,10 @@ import { GlassButton } from '../components/GlassButton';
 import { BlurContainer } from '../components/BlurContainer';
 import { PressableScale } from '../components/PressableScale';
 import { PanicButton } from '../components/PanicButton';
+import { AppMenuButton } from '../components/AppMenuButton';
+import { CheckboxRow } from '../components/CheckboxRow';
+import { useServiceStore } from '../store/useServiceStore';
+import { validateParcel } from '../utils/encomienda';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { useLocation } from '../hooks/useLocation';
 import { useSocket } from '../hooks/useSocket';
@@ -68,6 +73,15 @@ type Panel = 'destino' | 'origen' | 'ficha';
  */
 export const MapScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
+  const sheetMaxHeight = Math.max(220, height - insets.top - insets.bottom - 132);
+  const service = useServiceStore((s) => s.service);
+  const selectService = useServiceStore((s) => s.selectService);
+  const isParcel = service === 'encomienda';
+  const [parcelDescription, setParcelDescription] = useState('');
+  const [recipient, setRecipient] = useState('');
+  const [authorized, setAuthorized] = useState(false);
+  const [parcelError, setParcelError] = useState<string | null>(null);
   const router = useRouter();
   const session = useAuthStore((st) => st.session);
   const authProfile = useAuthStore((st) => st.profile);
@@ -180,6 +194,12 @@ export const MapScreen: React.FC = () => {
   };
 
   const handleRequestRide = useCallback(async () => {
+    const parcel = { descripcion: parcelDescription.trim(), destinatario: recipient.trim(), autorizado: authorized };
+    if (isParcel) {
+      const error = validateParcel(parcel);
+      setParcelError(error);
+      if (error) return;
+    }
     // Pedir un viaje requiere cuenta: un visitante pasa primero por el inicio de sesión.
     if (!session) {
       router.push('/(auth)/login');
@@ -190,12 +210,14 @@ export const MapScreen: React.FC = () => {
       await viaje.solicitar({
         origen,
         destino,
-        pasajeros: passengers,
+        pasajeros: isParcel ? 1 : passengers,
+        tipoServicio: service,
+        ...(isParcel ? { encomienda: parcel } : {}),
         origenNota: origen.tipo === 'sector' ? originNote : '',
         destinoNota: destinationNote,
       })
     );
-  }, [session, router, origen, destino, passengers, originNote, destinationNote, viaje]);
+  }, [session, router, origen, destino, passengers, originNote, destinationNote, viaje, isParcel, service, parcelDescription, recipient, authorized]);
 
   const handleCancelRequest = useCallback(async () => {
     setCancelando(true);
@@ -210,11 +232,10 @@ export const MapScreen: React.FC = () => {
   // ─── Activar botón de pánico ──────────────────────────────
   const handlePanic = useCallback(async () => {
     try {
-      // Emitir señal de emergencia al backend
-      console.log('[SOS] ¡Botón de pánico activado!');
-      // TODO: Implementar endpoint de emergencia en el backend
+      await Linking.openURL('tel:911');
     } catch (error) {
       console.error('[SOS] Error al activar pánico:', error);
+      Alert.alert('Llama al 911', 'No se pudo abrir la llamada. Marca 911 desde tu teléfono.');
     }
   }, []);
 
@@ -247,6 +268,15 @@ export const MapScreen: React.FC = () => {
       </PressableScale>
     </View>
   );
+
+  const serviceSelector = <View style={styles.serviceTabs}>
+    {([{ id: 'viaje', label: 'Tricimoto', icon: 'navigate-outline' }, { id: 'encomienda', label: 'Encomienda', icon: 'cube-outline' }] as const).map((item) => <PressableScale key={item.id}
+      onPress={() => { selectService(item.id); setParcelError(null); }} accessibilityRole="button" accessibilityLabel={item.label} accessibilityState={{ selected: service === item.id }}
+      style={[styles.serviceOption, service === item.id && styles.serviceOptionActive]}>
+      <Ionicons name={item.icon} size={22} color={service === item.id ? COLORS.primaryLight : COLORS.glassTextMutedDark} />
+      <Text style={[styles.serviceText, service === item.id && styles.serviceTextActive]}>{item.label}</Text>
+    </PressableScale>)}
+  </View>;
 
   return (
     <View style={styles.container}>
@@ -311,6 +341,7 @@ export const MapScreen: React.FC = () => {
         pointerEvents="box-none"
       >
         <View style={styles.statusRow}>
+        <AppMenuButton />
         <BlurContainer intensity={30} style={styles.statusPill}>
           <Ionicons
             name={currentSectorId ? 'location' : 'location-outline'}
@@ -351,9 +382,10 @@ export const MapScreen: React.FC = () => {
             style={styles.destinationCard}
             noPadding
           >
-            <View style={[styles.sheetBody, { paddingBottom: insets.bottom + SPACING.md }]}>
+            <ScrollView style={{ maxHeight: Math.min(sheetMaxHeight, height * 0.62) }} contentContainerStyle={[styles.sheetBody, { paddingBottom: insets.bottom + SPACING.md }]} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
+            {serviceSelector}
             <Text style={styles.sectionTitle} accessibilityRole="header">
-              {panel === 'origen' ? '¿Desde dónde sales?' : '¿A dónde vas?'}
+              {panel === 'origen' ? isParcel ? '¿Dónde la recogemos?' : '¿Desde dónde sales?' : isParcel ? '¿Dónde la entregamos?' : '¿A dónde vas?'}
             </Text>
             {panel === 'destino' && filaOrigen}
             {panel === 'origen' && gps && (
@@ -367,7 +399,7 @@ export const MapScreen: React.FC = () => {
               />
             )}
             <GlassInput
-              label="Busca un lugar"
+              label={isParcel ? 'Busca el punto de recogida o entrega' : 'Busca un lugar'}
               placeholder="Farmacia, muelle, letras…"
               value={busqueda.texto}
               onChangeText={busqueda.escribir}
@@ -440,7 +472,7 @@ export const MapScreen: React.FC = () => {
                 style={styles.cancelButton}
               />
             )}
-            </View>
+            </ScrollView>
           </GlassCard>
         </Animated.View>
       )}
@@ -453,17 +485,18 @@ export const MapScreen: React.FC = () => {
           style={styles.rideSheetContainer}
         >
           <GlassCard style={styles.rideSheet} noPadding>
-            <View style={[styles.sheetBody, { paddingBottom: insets.bottom + SPACING.md }]}>
+            <ScrollView style={{ maxHeight: sheetMaxHeight }} contentContainerStyle={[styles.sheetBody, { paddingBottom: insets.bottom + SPACING.md }]} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
+            {serviceSelector}
             {/* Encabezado con el total */}
             <View style={styles.rideHeader}>
-              <Text style={styles.rideLabel}>Total</Text>
-              <Text style={styles.ridePrice}>{formattedPrice}</Text>
-              <Text style={styles.rideCurrency}>USD</Text>
+              <Text style={styles.rideLabel}>{isParcel ? 'Encomienda' : 'Total'}</Text>
+              <Text style={[styles.ridePrice, isParcel && styles.parcelPrice]}>{isParcel ? 'Precio a convenir' : formattedPrice}</Text>
+              {!isParcel && <Text style={styles.rideCurrency}>USD</Text>}
             </View>
 
             {/* Detalles del viaje */}
             <View style={styles.routeDetails}>
-              <View style={styles.routeRow}>
+              {!isParcel && <View style={styles.routeRow}>
                 <Ionicons name="people" size={16} color={COLORS.primary} />
                 <Text style={styles.routeText}>
                   Pasajeros ({formattedPricePerPerson} c/u)
@@ -489,7 +522,7 @@ export const MapScreen: React.FC = () => {
                 >
                   <Ionicons name="add" size={22} color={COLORS.white} />
                 </PressableScale>
-              </View>
+              </View>}
               {filaOrigen}
               {origen?.tipo === 'sector' && (
                 <TextInput
@@ -519,16 +552,23 @@ export const MapScreen: React.FC = () => {
               />
             </View>
 
+            {isParcel && <View style={styles.parcelForm}>
+              <Text style={styles.searchHint}>Acuerda el precio por chat antes de entregar el paquete. Los datos de entrega se comparten con el conductor solo cuando acepta.</Text>
+              <GlassInput label="¿Qué vas a enviar?" leadingIcon="cube-outline" placeholder="Describe el contenido y tamaño" value={parcelDescription} onChangeText={setParcelDescription} maxLength={200} />
+              <GlassInput label="¿Quién recibe?" leadingIcon="person-outline" placeholder="Nombre de la persona que recibe" value={recipient} onChangeText={setRecipient} maxLength={100} />
+              <CheckboxRow label="Tengo autorización para compartir estos datos de entrega con el conductor asignado." checked={authorized} onChange={setAuthorized} />
+              {parcelError && <Text style={styles.parcelError} accessibilityRole="alert">{parcelError}</Text>}
+            </View>}
             {/* Botón de solicitud */}
             <GlassButton
-              label="Solicitar Tricimoto"
+              label={isParcel ? 'Solicitar encomienda' : 'Solicitar Tricimoto'}
               onPress={handleRequestRide}
               variant="secondary"
               size="lg"
               loading={isRequesting}
               disabled={!origen || !destino}
               leftIcon={
-                <Ionicons name="car" size={20} color={COLORS.darkBg} />
+                <Ionicons name={isParcel ? 'cube-outline' : 'navigate-outline'} size={20} color={COLORS.darkBg} />
               }
               style={styles.requestButton}
             />
@@ -541,7 +581,7 @@ export const MapScreen: React.FC = () => {
               size="sm"
               style={styles.cancelButton}
             />
-            </View>
+            </ScrollView>
           </GlassCard>
         </Animated.View>
       )}
@@ -692,6 +732,7 @@ const EstadoViaje: React.FC<EstadoViajeProps> = ({
         <Text style={styles.staleText} accessibilityLiveRegion="polite">{antiguedad}</Text>
       )}
       <Ruta ride={ride} />
+      {ride.serviceType === 'encomienda' && <Text style={styles.searchHint}>Encomienda · precio a convenir por el chat antes de entregar el paquete.</Text>}
       {conductor?.telefono && (
         <GlassButton
           label={`Llamar ${conductor.telefono}`}
@@ -717,6 +758,14 @@ const EstadoViaje: React.FC<EstadoViajeProps> = ({
 };
 
 const styles = StyleSheet.create({
+  serviceTabs: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.lg },
+  serviceOption: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm, minHeight: 56, borderRadius: 12, backgroundColor: COLORS.glassBgDark, padding: SPACING.sm },
+  serviceOptionActive: { backgroundColor: 'rgba(97, 227, 207, 0.13)', borderWidth: 1, borderColor: COLORS.primaryLight },
+  serviceText: { fontFamily: FONTS.body, fontSize: FONTS.sizes.sm, color: COLORS.glassTextMutedDark },
+  serviceTextActive: { color: COLORS.primaryLight },
+  parcelPrice: { fontSize: FONTS.sizes.xxl, flexShrink: 1 },
+  parcelForm: { marginBottom: SPACING.lg },
+  parcelError: { fontFamily: FONTS.body, fontSize: FONTS.sizes.sm, color: COLORS.dangerLight, marginTop: SPACING.sm },
   // ─── Buscador de lugares (paso 003) ─────────────────────
   searchHint: {
     color: COLORS.glassTextMutedDark,

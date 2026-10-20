@@ -149,6 +149,8 @@ export const useConsolaConductor = (
       // Para el chat del viaje; las pantallas del viaje en curso son del paso 005.
       useRideStore.getState().setActiveRide({
         id: oferta.viajeId,
+        serviceType: oferta.tipoServicio ?? 'viaje',
+        parcel: body?.data?.encomienda ?? null,
         status: 'aceptado',
         originSectorId: oferta.origen.sectorId ?? '',
         originName: textoPunto(oferta.origen),
@@ -195,7 +197,7 @@ export const useConsolaConductor = (
     if (!userId) return false;
     const { data, error } = await supabase
       .from('ofertas_viaje')
-      .select('fase, vence_en, distancia_m, resultado, viaje:viajes(id, estado, pasajeros, tarifa, sector_origen_id, sector_destino_id, origen_descripcion, destino_descripcion)')
+      .select('fase, vence_en, distancia_m, resultado, viaje:viajes(id, estado, tipo_servicio, pasajeros, tarifa, sector_origen_id, sector_destino_id, origen_descripcion, destino_descripcion)')
       .eq('viaje_id', viajeId)
       .eq('conductor_id', userId)
       .maybeSingle();

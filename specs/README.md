@@ -17,3 +17,9 @@ Flujo por paso: spec → aprobación → plan → tareas → implementación (co
 
 Plan maestro: documento "Plan CruciDrive: viabilidad, MVP y escalado" (claude.ai).
 Cada carpeta contiene `spec.md` (qué y por qué), `plan.md` (cómo) y `tasks.md` (tareas con su prueba).
+
+## Ampliaciones solicitadas
+
+| Carpeta | Estado |
+| --- | --- |
+| `009-experiencia-encomiendas` | Identidad, seguridad de sesión, navegación, configuración y encomiendas solicitadas por David el 20 oct 2026. Implementación local y formalización posterior, documentada como desviación de «spec primero». PR en borrador: pendientes revisión formal, RLS 0015 y teléfono. No completa ni renumera 005–008. |

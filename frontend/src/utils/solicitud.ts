@@ -1,5 +1,6 @@
 import { SECTORS } from '../constants/sectors';
 import type { Lugar } from './lugares';
+import type { ParcelDetails } from './encomienda';
 
 /**
  * Solicitud de viaje del pasajero (paso 003, T13). Sin React, para poder probarla.
@@ -25,6 +26,8 @@ export type Destino =
 
 /** Lo que el pasajero rellenó. Se guarda para "Volver a pedir" sin rellenar de nuevo (criterio 11). */
 export interface Solicitud {
+  tipoServicio?: 'viaje' | 'encomienda';
+  encomienda?: ParcelDetails;
   origen: Origen;
   destino: Destino;
   pasajeros: number;
@@ -78,6 +81,11 @@ const centroSector = (id: string): Coordenadas | null => SECTORS.find((s) => s.i
  */
 export const armarCuerpoSolicitud = (s: Solicitud): Record<string, unknown> => {
   const cuerpo: Record<string, unknown> = { pasajeros: s.pasajeros };
+  if (s.tipoServicio === 'encomienda') {
+    cuerpo.tipoServicio = 'encomienda';
+    cuerpo.encomienda = s.encomienda;
+    cuerpo.pasajeros = 1;
+  }
 
   if (s.origen.tipo === 'lugar') {
     cuerpo.lugarOrigenId = s.origen.lugar.id;

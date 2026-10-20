@@ -2,7 +2,11 @@ import React from 'react';
 import { StyleSheet, View, Text, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { PANEL_IN } from '../constants/motion';
+import { BrandLockup } from '../components/BrandLockup';
+import { AppMenuButton } from '../components/AppMenuButton';
 import { GlassCard } from '../components/GlassCard';
 import { GlassButton } from '../components/GlassButton';
 import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
@@ -15,7 +19,8 @@ import { COLORS, FONTS, SPACING } from '../constants/theme';
  * mostrando el avatar, estadísticas y secciones relevantes para cada rol.
  */
 export default function ProfileScreen() {
-  const { profile, signOut } = useSupabaseAuth();
+  const { profile, signOut, authError, isLoading } = useSupabaseAuth();
+  const insets = useSafeAreaInsets();
 
   const isDriver = profile?.rol === 'conductor';
 
@@ -23,12 +28,13 @@ export default function ProfileScreen() {
     <View style={styles.container}>
       <StatusBar style="light" />
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.lg }]}
         showsVerticalScrollIndicator={false}
       >
+        <View style={styles.brand}><BrandLockup compact /><AppMenuButton /></View>
         {/* Avatar y nombre */}
         <Animated.View
-          entering={FadeInDown.delay(100).duration(500)}
+          entering={PANEL_IN}
           style={styles.header}
         >
           <View
@@ -49,7 +55,7 @@ export default function ProfileScreen() {
           <Text
             style={[
               styles.role,
-              { color: isDriver ? COLORS.success : COLORS.primary },
+              { color: isDriver ? COLORS.successLight : COLORS.primaryLight },
             ]}
           >
             {isDriver ? 'Conductor' : 'Pasajero'}
@@ -58,7 +64,7 @@ export default function ProfileScreen() {
         </Animated.View>
 
         {/* Información / Estadísticas */}
-        <Animated.View entering={FadeInDown.delay(200).duration(500)}>
+        <View>
           <GlassCard style={styles.infoCard}>
             {isDriver && (
               <>
@@ -66,13 +72,13 @@ export default function ProfileScreen() {
                 <View style={styles.statsGrid}>
                   <View style={styles.statBox}>
                     <Text style={styles.statNumber}>
-                      {profile?.calificacion?.toFixed(1) ?? '5.0'}
+                      {profile?.calificacion?.toFixed(1) ?? 'Sin datos'}
                     </Text>
-                    <Text style={styles.statLabel}>Rating</Text>
+                    <Text style={styles.statLabel}>Calificación</Text>
                   </View>
                   <View style={styles.statBox}>
-                    <Text style={styles.statNumber}>0</Text>
-                    <Text style={styles.statLabel}>Viajes hoy</Text>
+                    <Text style={styles.statNumber}>Tricimoto</Text>
+                    <Text style={styles.statLabel}>Tu transporte</Text>
                   </View>
                 </View>
                 <View style={styles.infoRow}>
@@ -103,32 +109,34 @@ export default function ProfileScreen() {
                   <Ionicons name="star" size={20} color={COLORS.secondary} />
                   <Text style={styles.infoLabel}>Calificación</Text>
                   <Text style={styles.infoValue}>
-                    {profile?.calificacion?.toFixed(1) ?? '5.0'}
+                    {profile?.calificacion?.toFixed(1) ?? 'Sin datos'}
                   </Text>
                 </View>
                 <View style={styles.infoRow}>
-                  <Ionicons name="shield-checkmark" size={20} color={COLORS.success} />
-                  <Text style={styles.infoLabel}>Estado</Text>
-                  <Text style={[styles.infoValue, { color: COLORS.success }]}>
-                    Verificado
+                  <Ionicons name="person-circle-outline" size={20} color={COLORS.primaryLight} />
+                  <Text style={styles.infoLabel}>Cuenta</Text>
+                  <Text style={[styles.infoValue, { color: COLORS.primaryLight }]}>
+                    {profile?.activo === false ? 'Inactiva' : 'Registrada'}
                   </Text>
                 </View>
               </>
             )}
           </GlassCard>
-        </Animated.View>
+        </View>
 
         {/* Cerrar sesión */}
-        <Animated.View entering={FadeInDown.delay(300).duration(500)}>
+        <View>
           <GlassButton
             label="Cerrar sesión"
             onPress={signOut}
+            loading={isLoading}
             variant="danger"
             size="lg"
             leftIcon={<Ionicons name="log-out-outline" size={20} color={COLORS.white} />}
             style={styles.logoutButton}
           />
-        </Animated.View>
+          {authError && <Text style={styles.authError} accessibilityRole="alert">{authError}</Text>}
+        </View>
 
         {/* Footer */}
         <Text style={styles.version}>CruciDrive v1.0.0</Text>
@@ -147,7 +155,12 @@ const styles = StyleSheet.create({
     paddingTop: 80,
     paddingHorizontal: SPACING.lg,
     paddingBottom: 120,
+    width: '100%',
+    maxWidth: 560,
+    alignSelf: 'center',
   },
+  brand: { marginBottom: SPACING.xl, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  authError: { color: COLORS.dangerLight, fontFamily: FONTS.body, fontSize: FONTS.sizes.sm, lineHeight: 22, marginTop: SPACING.md },
   header: {
     alignItems: 'center',
     marginBottom: SPACING.xl,

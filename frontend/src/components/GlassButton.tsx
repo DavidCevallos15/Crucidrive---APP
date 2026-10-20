@@ -66,7 +66,7 @@ const VARIANT_TEXT_COLORS: Record<ButtonVariant, string> = {
  * Mapeo de dimensiones por tamaño.
  */
 const SIZE_CONFIG: Record<ButtonSize, { height: number; paddingHorizontal: number; fontSize: number }> = {
-  sm: { height: 40, paddingHorizontal: SPACING.md, fontSize: FONTS.sizes.sm },
+  sm: { height: 44, paddingHorizontal: SPACING.md, fontSize: FONTS.sizes.sm },
   md: { height: 48, paddingHorizontal: SPACING.lg, fontSize: FONTS.sizes.base },
   lg: { height: 56, paddingHorizontal: SPACING.xl, fontSize: FONTS.sizes.lg },
 };
@@ -99,10 +99,11 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
   const sizeConfig = SIZE_CONFIG[size];
 
   const containerStyle: ViewStyle = {
-    height: sizeConfig.height,
+    minHeight: sizeConfig.height,
+    paddingVertical: SPACING.sm,
     paddingHorizontal: sizeConfig.paddingHorizontal,
     backgroundColor: VARIANT_COLORS[variant],
-    borderRadius: SHAPES.borderRadiusFull,
+    borderRadius: SHAPES.borderRadiusMd,
     opacity: disabled ? 0.4 : 1,
     ...(variant === 'ghost' && {
       borderWidth: SHAPES.glassBorderWidth,
@@ -124,7 +125,7 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
       style={[styles.container, containerStyle, style]}
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityState={{ disabled, busy: loading }}
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
     >
       {loading ? (
         <ActivityIndicator color={VARIANT_TEXT_COLORS[variant]} size="small" />

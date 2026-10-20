@@ -142,6 +142,7 @@ describe('app · cabeceras, CORS, 404, JSON y rate limit', () => {
     await arrancar();
     const r = await fetch(`${base}/api/no-existe`);
     expect(r.status).toBe(404);
+    expect(r.headers.get('cache-control')).toBe('no-store');
     expect(await r.json()).toEqual({ status: 'error', message: 'Ruta no encontrada: GET /api/no-existe' });
   });
 

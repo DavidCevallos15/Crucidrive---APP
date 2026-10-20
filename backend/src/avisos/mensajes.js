@@ -22,12 +22,15 @@ const dinero = (n) => `$${Number(n).toFixed(2)}`;
  * @param {number} [ahora]
  */
 const avisoOferta = (oferta, tokens, nombreSector, ahora = Date.now()) => {
-  const personas = `${oferta.pasajeros} ${oferta.pasajeros === 1 ? 'persona' : 'personas'}`;
+  // Una encomienda no tiene tarifa ni personas: el precio se acuerda por chat (D-14).
+  const encomienda = oferta.tipoServicio === 'encomienda';
+  const title = encomienda ? 'Nueva encomienda · Precio a convenir' : `Nuevo viaje · ${dinero(oferta.tarifa)}`;
+  const detalle = encomienda ? 'Encomienda' : `${oferta.pasajeros} ${oferta.pasajeros === 1 ? 'persona' : 'personas'}`;
   const ttl = Math.max(1, Math.ceil((oferta.venceEn - ahora) / 1000));
   return tokens.map((to) => ({
     to,
-    title: `Nuevo viaje · ${dinero(oferta.tarifa)}`,
-    body: `${personas} · ${textoPunto(oferta.origen, nombreSector)} → ${textoPunto(oferta.destino, nombreSector)}`,
+    title,
+    body: `${detalle} · ${textoPunto(oferta.origen, nombreSector)} → ${textoPunto(oferta.destino, nombreSector)}`,
     data: { tipo: 'oferta', viajeId: oferta.viajeId, venceEn: oferta.venceEn },
     ttl,
     priority: 'high',

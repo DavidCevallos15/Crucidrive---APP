@@ -7,11 +7,11 @@
     "esModuleInterop": true,
     "allowJs": true,
     "skipLibCheck": true,
-    "baseUrl": ".",
-    "types": ["jest"],
+    "ignoreDeprecations": "6.0",
+    "types": ["jest", "node"],
     "paths": {
-      "@constants/*": ["src/constants/*"],
-      "@store/*": ["src/store/*"]
+      "@constants/*": ["./src/constants/*"],
+      "@store/*": ["./src/store/*"]
     }
   },
   "include": ["tests/**/*.ts", "src/**/*.ts"]

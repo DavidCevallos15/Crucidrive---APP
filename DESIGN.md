@@ -1,42 +1,53 @@
 ---
-version: 1.0.0
-name: CruciDrive Glass Design
-author: Antigravity AI
+name: CruciDrive
+description: Movilidad en tricimoto con identidad costera, moderna y tecnológica de Crucita.
 colors:
-  primary: "#0D9488"
-  primaryLight: "#14B8A6"
-  secondary: "#F59E0B"
-  secondaryLight: "#FBBF24"
+  primary: "#087E78"
+  primaryLight: "#61E3CF"
+  secondary: "#F3D6A1"
+  secondaryLight: "#F9E8C9"
   danger: "#EF4444"
   dangerLight: "#F87171"
   success: "#10B981"
   successLight: "#34D399"
-  darkBg: "#0B0F19"
-  lightBg: "#F8FAFC"
-  glassSurface: "rgba(11, 15, 25, 0.82)"
+  darkBg: "#061C23"
+  glassSurface: "rgba(6, 28, 35, 0.94)"
   glassBgDark: "rgba(255, 255, 255, 0.07)"
-  glassBgLight: "rgba(15, 23, 42, 0.04)"
   glassBorderDark: "rgba(255, 255, 255, 0.12)"
-  glassBorderLight: "rgba(15, 23, 42, 0.08)"
-  glassTextDark: "#F1F5F9"
-  glassTextLight: "#0F172A"
-  glassTextMutedDark: "#94A3B8"
-  glassTextMutedLight: "#64748B"
+  glassTextDark: "#F2F8F7"
+  glassTextMutedDark: "#ACBFBE"
+  white: "#FFFFFF"
 typography:
-  fontFamily: "Outfit, Inter, sans-serif"
-  sizes:
-    xs: "12px"
-    sm: "14px"
-    base: "16px"
-    lg: "18px"
-    xl: "20px"
-    xxl: "24px"
-    title: "32px"
-  weights:
-    regular: "400"
-    medium: "500"
-    semibold: "600"
-    bold: "700"
+  display:
+    fontFamily: "Outfit, sans-serif"
+    fontSize: "40px"
+    fontWeight: 700
+  headline:
+    fontFamily: "Outfit, sans-serif"
+    fontSize: "32px"
+    fontWeight: 600
+  title:
+    fontFamily: "Outfit, sans-serif"
+    fontSize: "24px"
+    fontWeight: 700
+  body:
+    fontFamily: "Inter, sans-serif"
+    fontSize: "16px"
+    fontWeight: 400
+    lineHeight: "24px"
+  label:
+    fontFamily: "Inter, sans-serif"
+    fontSize: "14px"
+    fontWeight: 500
+  caption:
+    fontFamily: "Inter, sans-serif"
+    fontSize: "12px"
+    fontWeight: 400
+rounded:
+  borderRadiusSm: "8px"
+  borderRadiusMd: "16px"
+  borderRadiusLg: "24px"
+  borderRadiusFull: "9999px"
 spacing:
   xs: "4px"
   sm: "8px"
@@ -44,93 +55,181 @@ spacing:
   lg: "24px"
   xl: "32px"
   xxl: "48px"
-shapes:
-  borderRadiusSm: "8px"
-  borderRadiusMd: "16px"
-  borderRadiusLg: "24px"
-  borderRadiusFull: "9999px"
-effects:
-  blurIntensity: "20px"
-  shadowLight: "0 8px 32px 0 rgba(31, 38, 135, 0.08)"
-  shadowDark: "0 8px 32px 0 rgba(0, 0, 0, 0.37)"
+components:
+  button-primary:
+    backgroundColor: "{colors.primary}"
+    textColor: "{colors.white}"
+    rounded: "{rounded.borderRadiusMd}"
+    padding: "8px 24px"
+  button-secondary:
+    backgroundColor: "{colors.secondary}"
+    textColor: "{colors.darkBg}"
+    rounded: "{rounded.borderRadiusMd}"
+    padding: "8px 24px"
+  button-danger:
+    backgroundColor: "{colors.danger}"
+    textColor: "{colors.white}"
+    rounded: "{rounded.borderRadiusMd}"
+    padding: "8px 24px"
+  button-ghost:
+    backgroundColor: "{colors.glassBgDark}"
+    textColor: "{colors.glassTextDark}"
+    rounded: "{rounded.borderRadiusMd}"
+    padding: "8px 24px"
+  input:
+    backgroundColor: "rgba(255, 255, 255, 0.05)"
+    textColor: "{colors.glassTextDark}"
+    rounded: "{rounded.borderRadiusSm}"
+    height: "52px"
+  card:
+    backgroundColor: "{colors.glassSurface}"
+    textColor: "{colors.glassTextDark}"
+    rounded: "{rounded.borderRadiusMd}"
+    padding: "{spacing.md}"
+  navigation:
+    backgroundColor: "{colors.glassSurface}"
+    textColor: "{colors.glassTextMutedDark}"
+    height: "85px"
+  auth-mode:
+    backgroundColor: "{colors.primary}"
+    textColor: "{colors.white}"
+    rounded: "{rounded.borderRadiusSm}"
+    padding: "0px 4px"
 ---
 
-# Especificación del Sistema de Diseño: CruciDrive App
+# Design System: CruciDrive
 
-Este documento es la fuente única de verdad para el diseño de la interfaz de usuario de **CruciDrive**, un sistema hiperlocal de transporte y geolocalización para Crucita, Ecuador. Define los tokens y las directrices visuales necesarias para construir una aplicación premium, interactiva y de alta fidelidad utilizando el concepto de **Glassmorphic Design** (Diseño de Cristal).
+## Overview
 
----
+**Creative North Star: "Crucita costera, moderna y tecnológica"**
 
-## 1. Concepto y Filosofía de Diseño
+Una identidad de movilidad local: marino profundo, turquesa luminoso y arena cálida sitúan CruciDrive en Crucita sin convertir cada pantalla en una postal. La marca acompaña las tareas de pedir, coordinar y realizar viajes en tricimoto.
 
-El sistema de diseño de CruciDrive se inspira en el agua, el océano y la luz costera de Crucita. Su núcleo visual es el **Glassmorphism**, el cual genera una sensación de profundidad, transparencia y ligereza. Esto es crucial para un entorno móvil, ya que el usuario debe sentir que la interfaz "flota" sobre un mapa dinámico e interactivo en tiempo real sin obstruir la visibilidad del trayecto.
+Los controles conservan la familiaridad de una aplicación nativa. La imagen costera aporta atmósfera al acceso; las superficies marinas de alta opacidad sostienen la lectura sobre imágenes y mapas. Outfit e Inter se conservan intencionalmente para mantener continuidad con la aplicación existente.
 
-### Pilares del Diseño:
-1. **Translucidez:** Fondos semitransparentes que permiten ver sutilmente los elementos de fondo (mapas, gradientes).
-2. **Desenfoque de Fondo (Backdrop Blur):** Efecto de lente esmerilado que desenfoca la información detrás de las tarjetas para garantizar la legibilidad del texto en primer plano.
-3. **Bordes de Cristal:** Bordes finos y ligeramente más claros que el fondo para emular el reflejo de la luz en un cristal físico.
-4. **Sombras Suaves y Elevación:** Sombras difusas y amplias que separan físicamente los contenedores del lienzo base.
-5. **Animaciones Fluidas (60fps):** Transiciones suaves de escala, opacidad y posición al abrir modales, cambiar de pantalla o cargar datos.
+**Key Characteristics:**
 
----
+- Marino para estructura, turquesa para marca y foco, arena para acciones destacadas.
+- Controles familiares, texto legible y jerarquía directa.
+- Profundidad contenida con superficies de alta opacidad.
+- Marca local mediante activos propios y mensajes en español.
 
-## 2. Aplicación Técnica en React Native + Tailwind CSS (NativeWind)
+La fuente única de tokens es `frontend/src/constants/theme.ts`; este documento registra sus valores reutilizados. El contexto de producto vive en `PRODUCT.md` y la composición del acceso en `.impeccable/surfaces/login.md`.
 
-Para implementar estos tokens de forma nativa en la aplicación móvil con React Native Expo y Tailwind CSS:
+## Colors
 
-* **Desenfoque:** Usar `BlurView` del paquete `expo-blur` en lugar de filtros de CSS del navegador (los cuales no son compatibles nativamente en Android/iOS sin el SDK de Expo).
-* **Contenedor Glassmorphic Estándar (Tailwind):**
-  - **Fondo:** `bg-white/10` (o `bg-slate-900/40` en modo oscuro).
-  - **Borde:** `border border-white/20` (o `border-slate-800/50`).
-  - **Desenfoque:** Ajustar la intensidad de `BlurView` a un valor equivalente a `intensity={20}`.
-  - **Sombra:** `shadow-lg shadow-black/20`.
-* **Animaciones:** Utilizar la librería `react-native-reanimated` para las transiciones e interacciones de gestos.
+La paleta combina el carácter del mar con un acento de arena cálida; los valores normativos están en el frontmatter.
 
----
+### Primary
 
-### Legibilidad y movimiento (reglas de este sistema)
-- **Superficie del cristal:** `glassSurface` (negro azulado al 82 %) con desenfoque. El blanco translúcido al 7 % no garantiza contraste sobre un mapa claro; el texto debe cumplir WCAG AA (4,5:1) sobre cualquier mapa.
-- **Movimiento:** los paneles entran en 220 ms con ease-out `cubic-bezier(0.23, 1, 0.32, 1)` y salen en 140 ms; sin retardos de entrada. Respuesta táctil al pulsar: escala 0.97 (0.92 en los botones de contador), 100 ms al bajar y 160 ms al soltar. Todo respeta "reducir movimiento".
-- **Botones:** se construyen sobre `PressableScale` (toque, clic y teclado), no sobre gestos sueltos.
-- **Cifras:** precios y contadores usan numerales tabulares para que no salten al cambiar.
-- **Tipografía:** Outfit para títulos, Inter para cuerpo. Sin guiones largos en el texto visible.
+- **Marino turquesa** (`primary`): botones primarios y selección activa del acceso.
+- **Agua luminosa** (`primaryLight`): foco, selección de texto, acentos de la marca y énfasis sobre marino.
 
-## 3. Guías de Componentes Clave
+### Secondary
 
-### A. Pantalla de Autenticación (Login con SMS)
-- **Fondo base:** Un gradiente radial suave que va del azul océano profundo (`#0B0F19`) al cian marino (`#0D9488`).
-- **Tarjeta de Login:** Un contenedor con bordes de cristal redondeados (`borderRadiusMd`), centrado en pantalla, que flota sobre el gradiente.
-- **Entradas de texto:** Fondos oscuros muy translúcidos con bordes activos en cian y placeholders claros.
-- **Botón de Acción (SMS):** Sólido, color naranja atardecer (`#F59E0B`), con un ligero reflejo superior para darle tridimensionalidad.
+- **Arena cálida** (`secondary`): acción principal del acceso mediante la variante secundaria y énfasis de viaje.
+- **Arena clara** (`secondaryLight`): variación de apoyo, incluida la indicación de ubicación pendiente.
 
-### B. Panel del Mapa y Ficha de Destino (Pasajero)
-- **Mapa Base:** Ocupa el 100% de la pantalla. En Android es Google Maps con estilo nocturno (D-02); en la versión web, OpenStreetMap con un velo oscuro.
-- **Píldora de estado:** Flota arriba a la izquierda y dice dónde estás ("Estás en La Loma") o si falta activar la ubicación. No es un campo de búsqueda: el destino se elige en la ficha de abajo, bajo la pregunta "¿A dónde vas?".
-- **Ficha de Información del Viaje (Bottom Sheet):** Se despliega desde la parte inferior. Fondo translúcido con desenfoque intenso. Muestra el total (0,50 USD por persona, con selector de pasajeros) de forma destacada utilizando tipografía en peso `bold` y tamaño `xxl`.
-- **Botón de Pánico (SOS):** Flotante arriba a la derecha (bajo la barra de estado, para que ninguna ficha lo tape), circular, rojo (`#EF4444`). Se activa manteniéndolo 2 s: un relleno claro crece de forma lineal mientras se mantiene y retrocede en 200 ms si se suelta. Un único anillo de latido lento lo mantiene localizable y se apaga con "reducir movimiento".
+### Neutral
 
-### C. Consola del Conductor (Modo Conductor)
-- **Switch de Estado Operativo (Disponible / Ocupado):** Ubicado en el encabezado. Su diseño debe ser sumamente visible, con estados de color intuitivos: verde esmeralda (`#10B981`) para disponible y gris/naranja para ocupado.
-- **Tarjeta de Solicitud de Viaje Recibido:** Modal emergente central que interrumpe la pantalla con animación elástica. Debe usar bordes de cristal gruesos (`border-white/30`) y una sombra amplia (`shadowDark`) para denotar urgencia y prioridad. Botones de aceptación masivos para facilitar el toque durante la conducción.
+- **Marino profundo** (`darkBg`): lienzo general y texto oscuro sobre arena.
+- **Superficie marina** (`glassSurface`): paneles sobre mapas o ilustración.
+- **Velo y borde de cristal** (`glassBgDark`, `glassBorderDark`): controles secundarios y separación sutil.
+- **Espuma y bruma** (`glassTextDark`, `glassTextMutedDark`): contenido principal y secundario.
+- **Blanco** (`white`): marca y texto de botones sólidos.
 
-### D. Chat de Viaje (Mensajería Instantánea)
-- **Burbujas de Mensaje:**
-  - **Enviados (Propios):** Fondo verde azulado translúcido (`rgba(13, 148, 136, 0.4)`) con borde cian.
-  - **Recibidos (Otros):** Fondo grisáceo translúcido (`rgba(255, 255, 255, 0.1)`) con borde blanco sutil.
-- **Barra de Entrada de Texto:** Fija en la base, estilo de barra de cristal integrada, impidiendo que el mapa se oculte del todo gracias a su transparencia.
+Rojo y verde son semánticos: `danger` y `dangerLight` comunican emergencia, error o una acción de cierre; `success` y `successLight` disponibilidad y éxito. El rojo no es un acento decorativo del acceso.
 
----
+**The Contrast Before Glass Rule.** La legibilidad gobierna la superficie; conservar el fondo marino de alta opacidad al colocar texto sobre imágenes o mapas y verificar el contraste de cada combinación.
 
-## 4. Reglas de Diseño: Qué Hacer y Qué No Hacer (Do's & Don'ts)
+## Typography
 
-### ✅ Qué Hacer (Do's)
-- **Hacer** que los elementos detrás de los contenedores de cristal tengan formas definidas o gradientes dinámicos para que el efecto de desenfoque sea perceptible y estético.
-- **Hacer** que los bordes de los contenedores de cristal sean sutiles y finos (`border-[0.5px]` o `border-[1px]`) para conservar el efecto realista.
-- **Hacer** que el contraste del texto sea excelente. Si el fondo es translúcido claro, usar tipografía en Slate oscuro (`#0F172A`). Si es translúcido oscuro, usar tipografía blanca (`#F1F5F9`).
-- **Hacer** que los elementos interactivos reaccionen al tacto con una micro-animación de escala (ej. reducir tamaño a `0.97` en el evento `onPressIn`).
+**Display Font:** Outfit, con fallback sans-serif.
+**Body Font:** Inter, con fallback sans-serif.
 
-### ❌ Qué No Hacer (Don'ts)
-- **No** usar colores de cristal planos sin desenfoque (backdrop blur), ya que se perdería el efecto de profundidad y se vería como una simple caja gris o blanca con opacidad.
-- **No** acumular múltiples capas de cristal una encima de otra (ej. un modal de cristal encima de una tarjeta de cristal encima de una barra de cristal), ya que degrada la legibilidad y satura el procesador gráfico (GPU).
-- **No** usar textos pequeños o delgados (`font-light`) sobre fondos translúcidos, puesto que dificulta la lectura a plena luz del día.
-- **No** usar sombras duras o colores de sombra muy oscuros sobre interfaces claras. La sombra del cristal debe simular la refracción de la luz ambiente.
+Outfit da identidad a títulos y acciones; Inter mantiene claridad en campos, mensajes y etiquetas. Las familias y pesos cargados por Expo gobiernan la representación nativa; el lockup utiliza la variante `Outfit-SemiBold`.
+
+### Hierarchy
+
+- **Display:** total destacado del viaje; usar numerales tabulares para precios y contadores.
+- **Headline:** jerarquía principal y marca de tamaño regular.
+- **Title:** títulos de formulario, nombre del perfil y encabezados de contenido.
+- **Body:** contenido, mensajes y campos. La escala de apoyo usa también tamaños de 18 y 20 de `FONTS.sizes`.
+- **Label / Caption:** etiquetas visibles, estado, ayuda y contexto breve. Evitar texto fino sobre fondos variables.
+
+El titular grande de escritorio del acceso es una decisión de esa superficie, no una nueva escala global. No reutilizar su tamaño en pantallas operativas por defecto.
+
+## Layout
+
+El ritmo reutilizado sigue pasos de 4 y 8, con padding habitual `md` y separación entre secciones `lg` o `xl`. Adaptar el espacio al área segura y permitir desplazamiento cuando el teclado reduce el viewport.
+
+En el acceso, una columna limita el formulario a 440 px; a partir de 900 px la composición de bienvenida pasa a marca/contexto y formulario dentro de un máximo de 1200 px. Esos límites pertenecen al acceso. El perfil centra contenido hasta 560 px. Los fondos del acceso cubren el viewport mediante posicionamiento absoluto y recorte, sin imponer su tamaño intrínseco al documento.
+
+El mapa conserva el lienzo completo, estado de ubicación arriba a la izquierda y ficha de origen/destino abajo. La ubicación no es un campo de búsqueda; el destino se elige en la ficha. Mantener total, selector de personas y estado de solicitud visibles según el flujo. Las barras y fichas deben dejar espacio a la navegación y al SOS.
+
+## Elevation & Depth
+
+La profundidad combina capas tonales, bordes finos y desenfoque de Expo. `GlassCard` usa una superficie marina al 94 %, borde fino y blur de intensidad 20; su contenido sigue siendo legible cuando el desenfoque no aporta separación. `BlurContainer` permite componer sin imponer sombra. No exigir transparencia intensa ni blur en todos los elementos.
+
+La sombra oscura compartida desplaza 8 px, tiene radio 32 y elevación Android 12; la variante clara conserva desplazamiento y radio con elevación 8. Los valores completos y sus traducciones para el panel están en el sidecar. El modal de oferta al conductor es opaco y sin blur para priorizar lectura y respuesta.
+
+Las entradas compartidas de panel duran 220 ms, las salidas 140 ms, y respetan reducción de movimiento. La pulsación compartida escala a 0.97 en 100 ms y regresa en 160 ms con la curva del tema, también respetando la preferencia del sistema. No añadir esperas encadenadas.
+
+## Shapes
+
+Tarjetas y botones compartidos usan `borderRadiusMd`; los campos usan `borderRadiusSm` y las fichas amplias pueden usar `borderRadiusLg`. El borde de cristal compartido es fino (1 px).
+
+**The Control Shape Rule.** Los botones GlassButton conservan esquinas de tarjeta; reservar el radio completo para geometrías circulares, avatares o estados compactos, sin convertirlo en el estilo global de acciones.
+
+## Components
+
+### Buttons
+
+`GlassButton` ofrece primary, secondary, danger y ghost. Primary usa turquesa marino con blanco; secondary arena con texto marino; danger rojo con blanco; ghost velo claro, borde sutil y texto claro. La acción principal del acceso usa secondary.
+
+Los tamaños sm/md/lg tienen alturas mínimas de 44/48/56 px, padding horizontal de 16/24/32 px y padding vertical `sm`. Son mínimos: permitir que texto ampliado aumente la altura. La carga sustituye el contenido por un indicador del color de texto y bloquea reenvíos; disabled reduce opacidad. `PressableScale` aporta interacción de toque, clic y teclado y conserva los estados accesibles.
+
+### Cards / Containers
+
+`GlassCard` agrupa contenido con padding `md`, radio estándar, superficie marina, borde y sombra compartida. Puede omitir padding o ajustar radio explícitamente. Las variantes highlight y danger cambian el borde; no convierten la tarjeta en una acción por sí mismas.
+
+### Inputs / Fields
+
+`GlassInput` mantiene etiqueta visible, texto Inter, altura mínima de 52 px y fondo blanco muy sutil. El foco cambia borde y selección a agua luminosa; el error tiene prioridad con rojo claro y mensaje anunciado como alerta. El fondo enfocado aumenta ligeramente su presencia.
+
+Correo y contraseña son los datos de acceso. La visibilidad de contraseña tiene control propio de 48 px con nombre accesible que cambia según el estado. Conservar autocomplete, teclado apropiado, texto de ayuda y edición bloqueada durante el envío.
+
+### Navigation
+
+`AppTabLayout` comparte barra inferior marina con blur, borde superior fino y etiquetas Inter de escala caption. El color activo lo recibe del rol; el inactivo usa bruma. Conservar etiquetas junto a iconos y espacio inferior suficiente para que el contenido no quede oculto.
+
+El selector del acceso usa dos controles con estado seleccionado y altura mínima de 44 px; cambia entre entrar y crear cuenta conservando los campos. No permite cambiar de modo durante el envío.
+
+### Brand and Assets
+
+`BrandLockup` combina `frontend/assets/brand-mark.png` con Cruci en blanco y Drive en agua luminosa. El tamaño regular muestra el lema; el compacto acompaña el perfil. No sustituirlo por un emoji o icono genérico.
+
+El acceso usa `frontend/assets/coast-login.jpg` con velo marino. Es ilustración de marca, no fotografía documental. Los originales generados y prompts están en `frontend/assets/brand/`. `frontend/app.json` conecta icono, splash, favicon y variantes adaptativas de Android.
+
+### Operational Surfaces
+
+- **Mapa y SOS:** preservar mapa nocturno nativo y vista web de OpenStreetMap con atribución visible. La web es una previsualización sin marcadores. SOS permanece arriba a la derecha, por encima de la ficha; requiere mantener 2 segundos, muestra progreso y revierte al soltar. Su anillo ambiental respeta reducción de movimiento.
+- **Conductor:** disponibilidad mediante Switch nativo, estados explícitos y aviso de desconexión. La oferta usa modal opaco, cuenta según el servidor, tarifa real, y acciones grandes de al menos 64 px. No reintroducir la antigua regla de modal de cristal.
+- **Chat:** distinguir mensajes propios a la derecha y recibidos a la izquierda; limitar el ancho de burbuja y conservar el compositor junto al teclado. Habilitar el chat según el viaje activo.
+- **Perfil:** mostrar rol, estado y calificación desde datos reales; `Sin datos` representa ausencia de calificación. Una cuenta registrada no implica identidad verificada. El cierre de sesión muestra carga y comunica errores.
+
+## Do's and Don'ts
+
+### Do:
+
+- **Do** usar los tokens de theme.ts para extender pantallas y controles.
+- **Do** conservar etiquetas visibles, foco perceptible, semántica accesible y mensajes de error anunciados.
+- **Do** respetar áreas seguras, teclado, desplazamiento y reducción de movimiento.
+- **Do** mantener las acciones del mapa, SOS y conductor legibles sobre fondos variables.
+
+### Don't:
+
+- **Don't** inventar calificaciones, verificaciones o estados de cuenta para llenar espacios.
+- **Don't** sustituir el acceso real por SMS ni mezclar consentimiento y perfil con el registro inicial.
+- **Don't** heredar el titular grande del acceso o botones totalmente redondos como reglas globales.
+- **Don't** copiar colores antiguos o animaciones heredadas como nuevas decisiones del sistema.
