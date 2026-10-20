@@ -14,6 +14,11 @@
 - Pendiente fuera de la T8: el `EXPO_ACCESS_TOKEN` del backend desplegado se configura con el despliegue del piloto (008). Hoy el único backend es el del PC de David, que ya lo tiene.
 - Sin cambios de código. Siguiente paso: T17 (prueba de campo con dos teléfonos).
 
+### 0015 aplicada en producción (009, T6)
+- David la ejecutó completa desde el SQL Editor tras fusionar el #47; no se usó `apply_migration` (con la 0014 se cortó a los 60 s). Verificado en producción: `viajes.tipo_servicio` y su check de precio, tabla `encomiendas` con RLS y las políticas `encomiendas_select` e `encomiendas_insert`, los triggers `viajes_encomienda_completa` y `viajes_tipo_inmutable`, y las funciones con los permisos esperados. Los 14 viajes existentes siguen como `viaje`.
+- Linter de seguridad: solo D-10. Rendimiento: sin hallazgos nuevos. La 0015 no figura en `supabase_migrations.schema_migrations`, igual que la 0014.
+- Con esto el backend del 009 ya puede desplegarse. Siguen pendientes de la 009: Auth y Storage reales en la T9, la revisión formal (T1) y el teléfono (T12).
+
 ---
 
 ## [1.58.0] - 2026-10-20 (Hora Local)
