@@ -7,6 +7,7 @@ Cada tarea indica su prueba y se tilda solo al cumplirse.
 - [ ] T2 · Validación de motivo, confirmación, estrellas y comentario en `utils/validation.js`, con los mismos patrones que los CHECK → prueba: `tests/viaje005.test.js`.
 - [ ] T3 · Endpoints de P6 y `PATCH /:id/estado` sobre `cancelar_viaje` → prueba: `tests/viaje005.test.js` (códigos 400, 403, 409 y 200; sin detalles internos en la respuesta).
 - [ ] T4 · Avisos a la otra parte por socket y con la app cerrada (P7) y reseñas en los datos del conductor (P8) → prueba: `tests/viaje005.test.js` y `tests/avisos.test.js` (sin nombre ni teléfono).
+- [ ] T4b · Finalizar por el pasajero con sanción: `terminar_viaje` para el pasajero en curso y bloqueo en `solicitarViaje` (P5b; criterios 5b y 5c) → prueba: `rls_007.sql` y `tests/viaje005.test.js` (2 no bloquean, 3 sí, se libera a las 24 h, los parámetros se validan).
 - [ ] T5 · **David:** aplicar la 0017 en producción antes de desplegar el backend.
 
 ## Conductor (PR 3)

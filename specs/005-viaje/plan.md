@@ -8,6 +8,7 @@ Sin servicios nuevos. Una migración (`0017_viaje_en_curso.sql`), endpoints REST
 - `llegado_en`: cuándo el conductor marcó «Llegué».
 - `cancelado_por` (`pasajero` | `conductor`) y `motivo_cancelacion`, con un CHECK que acepta solo los cuatro motivos del criterio 8. Lo mismo valida `utils/validation.js`.
 - `confirmacion_pasajero` (`llego` | `no_llego`) y `confirmado_en`.
+- `finalizado_por` (`conductor` | `pasajero`): registra la finalización del pasajero que lleva sanción (criterio 5b).
 
 Sin coordenadas nuevas: la cancelación queda registrada sin ubicación (criterio 10).
 
@@ -19,7 +20,7 @@ Sin coordenadas nuevas: la cancelación queda registrada sin ubicación (criteri
 | --- | --- | --- | --- |
 | `marcar_llegada` | conductor asignado | aceptado | fija `llegado_en` (no cambia el estado) |
 | `iniciar_viaje` | conductor asignado | aceptado | → en curso |
-| `terminar_viaje` | conductor asignado | en curso | → finalizado; el trigger del 003 lo deja disponible |
+| `terminar_viaje` | conductor asignado o pasajero (con sanción) | en curso | → finalizado con `finalizado_por`; el trigger del 003 deja al conductor disponible |
 | `cancelar_viaje(motivo)` | pasajero (solicitado o aceptado) o conductor (aceptado) | | → cancelado, con `cancelado_por` y motivo. En «solicitado» el motivo es opcional (cancelación del 003) |
 | `confirmar_llegada(llego)` | pasajero | finalizado, sin confirmar | fija la confirmación |
 
@@ -41,6 +42,12 @@ Sin coordenadas nuevas: la cancelación queda registrada sin ubicación (criteri
 **P5 · Chat en solo lectura (criterio 7).** Una política nueva sobre `messages` no deja insertar si el viaje del hilo está finalizado o cancelado. El socket del chat responde un error claro.
 
 ## Backend
+
+**P5b · Sanción por finalizar el pasajero (criterio 5c).**
+- `solicitarViaje` cuenta los viajes que el pasajero finalizó él mismo en la ventana, leyéndolos con `req.supabase`. Si llega al tope y la última vez fue hace menos del bloqueo, responde 429 con «Podrás pedir de nuevo a las HH:MM».
+- Parámetros `SANCION_FINALIZAR_MAX` (3), `SANCION_VENTANA_DIAS` (30) y `SANCION_BLOQUEO_HORAS` (24), validados al arrancar como los de D-11.
+- `POST /:id/terminar` hecho por el pasajero responde cuántas lleva, para el aviso de la app.
+- Alternativa descartada: fijar el tope en la BD con un trigger. Cambiar los números exigiría una migración, y la regla de negocio la aplica el servidor, igual que D-11.
 
 **P6 · Endpoints.** Todos con `req.supabase`, validación previa y `errorResponse` sin detalles internos:
 - `POST /api/viajes/:id/llegada`, `/iniciar`, `/terminar`, `/cancelar` (con `{ motivo }`), `/confirmar` (con `{ llego }`) y `/calificar` (con `{ estrellas, comentario }`).
