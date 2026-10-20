@@ -1,9 +1,9 @@
 import { Platform } from 'react-native';
-import Constants, { ExecutionEnvironment } from 'expo-constants';
-import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { authFetch } from '../utils/authFetch';
 import { API_CONFIG } from '../constants/config';
 import { crearRegistroAvisos } from './registroAvisos';
+import { notificaciones } from './notificaciones';
 import { leerDatosAviso, mostrarEnPrimerPlano, type EstadoConsola } from '../utils/avisoOferta';
 
 /**
@@ -21,7 +21,8 @@ export const CANAL_VIAJE = 'viaje';
  * diálogo de permiso no aparece hasta que existe un canal.
  */
 export const configurarCanales = async (): Promise<void> => {
-  if (Platform.OS !== 'android') return;
+  const Notifications = notificaciones();
+  if (!Notifications || Platform.OS !== 'android') return;
   await Notifications.setNotificationChannelAsync(CANAL_OFERTAS, {
     name: 'Ofertas de viaje',
     description: 'Un pasajero te pide un viaje. Tienes pocos segundos para aceptarlo.',
@@ -42,8 +43,8 @@ export const configurarCanales = async (): Promise<void> => {
  * (no admite avisos remotos en Android) o si el usuario negó el permiso.
  */
 export const obtenerTokenExpo = async (): Promise<string | null> => {
-  if (Platform.OS === 'web') return null;
-  if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) return null;
+  const Notifications = notificaciones();
+  if (!Notifications) return null; // web o Expo Go
 
   await configurarCanales();
   const actual = await Notifications.getPermissionsAsync();
@@ -89,7 +90,8 @@ export const marcarConsola = (cambios: Partial<EstadoConsola>) => {
 
 /** Decide si un aviso que llega con la app en primer plano se muestra. Una vez, al iniciar. */
 export const configurarManejadorAvisos = () => {
-  if (Platform.OS === 'web') return;
+  const Notifications = notificaciones();
+  if (!Notifications) return;
   Notifications.setNotificationHandler({
     handleNotification: async (aviso) => {
       const mostrar = mostrarEnPrimerPlano(leerDatosAviso(aviso.request.content.data), consola);
@@ -104,7 +106,8 @@ export const configurarManejadorAvisos = () => {
  * canceló o el conductor ya respondió. Si falla, tocar el aviso igual comprueba la BD (7).
  */
 export const descartarAvisosDeOferta = async (viajeId: string): Promise<void> => {
-  if (Platform.OS === 'web') return;
+  const Notifications = notificaciones();
+  if (!Notifications) return;
   try {
     const presentes = await Notifications.getPresentedNotificationsAsync();
     await Promise.all(presentes

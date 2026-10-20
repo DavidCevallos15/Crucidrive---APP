@@ -1,6 +1,6 @@
-import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
+import type { NotificationTaskPayload } from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
+import { notificaciones } from '../servicios/notificaciones';
 import { configurarManejadorAvisos, descartarAvisosDeOferta } from '../servicios/avisos';
 import { leerDatosAviso } from '../utils/avisoOferta';
 
@@ -15,14 +15,15 @@ export const TAREA_AVISOS = 'crucidrive-avisos-fondo';
 // Qué se muestra con la app abierta (P6): antes de que llegue el primer aviso.
 configurarManejadorAvisos();
 
-if (Platform.OS !== 'web') {
-  TaskManager.defineTask<Notifications.NotificationTaskPayload>(TAREA_AVISOS, async ({ data }) => {
+const Notifications = notificaciones();
+// Sin avisos (web o Expo Go) no hay nada que definir ni registrar.
+if (Notifications) {
+  TaskManager.defineTask<NotificationTaskPayload>(TAREA_AVISOS, async ({ data }) => {
     const carga = data && 'data' in data ? data.data : null;
     const datos = leerDatosAviso(carga);
     if (datos?.tipo === 'oferta_retirada') await descartarAvisosDeOferta(datos.viajeId);
   });
   Notifications.registerTaskAsync(TAREA_AVISOS).catch((error) => {
-    // En Expo Go no hay avisos remotos: la app sigue igual.
     console.warn('[Avisos] No se pudo registrar la tarea de segundo plano:', error);
   });
 }

@@ -2,6 +2,22 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.56.0] - 2026-10-20 (Hora Local)
+
+### Corrección: Expo Go se caía con una pantalla roja al abrir la app
+- Síntoma (prueba A en Expo Go): `[runtime not ready]: Error: expo-notifications: Android Push notifications (remote notifications) functionality ... was removed from Expo Go with the release of SDK 53`.
+- Causa: `avisos.ts`, `avisosFondo.ts` y `useRespuestaAvisos.ts` importaban `expo-notifications` de forma estática. En Expo Go (Android, SDK 53 o más) ese módulo lanza al **importarse**, aunque no se use. El APK no se veía afectado; la web ya tenía su propio arreglo (#40).
+- Arreglo:
+  - `src/servicios/notificaciones.ts` carga `expo-notifications` con `require` solo si hay avisos (fuera de la web y de Expo Go). Si no, devuelve `null` y la app sigue sin avisos.
+  - Los tres archivos pasan por ahí. `avisosFondo.ts` solo conserva un `import type`, que se borra al compilar.
+  - `src/utils/cargadorAvisos.ts` (puro): decide si hay avisos y carga el módulo una sola vez; si cargarlo falla, la app sigue sin avisos.
+- Efecto: Expo Go sirve de nuevo para probar login, buscador y mapa. Los avisos remotos y la ubicación en segundo plano siguen necesitando el APK.
+
+### Pruebas
+- `tests/cargadorAvisos.test.ts`: 5 pruebas. La que revisa que ningún archivo importe `expo-notifications` de forma estática falla con el código anterior (señala `avisos.ts`). Frontend 279/279. Sin errores de tipos en `src/` ni `app/`. Los bundles de Android y web compilan.
+
+---
+
 ## [1.55.0] - 2026-10-20 (Hora Local)
 
 ### Diagnóstico: el APK no llega a Supabase
