@@ -8,6 +8,8 @@ import { normalizarEmail } from '../utils/validators';
 import { mensajeDeAuth } from '../utils/mensajesAuth';
 import { registroAvisos } from '../servicios/avisos';
 import { detenerSeguimientoFondo } from '../tareas/ubicacionFondo';
+import { captureAccountScope } from '../utils/accountScope';
+import { closeAccountSession } from '../utils/closeAccountSession';
 
 /** Resultado de una acción de cuenta: ok, o un mensaje listo para mostrar. */
 export interface ResultadoAccion {
@@ -50,12 +52,16 @@ export const useSupabaseAuth = ({ bootstrap = false }: { bootstrap?: boolean } =
 
   // ─── Perfil: tabla 'perfiles' (columnas reales) ───────────
   const fetchProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
+    const scope = captureAccountScope(useAuthStore.getState);
+    if (scope.userId !== userId || !scope.isCurrent()) return null;
     try {
       const { data, error } = await supabase
         .from('perfiles')
         .select('id, nombre, telefono, rol, activo')
         .eq('id', userId)
         .maybeSingle();
+
+      if (!scope.isCurrent()) return null;
 
       if (error) {
         console.warn('[Auth] No se pudo leer el perfil:', error.message);
@@ -66,6 +72,7 @@ export const useSupabaseAuth = ({ bootstrap = false }: { bootstrap?: boolean } =
       setProfile((data as UserProfile | null) ?? null);
       return (data as UserProfile | null) ?? null;
     } catch (err) {
+      if (!scope.isCurrent()) return null;
       console.error('[Auth] Error al obtener perfil:', err);
       setProfile(null);
       return null;
@@ -74,17 +81,22 @@ export const useSupabaseAuth = ({ bootstrap = false }: { bootstrap?: boolean } =
 
   // ─── Verificación del conductor (backend) ─────────────────
   const fetchVerification = useCallback(async (): Promise<VerificationInfo | null> => {
+    const scope = captureAccountScope(useAuthStore.getState);
+    if (!scope.isCurrent()) return null;
     try {
       const response = await authFetch(API_CONFIG.endpoints.driver.verification);
+      if (!scope.isCurrent()) return null;
       if (!response.ok) {
         setVerification(null);
         return null;
       }
       const body = await response.json();
+      if (!scope.isCurrent()) return null;
       const info = body.data as VerificationInfo;
       setVerification(info);
       return info;
     } catch (err) {
+      if (!scope.isCurrent()) return null;
       console.error('[Auth] Error al consultar la verificación:', err);
       setVerification(null);
       return null;
@@ -164,7 +176,7 @@ export const useSupabaseAuth = ({ bootstrap = false }: { bootstrap?: boolean } =
       // Con confirmación de correo activada no hay sesión hasta que el usuario confirma.
       return { ok: true, requiereConfirmarCorreo: !data.session };
     } catch (err) {
-      const mensaje = err instanceof Error ? err.message : 'Error de conexión.';
+      const mensaje = mensajeDeAuth(err instanceof Error ? err.message : 'Error de conexión.');
       setAuthError(mensaje);
       return { ok: false, error: mensaje };
     } finally {
@@ -187,7 +199,7 @@ export const useSupabaseAuth = ({ bootstrap = false }: { bootstrap?: boolean } =
       }
       return { ok: true };
     } catch (err) {
-      const mensaje = err instanceof Error ? err.message : 'Error de conexión.';
+      const mensaje = mensajeDeAuth(err instanceof Error ? err.message : 'Error de conexión.');
       setAuthError(mensaje);
       return { ok: false, error: mensaje };
     } finally {
@@ -230,18 +242,30 @@ export const useSupabaseAuth = ({ bootstrap = false }: { bootstrap?: boolean } =
 
   // ─── Cerrar sesión ────────────────────────────────────────
   const signOut = useCallback(async () => {
+    setAuthError(null);
+    setLoading(true);
     try {
-      // Al cerrar sesión se apaga el GPS en segundo plano (paso 004, criterio 2).
-      await detenerSeguimientoFondo();
-      // El teléfono deja de recibir avisos antes del signOut: después ya no hay JWT para pedirlo.
-      await registroAvisos.olvidar();
-      await supabase.auth.signOut();
+      // Intentar ambas limpiezas antes de retirar el JWT. Un fallo de GPS/avisos
+      // no debe impedir que se intente revocar la sesión.
+      const ok = await closeAccountSession({
+        stopTracking: detenerSeguimientoFondo,
+        forgetDevice: () => registroAvisos.olvidar(),
+        revoke: () => supabase.auth.signOut(),
+        clearSession,
+      });
+      // Supabase conserva su sesión persistida ante errores de red. No fingir
+      // un logout local que al reiniciar volvería a abrir la cuenta.
+      if (!ok) {
+        setAuthError('No se pudo cerrar tu sesión. Revisa tu conexión e inténtalo de nuevo.');
+        return;
+      }
     } catch (err) {
       console.error('[Auth] Error al cerrar sesión:', err);
+      setAuthError('No se pudo cerrar tu sesión. Revisa tu conexión e inténtalo de nuevo.');
     } finally {
-      clearSession();
+      setLoading(false);
     }
-  }, [clearSession]);
+  }, [clearSession, setLoading]);
 
   return {
     // Estado

@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'crucidrive-pwa-v1';
+const CACHE_VERSION = 'crucidrive-pwa-v2';
 const STATIC_CACHE = `crucidrive-static-${CACHE_VERSION}`;
 
 self.addEventListener('install', (event) => {
@@ -12,7 +12,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys.map((key) => {
-          if (key !== STATIC_CACHE) {
+          if (key.startsWith('crucidrive-static-') && key !== STATIC_CACHE) {
             return caches.delete(key);
           }
           return undefined;
@@ -34,12 +34,19 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Nunca interceptar ni guardar API, autenticación, fotos privadas o URLs firmadas.
+  if (request.headers.has('authorization') || url.search ||
+      /^\/(api|auth|storage)\//.test(url.pathname)) return;
+
+  const cacheable = (response) => response.ok &&
+    !/no-store|private/i.test(response.headers.get('cache-control') || '');
+
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
         .then((response) => {
           const copy = response.clone();
-          if (response.ok) {
+          if (cacheable(response)) {
             event.waitUntil(caches.open(STATIC_CACHE).then((cache) => cache.put('/', copy)));
           }
           return response;
@@ -52,6 +59,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Lista explícita de recursos públicos del build. Otros GET pasan a la red.
+  if (!/^\/(assets\/|_expo\/static\/|(?:pwa-[\w-]+|apple-touch-icon|favicon)\.(?:png|ico)$)/.test(url.pathname)) return;
+
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) {
@@ -59,7 +69,7 @@ self.addEventListener('fetch', (event) => {
       }
 
       return fetch(request).then((response) => {
-        if (response && response.ok) {
+        if (response && cacheable(response)) {
           const copy = response.clone();
           event.waitUntil(caches.open(STATIC_CACHE).then((cache) => cache.put(request, copy)));
         }

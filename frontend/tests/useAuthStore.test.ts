@@ -42,6 +42,22 @@ describe('useAuthStore', () => {
   });
 
   describe('setSession', () => {
+    it('elimina permisos y verificación de otra cuenta al cambiar de usuario', () => {
+      const store = useAuthStore.getState();
+      store.setSession({ user: { id: 'admin-anterior' } } as any);
+      store.setProfile({ ...mockProfile, id: 'admin-anterior', rol: 'admin' });
+      store.setVerification({ estado: 'aprobado' } as any);
+      store.setSession({ user: { id: 'otra-cuenta' } } as any);
+      expect(useAuthStore.getState()).toMatchObject({ profile: null, verification: null, profileChecked: false, verificationChecked: false });
+    });
+
+    it('conserva el perfil cuando solo se refresca el token del mismo usuario', () => {
+      const store = useAuthStore.getState();
+      store.setSession({ user: { id: mockProfile.id } } as any);
+      store.setProfile(mockProfile);
+      store.setSession({ user: { id: mockProfile.id }, access_token: 'nuevo' } as any);
+      expect(useAuthStore.getState().profile).toEqual(mockProfile);
+    });
     it('should set session and extract user from it', () => {
       const mockUser = { id: 'user-123', email: 'test@example.com' } as any;
       const mockSession = { user: mockUser, access_token: 'token-abc' } as any;
