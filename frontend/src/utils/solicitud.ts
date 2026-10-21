@@ -59,16 +59,25 @@ export const sectorDeOrigen = (origen: Origen | null): string | null => {
   return origen.sectorId;
 };
 
-export const nombreOrigen = (origen: Origen | null): string => {
+export const nombreOrigen = (origen: Origen | null, nota = ''): string => {
   if (!origen) return '';
   if (origen.tipo === 'lugar') return origen.lugar.nombre;
   if (origen.tipo === 'gps') return `Tu ubicación · ${nombreSector(origen.sectorId)}`;
-  return nombreSector(origen.sectorId);
+  return nota.trim() ? `${nota.trim()} · ${nombreSector(origen.sectorId)}` : nombreSector(origen.sectorId);
 };
 
-export const nombreDestino = (destino: Destino | null): string => {
+export const nombreDestino = (destino: Destino | null, nota = ''): string => {
   if (!destino) return '';
-  return destino.tipo === 'lugar' ? destino.lugar.nombre : nombreSector(destino.sectorId);
+  return destino.tipo === 'lugar' ? destino.lugar.nombre : nota.trim()
+    ? `${nota.trim()} · ${nombreSector(destino.sectorId)}` : nombreSector(destino.sectorId);
+};
+
+/** Nombre libre del viaje: referencia del sector, nunca un alta en el catálogo. */
+export const nombreLibreValido = (texto: string): boolean => texto.trim().length >= 2 && texto.trim().length <= 200;
+
+export const referenciaEnSector = (texto: string, sectorId: string) => {
+  if (!nombreLibreValido(texto) || !SECTORS.some((s) => s.id === sectorId)) return null;
+  return { punto: { tipo: 'sector' as const, sectorId }, nota: texto.trim().replace(/\s+/g, ' ') };
 };
 
 /** Centro del sector: punto de partida o llegada cuando el pasajero elige solo el sector. */

@@ -138,6 +138,25 @@ describe('app · cabeceras, CORS, 404, JSON y rate limit', () => {
     expect(no.headers.get('access-control-allow-origin')).toBeNull();
   });
 
+  it('permite preflight autenticado de la vista 8082 sin saltarse JWT ni aceptar otro origen', async () => {
+    await arrancar({ ALLOWED_ORIGINS: 'http://127.0.0.1:8082' });
+    const headers = { Origin: 'http://127.0.0.1:8082', 'Access-Control-Request-Method': 'GET', 'Access-Control-Request-Headers': 'authorization,content-type' };
+    const previa = await fetch(`${base}/api/admin/lugares?visible=true`, { method: 'OPTIONS', headers });
+    expect(previa.status).toBe(204);
+    expect(previa.headers.get('access-control-allow-origin')).toBe(headers.Origin);
+    expect(previa.headers.get('access-control-allow-headers')).toContain('authorization');
+    const sinSesion = await fetch(`${base}/api/admin/lugares`, { headers: { Origin: headers.Origin } });
+    expect(sinSesion.status).toBe(401);
+    const ajeno = await fetch(`${base}/api/admin/lugares`, { method: 'OPTIONS', headers: { ...headers, Origin: 'https://ajeno.test' } });
+    expect(ajeno.headers.get('access-control-allow-origin')).toBeNull();
+  });
+
+  it('una lista explícita de producción no autoriza localhost por defecto', async () => {
+    await arrancar({ ALLOWED_ORIGINS: 'https://app.crucidrive.test' });
+    const r = await fetch(`${base}/api/admin/lugares`, { method: 'OPTIONS', headers: { Origin: 'http://127.0.0.1:8082', 'Access-Control-Request-Method': 'GET' } });
+    expect(r.headers.get('access-control-allow-origin')).toBeNull();
+  });
+
   it('ruta inexistente devuelve 404 en JSON', async () => {
     await arrancar();
     const r = await fetch(`${base}/api/no-existe`);

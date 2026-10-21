@@ -264,6 +264,8 @@ Con Reduce Motion, `WelcomeScreen` muestra contenido estático y llama `onPresen
 | Catálogo | Paleta, estados, campos, iconos y reglas; muestras sin solicitudes. |
 | Lugares del administrador | Visibles por defecto; nombre, sector y visibilidad combinables. Ocultos solo al elegir «Ocultos» o «Todos». Carga y reintento conservan filtros sin presentar resultados anteriores bajo el nuevo filtro. |
 
+La referencia libre del criterio 20 amplía origen y destino para viajes y encomiendas: buscar o escribir → «Usar este nombre» → elegir sector → ficha con nombre editable. La acción aparece desde dos caracteres, también con coincidencias, carga o error de búsqueda. El sector es obligatorio y permite origen y destino en el mismo sector. Mostrar nombre y sector, y explicar antes de elegir que la ubicación es aproximada: se usa el centro del sector, sin geocodificación exacta ni publicación en el catálogo. Elegir otro punto borra la nota anterior; una referencia libre nueva asigna el nombre confirmado al sector elegido. Encomienda conserva precio a convenir por chat.
+
 La zona de servicio 012 es orientativa: envolvente de los cinco centros operativos ampliada 1500 m, no frontera administrativa ni geocerca de despacho. Un GPS ausente o inválido no significa estar fuera. Fuera de zona, el pasajero ve el aviso, el mapa vuelve a Crucita y el GPS no se ofrece como origen; puede elegir lugar o sector. El conductor conserva sus coordenadas y puede cambiar disponibilidad durante el piloto; el servidor mantiene sus reglas. Los filtros admin se aplican juntos antes del límite de 200 resultados.
 
 SOS conserva pulsación funcional de 2000 ms para abrir el marcador con el 911. La reubicación 012 no implementa el registro de alertas D-05 pendiente del paso 006.
@@ -273,6 +275,8 @@ La previsualización web de OpenStreetMap mantiene atribución y no dibuja marca
 Evidencia visual en `.impeccable/review/premium/`: welcome y catalog móvil/escritorio; login, map, menu y settings móvil. Confirma apariencia web; no demuestra FPS, permisos, aspecto de marcadores ni accesibilidad completa en dispositivos nativos. Un bundle Android tampoco lo demuestra.
 
 La evidencia 012 en `.impeccable/review/campo012/` contiene mapa, menú, ficha, encomienda y configuración a 360×640, y mapa a 1280×800. Verificación reportada: 381 pruebas frontend, 368 backend, TypeScript y exportaciones web/Android correctos. Son capturas web sin Android físico ni sesión admin: los gestos y estados activos nativos, la recepción real del chat y el uso de filtros admin en dispositivo siguen pendientes. La bienvenida y los tokens 011 permanecen.
+
+La evidencia de referencia libre en `.impeccable/review/referencia-libre/` muestra nombre, ficha editable, encomienda y cambio de sector a 360×640, más ficha a 1280×800. `cambio-sector-360x640.png` documenta la eliminación de la nota anterior al elegir otro sector. Se reportan 388 pruebas frontend, 388 backend, TypeScript y exportación web correctos; la revisión independiente concluyó «ship» tras corregir ese reemplazo. Las capturas usan nombres de prueba y no se enviaron solicitudes reales; no validan Android físico ni coordinación con conductor.
 
 ## Do's and Don'ts
 
