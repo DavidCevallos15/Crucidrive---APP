@@ -12,7 +12,10 @@ const conductorRoutes = require('./routes/conductorRoutes');
 const dispositivoRoutes = require('./routes/dispositivoRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 
-const DEFAULT_ORIGINS = ['http://localhost:8081', 'http://localhost:19006'];
+const DEFAULT_ORIGINS = [
+  'http://localhost:8081', 'http://localhost:19006',
+  'http://localhost:8082', 'http://127.0.0.1:8082',
+];
 
 /**
  * Orígenes permitidos para CORS (navegador/PWA). Las apps nativas no envían

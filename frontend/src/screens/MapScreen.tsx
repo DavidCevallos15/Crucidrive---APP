@@ -51,6 +51,8 @@ import {
   nombreDestino,
   nombreOrigen,
   nombreSector,
+  nombreLibreValido,
+  referenciaEnSector,
   resolverOrigen,
   sectorDeOrigen,
   type Destino,
@@ -105,6 +107,7 @@ export const MapScreen: React.FC = () => {
   const conductorDelViaje = useConductorDelViaje(socket);
 
   const [panel, setPanel] = useState<Panel>('destino');
+  const [referenciaLibre, setReferenciaLibre] = useState<string | null>(null);
   const [destino, setDestino] = useState<Destino | null>(null);
   // Origen elegido a mano; null = el GPS (criterio 21).
   const [origenElegido, setOrigenElegido] = useState<Origen | null>(null);
@@ -165,18 +168,20 @@ export const MapScreen: React.FC = () => {
   // ─── Elegir destino u origen ──────────────────────────────
   const abrirPanel = useCallback((siguiente: Panel) => {
     busqueda.limpiar();
+    setReferenciaLibre(null);
     setPanel(siguiente);
   }, [busqueda]);
 
   // Con un lugar, el servidor toma sus coordenadas y su sector (criterio 19).
   const elegirDestino = useCallback((d: Destino) => {
     setDestino(d);
+    setDestinationNote('');
     abrirPanel('ficha');
   }, [abrirPanel]);
 
   const elegirOrigen = useCallback((o: Origen | null) => {
     setOrigenElegido(o);
-    if (o?.tipo !== 'sector') setOriginNote('');
+    setOriginNote('');
     abrirPanel(destino ? 'ficha' : 'destino');
   }, [abrirPanel, destino]);
 
@@ -186,9 +191,16 @@ export const MapScreen: React.FC = () => {
   }, [panel, elegirOrigen, elegirDestino]);
 
   const elegirSector = useCallback((sectorId: string) => {
-    if (panel === 'origen') elegirOrigen({ tipo: 'sector', sectorId });
-    else elegirDestino({ tipo: 'sector', sectorId });
-  }, [panel, elegirOrigen, elegirDestino]);
+    const libre = referenciaLibre !== null ? referenciaEnSector(referenciaLibre, sectorId) : null;
+    if (referenciaLibre !== null && !libre) return;
+    if (panel === 'origen') {
+      elegirOrigen(libre?.punto ?? { tipo: 'sector', sectorId });
+      if (libre) setOriginNote(libre.nota);
+    } else {
+      elegirDestino(libre?.punto ?? { tipo: 'sector', sectorId });
+      if (libre) setDestinationNote(libre.nota);
+    }
+  }, [panel, referenciaLibre, elegirOrigen, elegirDestino]);
 
   const reiniciarFicha = useCallback(() => {
     setDestino(null);
@@ -257,15 +269,15 @@ export const MapScreen: React.FC = () => {
   // ─── Sectores a elegir (el destino excluye el sector de origen) ─
   const sectorOrigen = sectorDeOrigen(origen);
   const sectoresDelPanel = useMemo(
-    () => (panel === 'origen' ? SECTORS : SECTORS.filter((s) => s.id !== sectorOrigen)),
-    [panel, sectorOrigen]
+    () => (panel === 'origen' || referenciaLibre !== null ? SECTORS : SECTORS.filter((s) => s.id !== sectorOrigen)),
+    [panel, sectorOrigen, referenciaLibre]
   );
 
   const filaOrigen = (
     <View style={styles.routeRow}>
       <Ionicons name={origen?.tipo === 'gps' ? 'navigate' : 'radio-button-on'} size={16} color={COLORS.success} />
       <Text style={[styles.routeText, !origen && styles.routeTextMissing]} numberOfLines={1}>
-        {origen ? `Desde: ${nombreOrigen(origen)}` : fueraDeZona ? 'Elige un lugar o sector de salida' : 'Sin GPS: elige desde dónde sales'}
+        {origen ? `Desde: ${nombreOrigen(origen, originNote)}` : fueraDeZona ? 'Elige un lugar o sector de salida' : 'Sin GPS: elige desde dónde sales'}
       </Text>
       <PressableScale
         onPress={() => abrirPanel('origen')}
@@ -395,8 +407,9 @@ export const MapScreen: React.FC = () => {
                 style={styles.destinationButton}
               />
             )}
+            {referenciaLibre === null ? <>
             <GlassInput
-              label={isParcel ? 'Busca el punto de recogida o entrega' : 'Busca un lugar'}
+              label={isParcel ? 'Lugar de recogida o entrega' : 'Busca o escribe un lugar'}
               placeholder="Farmacia, muelle, letras…"
               value={busqueda.texto}
               onChangeText={busqueda.escribir}
@@ -405,6 +418,13 @@ export const MapScreen: React.FC = () => {
               maxLength={80}
               accessibilityHint="Escribe al menos 2 letras"
             />
+            {nombreLibreValido(busqueda.texto) && <GlassButton
+              label="Usar este nombre"
+              variant="secondary"
+              onPress={() => { setReferenciaLibre(busqueda.texto.trim()); busqueda.limpiar(); }}
+              leftIcon={<Ionicons name="create-outline" size={20} color={COLORS.ink} />}
+              style={styles.destinationButton}
+            />}
             {busqueda.cargando && (
               <Text style={styles.searchHint}>Buscando…</Text>
             )}
@@ -413,7 +433,7 @@ export const MapScreen: React.FC = () => {
             )}
             {busqueda.buscado && !busqueda.error && busqueda.resultados.length === 0 && (
               <Text style={styles.searchHint} accessibilityLiveRegion="polite">
-                No encontramos «{busqueda.texto.trim()}». Elige el sector y escribe una referencia.
+                No encontramos ese lugar. Puedes usar el nombre que escribiste y elegir su sector.
               </Text>
             )}
             {busqueda.resultados.length > 0 && (
@@ -443,11 +463,19 @@ export const MapScreen: React.FC = () => {
               </>
             )}
             <Text style={styles.sectorsTitle}>O elige un sector</Text>
+            </> : <>
+              <GlassInput label="Nombre del lugar o referencia" value={referenciaLibre} onChangeText={setReferenciaLibre} maxLength={200} autoCorrect={false} required
+                helperText="No necesita aparecer en el catálogo." />
+              <Text style={styles.searchHint}>Elige en qué sector está. Usaremos una ubicación aproximada; el conductor verá el nombre que escribas.</Text>
+              <GlassButton label="Volver al buscador" variant="ghost" size="sm" onPress={() => { busqueda.escribir(referenciaLibre); setReferenciaLibre(null); }} style={styles.destinationButton} />
+              <Text style={styles.sectorsTitle}>Sector del lugar</Text>
+            </>}
             {sectoresDelPanel.map((sector) => (
               <GlassButton
                 key={sector.id}
                 label={sector.name}
                 onPress={() => elegirSector(sector.id)}
+                disabled={referenciaLibre !== null && !nombreLibreValido(referenciaLibre)}
                 variant="ghost"
                 size="md"
                 leftIcon={
@@ -529,14 +557,14 @@ export const MapScreen: React.FC = () => {
                   placeholder="¿Dónde te recogen? (opcional)"
                   placeholderTextColor={COLORS.glassTextMutedDark}
                   maxLength={200}
-                  accessibilityLabel="Referencia del punto de partida"
+                  accessibilityLabel="Nombre o referencia del punto de partida"
                   style={styles.noteInput}
                 />
               )}
               <View style={styles.routeRow}>
                 <Ionicons name="location" size={16} color={COLORS.secondary} />
                 <Text style={styles.routeText} numberOfLines={1}>
-                  Hasta: {nombreDestino(destino)}
+                  Hasta: {nombreDestino(destino, destinationNote)}
                 </Text>
               </View>
               <TextInput
@@ -545,7 +573,7 @@ export const MapScreen: React.FC = () => {
                 placeholder="¿Dónde exactamente? (opcional)"
                 placeholderTextColor={COLORS.glassTextMutedDark}
                 maxLength={200}
-                accessibilityLabel="Referencia del destino"
+                accessibilityLabel="Nombre o referencia del destino"
                 style={styles.noteInput}
               />
             </View>
