@@ -40,6 +40,8 @@ export const useSupabaseAuth = ({ bootstrap = false }: { bootstrap?: boolean } =
     verificationChecked,
     isLoading,
     isInitialized,
+    isSigningOut,
+    logoutError,
     setSession,
     setProfile,
     setVerification,
@@ -125,19 +127,32 @@ export const useSupabaseAuth = ({ bootstrap = false }: { bootstrap?: boolean } =
 
     initSession();
 
+    let mounted = true;
+    const pendientes = new Set<ReturnType<typeof setTimeout>>();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
+      (event, newSession) => {
+        if (event === 'SIGNED_OUT') {
+          clearSession();
+          return;
+        }
         setSession(newSession);
 
         if (event === 'SIGNED_IN' && newSession?.user) {
-          await fetchProfile(newSession.user.id);
-        } else if (event === 'SIGNED_OUT') {
-          clearSession();
+          // Auth espera a sus listeners. Nunca devolverle una lectura que vuelve
+          // a pedirle su token; ejecutar el perfil fuera de esa notificación.
+          const scope = captureAccountScope(useAuthStore.getState);
+          const timer = setTimeout(() => {
+            pendientes.delete(timer);
+            if (mounted && scope.isCurrent()) void fetchProfile(newSession.user.id);
+          }, 0);
+          pendientes.add(timer);
         }
       }
     );
 
     return () => {
+      mounted = false;
+      pendientes.forEach(clearTimeout);
       subscription.unsubscribe();
     };
   }, []);
@@ -242,8 +257,9 @@ export const useSupabaseAuth = ({ bootstrap = false }: { bootstrap?: boolean } =
 
   // ─── Cerrar sesión ────────────────────────────────────────
   const signOut = useCallback(async () => {
+    if (!useAuthStore.getState().beginSignOut()) return;
     setAuthError(null);
-    setLoading(true);
+    let error: string | null = null;
     try {
       // Intentar ambas limpiezas antes de retirar el JWT. Un fallo de GPS/avisos
       // no debe impedir que se intente revocar la sesión.
@@ -251,19 +267,18 @@ export const useSupabaseAuth = ({ bootstrap = false }: { bootstrap?: boolean } =
         stopTracking: detenerSeguimientoFondo,
         forgetDevice: () => registroAvisos.olvidar(),
         revoke: () => supabase.auth.signOut(),
-        clearSession,
+        clearSession: () => { if (useAuthStore.getState().session) clearSession(); },
       });
       // Supabase conserva su sesión persistida ante errores de red. No fingir
       // un logout local que al reiniciar volvería a abrir la cuenta.
       if (!ok) {
-        setAuthError('No se pudo cerrar tu sesión. Revisa tu conexión e inténtalo de nuevo.');
-        return;
+        error = 'No se pudo confirmar el cierre. Revisa tu conexión y pulsa Cerrar sesión para reintentar.';
       }
     } catch (err) {
       console.error('[Auth] Error al cerrar sesión:', err);
-      setAuthError('No se pudo cerrar tu sesión. Revisa tu conexión e inténtalo de nuevo.');
+      error = 'No se pudo confirmar el cierre. Revisa tu conexión y pulsa Cerrar sesión para reintentar.';
     } finally {
-      setLoading(false);
+      useAuthStore.getState().endSignOut(error);
     }
   }, [clearSession, setLoading]);
 
@@ -277,7 +292,8 @@ export const useSupabaseAuth = ({ bootstrap = false }: { bootstrap?: boolean } =
     verificationChecked,
     isLoading,
     isInitialized,
-    authError,
+    isSigningOut,
+    authError: logoutError ?? authError,
 
     // Acciones
     signUp,

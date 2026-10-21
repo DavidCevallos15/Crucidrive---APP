@@ -26,7 +26,7 @@ const FOTOS: { tipo: TipoFoto; titulo: string; ayuda: string }[] = [
  * (ve el motivo y corrige) y aprobado (el layout raíz lo lleva a su consola).
  */
 export const VerificationScreen: React.FC = () => {
-  const { user, verification, verificationChecked, fetchVerification, signOut } = useSupabaseAuth();
+  const { user, verification, verificationChecked, fetchVerification, signOut, isSigningOut, authError } = useSupabaseAuth();
 
   const [cedula, setCedula] = useState('');
   const [fotos, setFotos] = useState<Fotos>({ conductor: null, cedula: null, vehiculo: null });
@@ -92,7 +92,8 @@ export const VerificationScreen: React.FC = () => {
             loading={actualizando}
             style={styles.principal}
           />
-          <GlassButton label="Cerrar sesión" onPress={signOut} variant="ghost" size="sm" style={styles.salir} />
+          <GlassButton label={isSigningOut ? 'Cerrando sesión…' : 'Cerrar sesión'} onPress={signOut} loading={isSigningOut} variant="ghost" size="sm" style={styles.salir} />
+          {authError && <Text style={styles.errorGeneral} accessibilityRole="alert">{authError}</Text>}
         </GlassCard>
       </AuthScaffold>
     );
@@ -153,7 +154,8 @@ export const VerificationScreen: React.FC = () => {
           loading={enviando}
           style={styles.principal}
         />
-        <GlassButton label="Cerrar sesión" onPress={signOut} variant="ghost" size="sm" style={styles.salir} />
+        <GlassButton label={isSigningOut ? 'Cerrando sesión…' : 'Cerrar sesión'} onPress={signOut} loading={isSigningOut} variant="ghost" size="sm" style={styles.salir} />
+        {authError && <Text style={styles.errorGeneral} accessibilityRole="alert">{authError}</Text>}
       </GlassCard>
     </AuthScaffold>
   );

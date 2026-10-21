@@ -21,13 +21,13 @@ solicitado por David tras un bloqueo. No añade funcionalidades ni cambia permis
 
 ## Tareas y pruebas
 
-- [ ] Regresión: Auth que no responde, fallo, éxito y resultado tardío. Datos locales
+- [x] Regresión: Auth que no responde, fallo, éxito y resultado tardío. Datos locales
   solo se limpian con confirmación, y un segundo toque no duplica la revocación.
-- [ ] Corregir transición reproducida, listener y estado compartido; probar scopes.
-- [ ] Mejorar carga/error/reintento y layout de salida en los tres roles.
-- [ ] Prueba web con las tres cuentas: login, pantalla del rol, chat si está
+- [x] Corregir transición reproducida, listener y estado compartido; probar scopes.
+- [x] Mejorar carga/error/reintento y layout de salida en los tres roles.
+- [x] Prueba web con las tres cuentas: login, pantalla del rol, chat si está
   disponible, salida, recarga y navegación protegida sin resucitar sesión.
-- [ ] Tests frontend/backend, TypeScript, exportación y revisión independiente UI.
+- [x] Tests frontend/backend, TypeScript, exportación y revisión independiente UI.
 - [ ] Registro, commit y PR con CI. Android físico se declara pendiente si ADB no
   expone dispositivos; no sustituir esa prueba por evidencia web.
 
@@ -44,3 +44,29 @@ privado. El guard raíz redirige una sola vez por destino a `/explorar`, alias
 inequívoco del mapa público; `/` sigue funcionando como entrada habitual.
 Regresión de los tres grupos privados → `/explorar`, sin redirección posterior.
 El menú deja la navegación únicamente al guard y se cierra al cambiar identidad.
+
+## Resultado de las pruebas
+
+- Pasajero: acceso al mapa y perfil; salida desde menú a `/explorar`, recarga sin
+  sesión y acceso directo a `/profile` redirigido sin mostrar contenido privado.
+- Conductor aprobado: consola, chat y perfil propios; salida desde Perfil y
+  recarga sin sesión. El perfil no presenta «No disponible» si ese dato no existe.
+- Administrador: panel vacío real, catálogo cargado y búsqueda Farmacia + Malecón
+  con tres resultados; salida desde cabecera con controles busy/disabled,
+  recarga y menú de visitante. Sin React #185 en la comprobación final.
+- Ambos chats están sin viaje activo; no se enviaron mensajes ni solicitudes
+  nuevas, ni se aprobó/rechazó documentación. No se modificaron precios o roles.
+- Limpieza de viaje/chat/referencias y conductores cercanos al cambiar identidad;
+  las lecturas tardías de viajes se descartan si cambió la generación de cuenta.
+- Regresión de Auth confirmada primero en rojo. Pruebas finales: 412 frontend y
+  388 backend, TypeScript y exportación web. La integración con el SDK instalado
+  prueba fallo conservando credenciales y reintento exitoso sin sesión al reiniciar.
+- Capturas verificadas en `.impeccable/review/logout/`: admin 360×640 y 1280×800,
+  menú de pasajero 360×640 y salida pública 360×640. Sin credenciales en archivos.
+- No hay dispositivo en ADB; no se declara probado logout, teclado o recepción de
+  mensajes en teléfono. La exportación Android/Hermes valida empaquetado solamente.
+- Revisión independiente: capturas sin defectos visuales materiales; se detectó
+  una carrera adicional en las mutaciones de viaje. Corregida con scopes antes de
+  aplicar solicitudes/cancelaciones/pasos y sus finally. Quince pruebas ejercitan
+  las acciones reales con red diferida → salir/cambiar/volver a la misma cuenta.
+  Veredicto posterior **ship al P1 revisado, resolved**; no amplía la evidencia nativa.

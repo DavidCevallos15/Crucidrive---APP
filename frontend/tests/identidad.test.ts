@@ -219,7 +219,10 @@ describe('enrutamiento por rol (criterios 2, 5 y 9)', () => {
     };
     expect(destinoGuardia([], visitante)).toBeNull();
     expect(destinoGuardia(['(auth)', 'login'], visitante)).toBeNull();
-    expect(destinoGuardia(['(app)', '(driver)'], visitante)).toBe('/');
+    for (const grupo of ['(driver)', '(passenger)', '(admin)']) {
+      expect(destinoGuardia(['(app)', grupo], visitante)).toBe('/explorar');
+    }
+    expect(destinoGuardia(['explorar'], visitante)).toBeNull();
 
     // Con sesión pero aún leyendo perfil o verificación
     expect(

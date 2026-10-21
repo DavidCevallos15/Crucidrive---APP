@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useFocusEffect, usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,11 +22,12 @@ export function AppMenuProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [triggers, setTriggers] = useState(0);
   const pathname = usePathname();
+  const userId = useAuthStore((s) => s.user?.id ?? null);
   const insets = useSafeAreaInsets();
   const abrir = useCallback(() => setOpen(true), []);
   const registrar = useCallback((delta: number) => setTriggers((n) => Math.max(0, n + delta)), []);
   const context = useMemo(() => ({ open, abrir, registrar }), [open, abrir, registrar]);
-  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => setOpen(false), [pathname, userId]);
   const borde = Gesture.Pan().maxPointers(1).activeOffsetX(18).failOffsetX(-10).failOffsetY([-12, 12])
     .onEnd((e) => { if (abrirTrasDeslizar(e.translationX, e.velocityX)) runOnJS(abrir)(); });
   return <MenuContext.Provider value={context}>
@@ -76,18 +77,18 @@ function MenuDrawer({ open, setOpen }: { open: boolean; setOpen: (open: boolean)
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { profile, session, verification } = useAuthStore();
-  const { signOut, authError, isLoading } = useSupabaseAuth();
+  const { signOut, authError, isSigningOut } = useSupabaseAuth();
   const service = useServiceStore((s) => s.service);
   const selectService = useServiceStore((s) => s.selectService);
   const passenger = !profile || profile.rol === 'pasajero';
   const home = profile ? rutaInicial(profile.rol, verification?.estado ?? null) : '/';
   const go = (route: string) => { setOpen(false); router.push(route as never); };
   const choose = (next: ServiceType) => { selectService(next); go(home); };
-  const row = (label: string, icon: keyof typeof Ionicons.glyphMap, action: () => void, selected = false) => (
-    <PressableScale onPress={action} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ selected }} style={[styles.row, selected && styles.selected]}>
-      {label === 'Viajar en tricimoto' ? <TricimotoIcon size={26} color={selected ? COLORS.wine : COLORS.glassTextMutedDark} /> : <Ionicons name={icon} size={22} color={selected ? COLORS.primaryLight : COLORS.glassTextMutedDark} />}
+  const row = (label: string, icon: keyof typeof Ionicons.glyphMap, action: () => void, selected = false, busy = false) => (
+    <PressableScale onPress={action} disabled={isSigningOut} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ selected, disabled: isSigningOut, busy }} style={[styles.row, selected && styles.selected]}>
+      {busy ? <ActivityIndicator color={COLORS.wine} /> : label === 'Viajar en tricimoto' ? <TricimotoIcon size={26} color={selected ? COLORS.wine : COLORS.glassTextMutedDark} /> : <Ionicons name={icon} size={22} color={selected ? COLORS.primaryLight : COLORS.glassTextMutedDark} />}
       <Text style={[styles.rowText, selected && styles.selectedText]}>{label}</Text>
-      <Ionicons name="chevron-forward" size={16} color={COLORS.glassTextMutedDark} />
+      {!busy && <Ionicons name="chevron-forward" size={16} color={COLORS.glassTextMutedDark} />}
     </PressableScale>
   );
   return <Modal visible={open} transparent animationType="none" onRequestClose={cerrar} statusBarTranslucent>
@@ -112,7 +113,8 @@ function MenuDrawer({ open, setOpen }: { open: boolean; setOpen: (open: boolean)
             {row('Acerca de CruciDrive', 'information-circle-outline', () => go('/(settings)/acerca'))}
           </ScrollView>
           <View style={styles.bottom}>
-            {session ? row(isLoading ? 'Cerrando sesión…' : 'Cerrar sesión', 'log-out-outline', async () => { if (isLoading) return; await signOut(); if (!useAuthStore.getState().session) { setOpen(false); router.replace('/'); } }) : row('Iniciar sesión o crear cuenta', 'log-in-outline', () => go('/(auth)/login'))}
+            {session ? row(isSigningOut ? 'Cerrando sesión…' : 'Cerrar sesión', 'log-out-outline', signOut, false, isSigningOut) : row('Iniciar sesión o crear cuenta', 'log-in-outline', () => go('/(auth)/login'))}
+            {isSigningOut && <Text style={styles.footer} accessibilityLiveRegion="polite">Estamos cerrando tu sesión. Puede tardar unos segundos.</Text>}
             {authError && <Text style={styles.error} accessibilityRole="alert">{authError}</Text>}
             <Text style={styles.footer}>Crucita · Solo tricimotos</Text>
           </View>

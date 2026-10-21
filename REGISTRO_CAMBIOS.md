@@ -2,6 +2,20 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.72.0] - 2026-10-20 (Hora Local)
+
+### 002 · Salida sin bucles y pruebas de los tres roles
+- Plan documentado en `535376e`, corrección solicitada tras un bloqueo real. Se reprodujo React #185: el guard raíz y el Redirect del layout privado competían por `/`, compartida con el mapa del pasajero. Solo el raíz navega ahora a `/explorar`; el layout privado no monta contenido sin sesión y el menú se cierra al cambiar la identidad.
+- Revocación con espera máxima de 20 s, además de los 4 s de GPS/avisos; transporte Auth abortable a los 15 s. Listener síncrono con perfil diferido, cierre único compartido y error/reintento accesible. Un fallo conserva credenciales; no se anuncia una salida inexistente.
+- Al salir o cambiar de cuenta se limpian viaje, hilo de chat, última referencia y conductores cercanos. Las lecturas tardías de viajes no restauran la cuenta anterior.
+- Cabecera admin adaptable con acciones en segunda fila, ancho limitado en escritorio y carga/disabled; perfil y verificación comparten feedback de salida. El perfil no inventa «No disponible» si no recibió el estado operativo.
+- Verificación web real: login/salida/recarga de pasajero, conductor y admin; ruta privada bloqueada después de salir; catálogo admin y búsqueda nombre+sector correctos. Ambos chats sin viaje activo; no se generaron solicitudes ni mensajes reales.
+- **412 pruebas frontend, 388 backend**, TypeScript y export web correctos. Prueba con SDK real y almacenamiento simulado: error conserva sesión, reintento la elimina y reiniciar no la restaura. Android/Hermes exportado; teléfono pendiente por ausencia de dispositivo ADB. Capturas en `.impeccable/review/logout/`.
+- Revisión independiente: capturas correctas; hallazgo P1 de respuestas tardías en mutaciones corregido y calificado **resolved, ship al P1 revisado**. Quince regresiones de acciones reales cubren solicitud, cancelación y pasos del conductor tras salir/cambiar/volver a la misma cuenta, incluidos finally y callbacks.
+- Sin cambios de BD, dependencias nuevas ni credenciales guardadas. Detalle en `specs/002-identidad/cierre-sesion-campo.md`.
+
+---
+
 ## [1.71.0] - 2026-10-20 (Hora Local)
 
 ### 003 · Usar nombres de lugares aunque no estén en el catálogo

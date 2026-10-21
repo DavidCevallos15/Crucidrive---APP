@@ -4,6 +4,7 @@ import { authFetch } from '../utils/authFetch';
 import { API_CONFIG } from '../constants/config';
 import { useAuthStore } from '../store/useAuthStore';
 import { useRideStore } from '../store/useRideStore';
+import { captureAccountScope } from '../utils/accountScope';
 import { textoPunto, type EstadoTricimoto } from '../utils/oferta';
 import {
   avisoParaConductor,
@@ -21,6 +22,7 @@ import type { useSocket } from './useSocket';
 type Resultado = { ok: true; terminado?: boolean } | { ok: false; mensaje: string };
 
 const SIN_CONEXION = 'No se pudo conectar con el servidor. Revisa tus datos móviles e inténtalo de nuevo.';
+const SESION_CAMBIO = 'Tu sesión cambió. Vuelve a abrir el viaje con tu cuenta.';
 
 const ENDPOINT_DEL_PASO: Record<PasoConductor, (id: string) => string> = {
   llegada: API_CONFIG.endpoints.rides.llegada,
@@ -115,8 +117,11 @@ export const useViajeConductor = (
   const cargar = useCallback(async () => {
     if (!userId || leyendo.current) return;
     leyendo.current = true;
+    const scope = captureAccountScope(useAuthStore.getState);
+    if (scope.userId !== userId || !scope.isCurrent()) { leyendo.current = false; return; }
     try {
-      fijar(await leerViajeConductor(lector, userId));
+      const siguiente = await leerViajeConductor(lector, userId);
+      if (scope.isCurrent()) fijar(siguiente);
     } catch (error) {
       // Sin red se conserva lo que se ve; se vuelve a leer al reconectar.
       console.warn('[ViajeConductor] No se pudo leer el viaje:', error);
@@ -155,10 +160,13 @@ export const useViajeConductor = (
   }, []);
 
   const darPaso = useCallback(async (paso: PasoConductor): Promise<Resultado> => {
+    const scope = captureAccountScope(useAuthStore.getState);
+    if (!scope.isCurrent()) return { ok: false, mensaje: SESION_CAMBIO };
     if (!viaje || enviando) return { ok: false, mensaje: 'Espera a que termine el paso anterior.' };
     setEnviando(paso);
     try {
       const r = await enviar(ENDPOINT_DEL_PASO[paso](viaje.id));
+      if (!scope.isCurrent()) return { ok: false, mensaje: SESION_CAMBIO };
       if (!r.ok) {
         // 409: el viaje cambió en otro lado (por ejemplo, el pasajero canceló): se vuelve a leer.
         void cargar();
@@ -172,15 +180,18 @@ export const useViajeConductor = (
       fijar(trasPaso(viaje, paso, r.data, new Date().toISOString()));
       return { ok: true };
     } finally {
-      setEnviando(null);
+      if (scope.isCurrent()) setEnviando(null);
     }
   }, [viaje, enviando, enviar, cargar, fijar]);
 
   const cancelar = useCallback(async (motivo: MotivoCancelacion): Promise<Resultado> => {
+    const scope = captureAccountScope(useAuthStore.getState);
+    if (!scope.isCurrent()) return { ok: false, mensaje: SESION_CAMBIO };
     if (!viaje || enviando) return { ok: false, mensaje: 'Espera a que termine el paso anterior.' };
     setEnviando('cancelar');
     try {
       const r = await enviar(API_CONFIG.endpoints.rides.cancelar(viaje.id), { motivo });
+      if (!scope.isCurrent()) return { ok: false, mensaje: SESION_CAMBIO };
       if (!r.ok) {
         void cargar();
         return r;
@@ -189,7 +200,7 @@ export const useViajeConductor = (
       alCerrarRef.current(null);
       return { ok: true, terminado: true };
     } finally {
-      setEnviando(null);
+      if (scope.isCurrent()) setEnviando(null);
     }
   }, [viaje, enviando, enviar, cargar, fijar]);
 

@@ -22,7 +22,7 @@ import { COLORS, FONTS, SPACING } from '../constants/theme';
  * mostrando el avatar, estadísticas y secciones relevantes para cada rol.
  */
 export default function ProfileScreen() {
-  const { profile, signOut, authError, isLoading } = useSupabaseAuth();
+  const { profile, signOut, authError, isSigningOut } = useSupabaseAuth();
   const insets = useSafeAreaInsets();
 
   const isDriver = profile?.rol === 'conductor';
@@ -86,7 +86,7 @@ export default function ProfileScreen() {
                     <Text style={styles.statLabel}>Tu transporte</Text>
                   </View>
                 </View>
-                <View style={styles.infoRow}>
+                {profile?.estado_operativo && <View style={styles.infoRow}>
                   <Ionicons name="shield-checkmark" size={18} color={COLORS.success} />
                   <Text style={styles.infoLabel}>Estado de operación</Text>
                   <Text
@@ -104,7 +104,7 @@ export default function ProfileScreen() {
                       ? 'Disponible'
                       : 'No disponible'}
                   </Text>
-                </View>
+                </View>}
               </>
             )}
 
@@ -141,9 +141,9 @@ export default function ProfileScreen() {
         {/* Cerrar sesión */}
         <View>
           <GlassButton
-            label="Cerrar sesión"
+            label={isSigningOut ? 'Cerrando sesión…' : 'Cerrar sesión'}
             onPress={signOut}
-            loading={isLoading}
+            loading={isSigningOut}
             variant="danger"
             size="lg"
             leftIcon={<Ionicons name="log-out-outline" size={20} color={COLORS.white} />}

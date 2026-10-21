@@ -94,17 +94,19 @@ function AppRaiz() {
   }, [fontsLoaded, fontError]);
 
   // ─── Guardia de navegación por sesión, perfil y rol (spec 002) ─────
+  const destino = destinoGuardia(segments, {
+    isInitialized,
+    hasSession: Boolean(session),
+    profileChecked,
+    rol: profile?.rol ?? null,
+    verificationChecked,
+    verificacion: verification?.estado ?? null,
+  });
   useEffect(() => {
-    const destino = destinoGuardia(segments, {
-      isInitialized,
-      hasSession: Boolean(session),
-      profileChecked,
-      rol: profile?.rol ?? null,
-      verificationChecked,
-      verificacion: verification?.estado ?? null,
-    });
     if (destino) router.replace(destino as never);
-  }, [isInitialized, session, profile, profileChecked, verification, verificationChecked, segments, router]);
+    // Una sola orden por destino. Durante la transición Expo publica objetos de
+    // navegación nuevos; observarlos aquí reenviaba replace antes de completarlo.
+  }, [destino, router]);
 
   // ─── Pantalla de carga mientras se verifica la sesión o cargan fuentes ─────
   if (mostrarCargaInicial(isInitialized, fontsLoaded, Boolean(fontError))) {

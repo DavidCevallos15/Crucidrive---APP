@@ -1,17 +1,17 @@
-import { Slot, Redirect } from 'expo-router';
+import { Slot } from 'expo-router';
 import { useAuthStore } from '../../src/store/useAuthStore';
 
 /**
  * Layout protegido de la aplicación.
  *
- * Verifica que exista una sesión activa. Si no la hay,
- * redirige al login automáticamente.
+ * No monta contenido privado sin sesión. El layout raíz es el único dueño de
+ * la redirección: dos guards compitiendo por / dejaban un bucle al salir.
  */
 export default function AppLayout() {
   const session = useAuthStore((s) => s.session);
 
   if (!session) {
-    return <Redirect href="/" />;
+    return null;
   }
 
   return <Slot />;

@@ -13,6 +13,19 @@ beforeEach(() => jest.useFakeTimers());
 afterEach(() => jest.useRealTimers());
 
 describe('cerrar sesión no se cuelga', () => {
+  it('si Auth nunca responde, libera la interfaz sin anunciar una salida inexistente', async () => {
+    const clearSession = jest.fn();
+    const resultado = closeAccountSession({
+      stopTracking: async () => {}, forgetDevice: async () => {},
+      revoke: () => nunca(), clearSession,
+    });
+    let estado: boolean | 'pendiente' = 'pendiente';
+    void resultado.then((valor) => { estado = valor; });
+    await jest.advanceTimersByTimeAsync(20_000);
+    expect(estado).toBe(false);
+    expect(clearSession).not.toHaveBeenCalled();
+  });
+
   it('si apagar el GPS u olvidar el teléfono no responden, igual revoca la sesión al vencer el límite', async () => {
     const revoke = jest.fn(async () => ({ error: null }));
     const clearSession = jest.fn();
@@ -30,6 +43,18 @@ describe('cerrar sesión no se cuelga', () => {
     const olvidar = registro.olvidar();
     await jest.advanceTimersByTimeAsync(LIMITE_TAREA_AVISOS_MS);
     await expect(olvidar).resolves.toBeUndefined();
+  });
+
+  it('una confirmación tardía tras el límite no limpia por segunda vez el estado de otra cuenta', async () => {
+    let resolver!: (valor: { error: null }) => void;
+    const clearSession = jest.fn();
+    const resultado = closeAccountSession({ stopTracking: async () => {}, forgetDevice: async () => {},
+      revoke: () => new Promise((resolve) => { resolver = resolve; }), clearSession });
+    await jest.advanceTimersByTimeAsync(20_000);
+    await expect(resultado).resolves.toBe(false);
+    resolver({ error: null });
+    await jest.advanceTimersByTimeAsync(1);
+    expect(clearSession).not.toHaveBeenCalled();
   });
 
   it('conLimite devuelve el valor de respaldo al vencer y el resultado si llega antes', async () => {
