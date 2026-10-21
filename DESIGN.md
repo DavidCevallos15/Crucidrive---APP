@@ -186,7 +186,7 @@ El ritmo compartido usa la escala 4/8 del frontmatter: padding habitual `md`, se
 
 La bienvenida centra una columna hasta 520 puntos; desde 900 coloca escena y acciones en dos columnas, separación 72 y máximo 1200. El contenedor exterior llega a 1248 con padding horizontal 24. El catálogo centra hasta 1040, con muestras en filas ajustables y formulario hasta 480. El acceso limita formulario a 440; ajustes, lectura a 680. Estos límites pertenecen a sus superficies.
 
-El mapa conserva su lienzo y ficha inferior; ubicación, menú, cuenta y SOS siguen accesibles. Fichas y barras dejan visible la atribución. La bienvenida no solicita permisos de ubicación ni notificaciones.
+La extensión 012 conserva el lienzo y la ficha inferior del mapa. El menú queda arriba a la izquierda; «Mi cuenta» vive dentro del menú con sesión y el acceso se ofrece allí sin sesión. Sector o aviso de ubicación y SOS de 64 puntos comparten una cabecera fija de la hoja; solo el contenido inferior se desplaza. Cuenta, sector y SOS no flotan sobre el mapa. Fichas y barras dejan visible la atribución. La bienvenida no solicita permisos de ubicación ni notificaciones.
 
 ## Elevation & Depth
 
@@ -195,6 +195,8 @@ Superficie blanca opaca, borde fino y sombra tinta suave. `GlassCard` conserva s
 `AppTabLayout` conserva blur propio 25 sobre superficie blanca. No extenderlo a todas las tarjetas. El menú modal usa velo tinta y panel de papel. No añadir brillos de color ni sombras negras duras.
 
 Paneles compartidos: entrada/salida 220/140 ms. `PressableScale`: escala 0,97 en 100 ms y regreso en 140 ms, curva del tema y `ReduceMotion.System`. Los tiempos genéricos 150/250/400 del tema no sustituyen estos valores concretos.
+
+El menú 012 usa su propio spring de 300 ms, dampingRatio 1 y `ReduceMotion.System`; el cierre limita el sobrepaso para evitar rebote. El arrastre de cierre actualiza la posición en el hilo de UI y recupera el panel si el gesto se interrumpe. No extender esta transición a todas las hojas.
 
 ## Shapes
 
@@ -226,7 +228,9 @@ Contraseña: control propio 48×48 con nombre Mostrar/Ocultar contraseña y esta
 
 ### Navigation
 
-`AppMenuButton`: modal lateral papel, ancho hasta 360 dejando 36 exteriores, cierre visible y opciones según sesión/rol. Filas mínimo 56, selección vino suave, iconos con etiqueta. Disparador 48; cierre mínimo 44. Estas medidas existentes no garantizan 48 para todos los iconos Android.
+`AppMenuButton`: disparador siempre arriba a la izquierda y modal desde la izquierda, papel, ancho hasta 360 dejando 36 exteriores, cierre visible y opciones según sesión/rol. Filas mínimo 56, selección vino suave, iconos con etiqueta. Disparador y cierre mínimo 48. «Mi cuenta» se muestra con sesión; sin sesión, «Iniciar sesión o crear cuenta».
+
+El borde de apertura de 24 puntos se activa solo en las pantallas principales con menú y foco. El resto del mapa conserva sus gestos. Ajustes mantiene el botón de menú, desactiva ese borde (`edgeSwipe={false}`) y conserva Atrás del sistema. Cierre por deslizamiento izquierdo, exterior, botón de cierre o Atrás; no atribuir al navegador la validación del gesto nativo.
 
 `AppTabLayout`: barra inferior 85, borde superior fino, etiquetas Inter caption; activo según rol (vino pasajero, éxito conductor). Selector de acceso: segmentos mínimo 44 y selección vino/blanco, estado explícito y sin cambio durante envío; no es navegación global.
 
@@ -252,16 +256,23 @@ Con Reduce Motion, `WelcomeScreen` muestra contenido estático y llama `onPresen
 | --- | --- |
 | Bienvenida | Marca, escena, saludo, servicios y acceso; una columna móvil, dos en escritorio. |
 | Acceso / registro | Contexto, selector, campos, errores y acción. Correo/contraseña; perfil y consentimiento conservan su flujo. |
-| Mapa / encomienda | Lienzo y ficha de servicio con origen/destino. Encomienda añade contenido, destinatario y autorización; precio a convenir por chat. |
+| Mapa / encomienda | Menú izquierdo, cabecera fija con sector/aviso y SOS, contenido desplazable con origen/destino. Encomienda añade contenido, destinatario y autorización; precio a convenir por chat. |
 | Buscando / aceptado | Estado real y cancelar mientras busca; datos reales del conductor y chat al aceptar. |
-| Conductor | Conexión, disponibilidad y oferta real con aceptar/rechazar. |
+| Conductor | Conexión, disponibilidad y oferta real con aceptar/rechazar; aviso fuera de zona sin nuevo bloqueo de disponibilidad en el piloto y sin SOS flotante sobre ofertas. |
 | Ajustes / ayuda / cuenta | Volver, título y grupos de filas; acciones destructivas separadas. |
 | Chat | Participante real, burbujas y compositor junto al teclado; habilitado según servicio activo. |
 | Catálogo | Paleta, estados, campos, iconos y reglas; muestras sin solicitudes. |
+| Lugares del administrador | Visibles por defecto; nombre, sector y visibilidad combinables. Ocultos solo al elegir «Ocultos» o «Todos». Carga y reintento conservan filtros sin presentar resultados anteriores bajo el nuevo filtro. |
+
+La zona de servicio 012 es orientativa: envolvente de los cinco centros operativos ampliada 1500 m, no frontera administrativa ni geocerca de despacho. Un GPS ausente o inválido no significa estar fuera. Fuera de zona, el pasajero ve el aviso, el mapa vuelve a Crucita y el GPS no se ofrece como origen; puede elegir lugar o sector. El conductor conserva sus coordenadas y puede cambiar disponibilidad durante el piloto; el servidor mantiene sus reglas. Los filtros admin se aplican juntos antes del límite de 200 resultados.
+
+SOS conserva pulsación funcional de 2000 ms para abrir el marcador con el 911. La reubicación 012 no implementa el registro de alertas D-05 pendiente del paso 006.
 
 La previsualización web de OpenStreetMap mantiene atribución y no dibuja marcadores; la tricimoto del mapa nativo depende de datos reales. No inferir rutas calculadas ni tiempos estimados de una escena o un bundle.
 
 Evidencia visual en `.impeccable/review/premium/`: welcome y catalog móvil/escritorio; login, map, menu y settings móvil. Confirma apariencia web; no demuestra FPS, permisos, aspecto de marcadores ni accesibilidad completa en dispositivos nativos. Un bundle Android tampoco lo demuestra.
+
+La evidencia 012 en `.impeccable/review/campo012/` contiene mapa, menú, ficha, encomienda y configuración a 360×640, y mapa a 1280×800. Verificación reportada: 381 pruebas frontend, 368 backend, TypeScript y exportaciones web/Android correctos. Son capturas web sin Android físico ni sesión admin: los gestos y estados activos nativos, la recepción real del chat y el uso de filtros admin en dispositivo siguen pendientes. La bienvenida y los tokens 011 permanecen.
 
 ## Do's and Don'ts
 

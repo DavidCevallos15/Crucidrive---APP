@@ -4,6 +4,8 @@ Fecha: 20 de octubre de 2026. Dirección solicitada por David: móvil, moderno, 
 
 Integración de main antes del PR: esta ampliación se identifica como **011**, sin sustituir `010-ajustes-de-campo`. Se conservan el acceso compacto bajo 880 puntos de alto, la hoja desplazable y las alturas de navegación/áreas seguras. Las ofertas del conductor mantienen su componente operativo existente; los nuevos tokens no cambian la regla de asignación ni la lista de hasta tres ofertas.
 
+La extensión **012** ajusta navegación, cabecera del mapa, aviso de zona y filtros de lugares. Mantiene la paleta, tokens y bienvenida del 011.
+
 ## Identidad
 
 CruciDrive es movilidad local en tricimoto en Crucita, con viajes y encomiendas. El símbolo conserva la C, camino y ola; pasa a vino y arena. La tricimoto propia sustituye al automóvil genérico en selección y marcadores. La ilustración es arte de marca, no una fotografía de una unidad o un conductor real.
@@ -68,7 +70,7 @@ Los títulos grandes usan tracking cercano a −0,02 em; el cuerpo mantiene espa
 | `PressableScale` | `pressedScale`, eventos de foco/pulsación, `disabled` | Respuesta en press-in y foco web visible; respeta Reduce Motion. |
 | `BrandLockup` | regular, `compact` | Logo con nombre, lema solo en tamaño regular; nunca sustituir por emoji. |
 | `TricimotoIcon` | `size`, `color`, `background` | Geometría propia; 26–32 en servicios y mapa; 48 en catálogo. No usar automóvil. |
-| `AppMenuButton` | Control hamburger compartido | Modal lateral, cierre visible, fondo atenuado, opciones según rol. Conserva navegación y permisos existentes. |
+| `AppMenuButton` | Control hamburger compartido; `edgeSwipe` | Disparador arriba a la izquierda; modal desde la izquierda, ancho hasta 360 dejando 36 exteriores, filas 56 y cierre 48. Cuenta dentro del menú con sesión; acceso sin sesión. Borde de 24 solo en pantallas principales con foco; ajustes usa `edgeSwipe={false}` y conserva Atrás del sistema. |
 | `CoastalScene` | Escena de marca | Tricimoto vino/arena y costa azul, sin datos de un viaje. No es un mapa de ruta. |
 | `CoastalIntro` | `onFinish` | Pasada única de espuma, Omitir; no reproduce sonido. |
 
@@ -110,15 +112,22 @@ La máscara adaptativa recibe padding adicional al generarse. El monocromo conti
 | --- | --- | --- |
 | Bienvenida | Marca → escena → saludo → servicios → acceso | Viajar o enviar una encomienda |
 | Acceso / registro | Marca y contexto → selector → campos → errores → consentimiento contextual | Entrar o crear cuenta |
-| Mapa | Ubicación, menú y cuenta → mapa → ficha de servicio → destino/origen | Seleccionar y solicitar |
+| Mapa | Menú izquierdo → mapa → hoja con cabecera fija de sector/aviso y SOS 64 → contenido desplazable de destino/origen | Seleccionar y solicitar |
 | Encomienda | Ruta → contenido → destinatario → autorización → precio a convenir | Solicitar encomienda |
 | Buscando | Estado real → ruta → acción de cancelar | Cancelar mientras busca |
 | Servicio aceptado | Datos reales del conductor → ruta y precio/condición → chat | Coordinar por chat |
-| Conductor | Estado de conexión → disponibilidad → oferta con cuenta real | Aceptar o rechazar |
+| Conductor | Estado de conexión → aviso fuera de zona cuando corresponda → disponibilidad → oferta con cuenta real, sin SOS flotante | Aceptar o rechazar |
 | Ajustes y ayuda | Encabezado con volver → título → grupos de filas y explicación | Abrir sección o permiso |
 | Cuenta / privacidad | Datos propios → exportación → consentimiento → acción destructiva separada | Gestionar su cuenta |
 | Chat | Participante real → burbujas → compositor junto al teclado | Enviar mensaje |
 | Catálogo de diseño | Paleta → estados → campos → iconos → reglas | Explorar muestras sin enviar datos |
+| Lugares del administrador | Visibles por defecto → búsqueda por nombre + sector + visibilidad → carga, resultados o reintento | Consultar y editar; «Ocultos» o «Todos» incluyen desactivados a elección |
+
+La hoja del mapa mantiene sector/aviso y SOS visibles mientras se desplaza el contenido de pedir, buscando o servicio activo. Cuenta, sector y SOS ya no flotan sobre el mapa. El SOS conserva los dos segundos de pulsación para abrir el marcador con el 911; el registro de alertas D-05 sigue pendiente del paso 006.
+
+La zona orientativa del piloto es la envolvente de los cinco centros operativos ampliada 1500 m. No es un límite administrativo ni añade una restricción de despacho. GPS desconocido o inválido no equivale a fuera de zona. El pasajero fuera ve «Estás fuera de la zona de servicio de Crucita», el mapa se centra en Crucita y puede elegir origen manual por lugar o sector; no usa su GPS exterior como origen. El conductor conserva el GPS real y recibe el aviso sin bloqueo nuevo de disponibilidad durante el piloto; rigen las reglas actuales del servidor.
+
+Los filtros admin de nombre, sector y visibilidad se combinan en servidor antes del límite de 200 resultados. Al cambiarlos se indica carga y se ocultan los resultados anteriores; errores ofrecen reintento conservando los filtros. «Visibles» es el valor inicial; los lugares ocultos requieren elegir «Ocultos» o «Todos».
 
 No añadir un tiempo estimado ni dibujar una ruta de calles que el backend no calcula. La previsualización web de OpenStreetMap sigue sin dibujar marcadores; los marcadores de tricimoto se usan en el mapa nativo con datos reales.
 
@@ -128,6 +137,7 @@ No añadir un tiempo estimado ni dibujar una ruta de calles que el backend no ca
 | --- | --- | --- |
 | Pulsar / soltar | 100 / 140 ms | Escala 0,97 y vuelta, curva ease-out compartida |
 | Entrada / salida de panel | 220 / 140 ms | Rápida, sin retardos encadenados |
+| Menú 012 | Spring 300 ms | Sin rebote, `ReduceMotion.System`; arrastre de cierre en hilo de UI y recuperación al interrumpirse |
 | Bienvenida | 2.400 ms | Logo sobre arena; agua y borde de espuma pasan y revelan el contenido |
 | SOS | 2.000 ms | Progreso solo mientras mantiene pulsado; sin anillo ornamental infinito |
 
@@ -135,11 +145,15 @@ La bienvenida de la raíz pública se recuerda con `crucidrive:welcome:v1 = seen
 
 Reduce Motion muestra la bienvenida estática sin pasada espacial. Omitir permanece disponible durante la animación. No se altera el acceso por roles, el destino de avisos ni las rutas privadas. `/bienvenida` permite una reproducción manual; `/diseno` es el catálogo del propietario, separado de los flujos de operación.
 
+El menú se abre por botón o desde el borde izquierdo de 24 puntos en pantallas principales con foco; el resto del mapa conserva sus gestos. Se cierra por deslizamiento izquierdo, exterior, cierre visible o Atrás. Ajustes conserva el menú a la izquierda y el gesto Atrás nativo, sin borde de apertura reservado.
+
 ## Accesibilidad, verdad y mantenimiento
 
 Foco visible, etiquetas persistentes, errores anunciados, controles con nombre y carga sin doble envío. El color acompaña un texto o símbolo; no sustituye un estado. No solicitar permisos desde la bienvenida ni encender GPS/notificaciones por una animación. No esconder advertencias o errores para mejorar una captura.
 
 Esta versión define una apariencia clara; no promete alternancia automática claro/oscuro. Pruebas automatizadas de contraste cubren combinaciones normativas; tests de preferencia cubren primera visita y fallos de almacenamiento. Las capturas validan web móvil/escritorio. FPS, Keychain/Keystore, permisos y aspecto de marcadores nativos se verifican en un teléfono con nuevo APK: no quedan demostrados por un bundle.
+
+Evidencia 012: `.impeccable/review/campo012/` contiene mapa, menú, ficha, encomienda y configuración a 360×640, más mapa a 1280×800. Se reportan 381 pruebas frontend, 386 backend (incluidas las correcciones de configuración posteriores a la revisión UI), TypeScript y exportaciones web/Android correctos. Las capturas son web, sin Android físico ni sesión admin; quedan pendientes los gestos nativos, estados activos con cuentas reales, recepción de chat y filtros admin en dispositivo. Estas comprobaciones no implementan el registro SOS del 006.
 
 ## Skills consultados
 

@@ -2,6 +2,28 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.70.0] - 2026-10-20 (Hora Local)
+
+### 012 · Navegación y mapa, aprobados por David
+- Spec y decisiones A/B registradas en `303e30b`; implementación en `d2b6e0a`. Buscar lugares por nombre y sector, ocultos mediante filtro; conductor fuera de Crucita recibe aviso sin bloqueo nuevo durante el piloto.
+- Menú siempre a la izquierda, apertura desde un borde reservado y cierre por gesto, exterior, botón o Atrás. Spring 300 ms con reducción de movimiento; ajustes conserva el gesto Atrás del sistema. «Mi cuenta» queda en el menú.
+- Sector y SOS comparten cabecera fija en las hojas; el contenido se desplaza debajo. GPS exterior no se usa como origen del pasajero, que puede elegir lugar/sector; el mapa vuelve a Crucita. La zona es una aproximación documentada del piloto.
+- Lugares admin inicia en visibles y combina nombre, sector y visibilidad en el servidor antes del límite de 200; carga/reintento conservan filtros sin presentar resultados viejos como actuales.
+- **Verdad del SOS:** conserva la pulsación de 2 s para abrir el marcador 911. Registro de alertas D-05 aún pendiente del 006; se corrigió la descripción accesible para no prometerlo.
+- Revisión independiente **ship al alcance código y capturas web**. Evidencia en `.impeccable/review/campo012/`; sistema y guía actualizados. Android físico, estados activos y sesión admin siguen pendientes.
+
+### Correcciones operativas del registro compartido
+- `9273e79`: nodemon vigila solo `src`, para que la cobertura no provoque reinicios continuos. Reiniciar una vez el proceso de desarrollo para cargar la configuración.
+- `TRUST_PROXY` conserva modo directo con vacío/false/0; admite proxy explícito y rechaza valores inválidos en vez de convertirlos en un salto confiable. La cabecera por sí sola no habilita confianza; `.env` local no se modifica. La topología real debe verificarse si el aviso persiste.
+- Pruebas: **381 frontend, 386 backend**, TypeScript sin errores; exportaciones Expo web y Android/Hermes correctas. Sin dependencias ni migraciones nuevas.
+
+### APK solicitado y prueba de campo pendiente
+- EAS preview Android **FINISHED**, build `f9ece896-1611-4e6a-8d86-987dcf00ca72`, desde main `360395c` con PR #58. Es anterior a 012; descarga entregada en el chat.
+- Se encontró LDPlayer abierto, pero su ADB no muestra dispositivos y localhost:5555 rechaza conexión. Se envió GPS Crucita por consola del fabricante, sin poder confirmarlo en Android. No se canceló el viaje remoto ni se afirmó haber probado chat/logout físicos.
+- Procedimiento y límites: `docs/validacion-campo-012.md`. T3, T7 y validación de campo siguen abiertos.
+
+---
+
 ## [1.69.0] - 2026-10-21 (Hora Local)
 
 ### Correcciones de la prueba en emulador y teléfono (APK del 011)
