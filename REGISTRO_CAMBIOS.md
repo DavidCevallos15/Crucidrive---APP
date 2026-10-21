@@ -5,7 +5,7 @@
 ## [1.72.0] - 2026-10-20 (Hora Local)
 
 ### 002 · Salida sin bucles y pruebas de los tres roles
-- Plan documentado en `535376e`, corrección solicitada tras un bloqueo real. Se reprodujo React #185: el guard raíz y el Redirect del layout privado competían por `/`, compartida con el mapa del pasajero. Solo el raíz navega ahora a `/explorar`; el layout privado no monta contenido sin sesión y el menú se cierra al cambiar la identidad.
+- Plan documentado en `535376e`, implementación en `adb43b4`, corrección solicitada tras un bloqueo real. Se reprodujo React #185: el guard raíz y el Redirect del layout privado competían por `/`, compartida con el mapa del pasajero. Solo el raíz navega ahora a `/explorar`; el layout privado no monta contenido sin sesión y el menú se cierra al cambiar la identidad.
 - Revocación con espera máxima de 20 s, además de los 4 s de GPS/avisos; transporte Auth abortable a los 15 s. Listener síncrono con perfil diferido, cierre único compartido y error/reintento accesible. Un fallo conserva credenciales; no se anuncia una salida inexistente.
 - Al salir o cambiar de cuenta se limpian viaje, hilo de chat, última referencia y conductores cercanos. Las lecturas tardías de viajes no restauran la cuenta anterior.
 - Cabecera admin adaptable con acciones en segunda fila, ancho limitado en escritorio y carga/disabled; perfil y verificación comparten feedback de salida. El perfil no inventa «No disponible» si no recibió el estado operativo.
