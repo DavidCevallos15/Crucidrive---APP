@@ -363,11 +363,11 @@ describe('T11 · lugares del administrador (criterio 24)', () => {
 
   /** Consulta encadenada que registra filtros, inserts y updates, y resuelve con `respuesta`. */
   const crearDbLugares = (respuesta) => {
-    const registro = { filtros: [], insert: null, update: null };
+    const registro = { filtros: [], insert: null, update: null, limite: null, filtrosAlLimitar: [] };
     const q = {
       select: () => q,
       order: () => q,
-      limit: () => q,
+      limit: (n) => { registro.limite = n; registro.filtrosAlLimitar = [...registro.filtros]; return q; },
       ilike: (col, patron) => { registro.filtros.push(['ilike', col, patron]); return q; },
       eq: (col, v) => { registro.filtros.push(['eq', col, v]); return q; },
       insert: (filas) => { registro.insert = filas; return q; },
@@ -402,6 +402,23 @@ describe('T11 · lugares del administrador (criterio 24)', () => {
     const [lugar] = r.json.mock.calls[0][0].data;
     expect(lugar).toMatchObject({ nombre: 'Letras Crucita', lat: -0.8704248, lng: -80.5401576 });
     expect(lugar).not.toHaveProperty('ubicacion');
+  });
+
+  test('012: sector, nombre y visibilidad se aplican antes del límite de 200', async () => {
+    const { db, registro } = crearDbLugares({ data: [filaLugar], error: null });
+    const r = res();
+    await listarLugares({ query: { q: 'LÉTRAS', visible: 'false', sector: 'malecon' }, supabase: db }, r);
+    expect(registro.filtros).toEqual([['ilike', 'nombre_norm', '%letras%'], ['eq', 'visible', false], ['eq', 'sector_id', 'malecon']]);
+    expect(registro.filtrosAlLimitar).toEqual(registro.filtros);
+    expect(registro.limite).toBe(200);
+  });
+
+  test.each(['madrid', "malecon' or true", ['malecon'], { eq: 'malecon' }])('012: rechaza sector inválido %j antes de consultar', async (sector) => {
+    const { db } = crearDbLugares({ data: [], error: null });
+    const r = res();
+    await listarLugares({ query: { sector }, supabase: db }, r);
+    expect(r.status).toHaveBeenCalledWith(400);
+    expect(db.from).not.toHaveBeenCalled();
   });
 
   test('crear exige nombre, categoría válida y coordenadas', async () => {

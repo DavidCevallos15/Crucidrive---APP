@@ -16,6 +16,7 @@ const {
 
 const COLUMNAS = 'id, nombre, categoria, ubicacion, sector_id, fuente, visible, editado_por_admin, actualizado_en';
 const LIMITE = 200;
+const SECTORES_OPERATIVOS = new Set(['la_boca', 'las_gilces', 'los_arenales', 'malecon', 'la_loma']);
 
 /** La ubicación llega como EWKB: se devuelve como { lat, lng } para el mapa del panel. */
 const aRespuesta = ({ ubicacion, ...resto }) => ({ ...resto, ...puntoDesdeEwkb(ubicacion) });
@@ -44,9 +45,12 @@ const leerCampos = (body, { parcial }) => {
   return { campos };
 };
 
-/** GET /api/admin/lugares?q=&visible=true|false — hasta 200, por nombre. */
+/** GET /api/admin/lugares?q=&visible=true|false&sector= — filtros antes del límite. */
 const listarLugares = asyncHandler(async (req, res) => {
-  const { q, visible } = req.query;
+  const { q, visible, sector } = req.query;
+  if (sector !== undefined && !SECTORES_OPERATIVOS.has(sector)) {
+    return errorResponse(res, 400, 'El sector no es válido.');
+  }
   if (visible !== undefined && !['true', 'false'].includes(visible)) {
     return errorResponse(res, 400, '"visible" debe ser true o false.');
   }
@@ -54,10 +58,12 @@ const listarLugares = asyncHandler(async (req, res) => {
     return errorResponse(res, 400, 'La búsqueda no puede superar 80 caracteres.');
   }
 
-  let consulta = req.supabase.from('lugares').select(COLUMNAS).order('nombre').limit(LIMITE);
+  let consulta = req.supabase.from('lugares').select(COLUMNAS);
   const texto = normalizar(q).replace(/[%_\\]/g, '');
   if (texto) consulta = consulta.ilike('nombre_norm', `%${texto}%`);
   if (visible !== undefined) consulta = consulta.eq('visible', visible === 'true');
+  if (sector !== undefined) consulta = consulta.eq('sector_id', sector);
+  consulta = consulta.order('nombre').limit(LIMITE);
 
   const { data, error } = await consulta;
   if (error) {

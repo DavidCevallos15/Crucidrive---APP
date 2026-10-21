@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-20T21:48:50.111Z",
+  "generatedAt": "2026-10-21T01:31:01.000Z",
   "title": "Design System: CruciDrive",
   "extensions": {
     "colorMeta": {
@@ -137,6 +137,11 @@
         "purpose": "Salida compartida con ReduceMotion.System."
       },
       {
+        "name": "menu-spring",
+        "value": "spring duration=300ms dampingRatio=1",
+        "purpose": "Menú 012 desde la izquierda con ReduceMotion.System. Cierre con overshootClamping, arrastre en hilo de UI y recuperación al interrumpir; no sustituye la transición genérica de paneles."
+      },
+      {
         "name": "coastal-intro",
         "value": "2400ms ease-in-out cubic",
         "purpose": "Una pasada espacial sin sonido y omisible desde el inicio. Reduced Motion muestra estado estático y onPresented registra presentación desde efecto."
@@ -144,7 +149,7 @@
       {
         "name": "panic-hold",
         "value": "2000ms linear",
-        "purpose": "Duración funcional de SOS mientras mantiene pulsado; no bucle ornamental."
+        "purpose": "Duración funcional de SOS 64 en cabecera fija de la hoja del mapa; abre el marcador con 911. No bucle ornamental ni registro de alertas D-05 del paso 006."
       }
     ],
     "breakpoints": [
@@ -238,7 +243,7 @@
   ],
   "narrative": {
     "northStar": "Crucita costera, moderna y tecnológica",
-    "overview": "El sistema 011 expresa la dirección clara y premium elegida por David: papel cálido, arena Silk Mango, vino Neon Candy y azul Wild Navy. La tricimoto propia y la costa reconocible sitúan la marca en Crucita. Outfit construye la identidad; Inter sostiene lectura y acciones de una aplicación móvil.\n\nLa bienvenida concentra la ilustración y la pasada de espuma. Los controles operativos priorizan contenido legible, superficies blancas, tinta oscura y estados explícitos. La profundidad es contenida y no depende de transparencia o animación.",
+    "overview": "El sistema 011 expresa la dirección clara y premium elegida por David: papel cálido, arena Silk Mango, vino Neon Candy y azul Wild Navy. La tricimoto propia y la costa reconocible sitúan la marca en Crucita. Outfit construye la identidad; Inter sostiene lectura y acciones de una aplicación móvil.\n\nLa bienvenida concentra la ilustración y la pasada de espuma. Los controles operativos priorizan contenido legible, superficies blancas, tinta oscura y estados explícitos. La profundidad es contenida y no depende de transparencia o animación.\n\nLa extensión 012 conserva paleta, tokens y bienvenida. Menú siempre a la izquierda y cuenta dentro del menú; borde de apertura de 24 puntos solo en pantallas principales con foco, mientras ajustes conserva Atrás nativo. El mapa usa cabecera fija con sector/aviso y SOS 64 sobre contenido desplazable. La zona aproximada del piloto avisa al conductor sin bloquear disponibilidad. Lugares admin inicia en visibles, combina nombre y sector, y consulta ocultos solo al elegir Ocultos o Todos.",
     "keyCharacteristics": [
       "Lienzo claro, vino para actuar, arena para calidez y azul para paisaje.",
       "Tricimoto geométrica propia e iconos de acción en contorno.",
@@ -262,7 +267,9 @@
       "Do conservar etiquetas, nombres accesibles, foco, errores anunciados y carga sin doble envío.",
       "Do permitir texto ampliado, desplazamiento, teclado y áreas seguras.",
       "Do respetar Reduce Motion y persistir también la bienvenida estática.",
-      "Do revisar estados reales y fondos variables además de colores aislados."
+      "Do revisar estados reales y fondos variables además de colores aislados.",
+      "Do conservar cabecera fija de sector/aviso y SOS, contenido desplazable y atribución visible en el mapa.",
+      "Do mantener filtros admin durante carga y reintento, sin presentar resultados anteriores bajo una selección nueva."
     ],
     "donts": [
       "Don't reintroducir turquesa/oscuro por nombres legacy ni prometer modo oscuro automático.",

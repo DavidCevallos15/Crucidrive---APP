@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,10 +12,9 @@ import { API_CONFIG } from '../constants/config';
 import { COLORS, FONTS, SHAPES, SPACING } from '../constants/theme';
 import { useLugaresAdminStore } from '../store/useLugaresAdminStore';
 import { ATRIBUCION_OSM, ICONO_CATEGORIA } from '../utils/lugares';
-import { CATEGORIAS, ID_NUEVO, type LugarAdmin } from '../utils/lugaresAdmin';
+import { CATEGORIAS, ID_NUEVO, parametrosLugares, type FiltroLugares as Filtro, type LugarAdmin } from '../utils/lugaresAdmin';
+import { SECTORS } from '../constants/sectors';
 import { nombreSector } from '../utils/solicitud';
-
-type Filtro = 'todos' | 'visibles' | 'ocultos';
 
 const FILTROS: { value: Filtro; label: string }[] = [
   { value: 'todos', label: 'Todos' },
@@ -42,19 +41,17 @@ export const AdminPlacesScreen: React.FC = () => {
   const setLugares = useLugaresAdminStore((s) => s.setLugares);
 
   const [texto, setTexto] = useState('');
-  const [filtro, setFiltro] = useState<Filtro>('todos');
+  const [filtro, setFiltro] = useState<Filtro>('visibles');
+  const [sector, setSector] = useState('');
   const [cargado, setCargado] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refrescando, setRefrescando] = useState(false);
   const turno = useRef(0);
 
-  const cargar = useCallback(async (q: string, f: Filtro) => {
+  const cargar = useCallback(async (q: string, f: Filtro, s: string) => {
     const miTurno = ++turno.current;
     setError(null);
-    const params = new URLSearchParams();
-    if (q.trim()) params.set('q', q.trim());
-    if (f !== 'todos') params.set('visible', f === 'visibles' ? 'true' : 'false');
-    const query = params.toString();
+    const query = parametrosLugares(q, f, s);
     try {
       const r = await authFetch(`${API_CONFIG.endpoints.admin.places}${query ? `?${query}` : ''}`);
       const cuerpo = await r.json().catch(() => null);
@@ -74,20 +71,25 @@ export const AdminPlacesScreen: React.FC = () => {
 
   // Espera 300 ms entre teclas antes de consultar.
   useEffect(() => {
-    const id = setTimeout(() => void cargar(texto, filtro), 300);
-    return () => clearTimeout(id);
-  }, [texto, filtro, cargar]);
+    setCargado(false);
+    setError(null);
+    const id = setTimeout(() => void cargar(texto, filtro, sector), 300);
+    return () => { clearTimeout(id); turno.current++; };
+  }, [texto, filtro, sector, cargar]);
 
   // Al volver del formulario, la lista refleja lo guardado (con el filtro que había).
-  const actual = useRef({ texto, filtro });
-  actual.current = { texto, filtro };
-  useFocusEffect(useCallback(() => { void cargar(actual.current.texto, actual.current.filtro); }, [cargar]));
+  const actual = useRef({ texto, filtro, sector });
+  actual.current = { texto, filtro, sector };
+  useFocusEffect(useCallback(() => {
+    void cargar(actual.current.texto, actual.current.filtro, actual.current.sector);
+    return () => { turno.current++; };
+  }, [cargar]));
 
   const refrescar = useCallback(async () => {
     setRefrescando(true);
-    await cargar(texto, filtro);
+    await cargar(texto, filtro, sector);
     setRefrescando(false);
-  }, [cargar, texto, filtro]);
+  }, [cargar, texto, filtro, sector]);
 
   return (
     <View style={styles.container}>
@@ -123,6 +125,12 @@ export const AdminPlacesScreen: React.FC = () => {
           maxLength={80}
         />
         <SegmentedControl label="Mostrar" opciones={FILTROS} value={filtro} onChange={setFiltro} />
+        <Text style={styles.filtroLabel}>Sector</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator keyboardShouldPersistTaps="handled" contentContainerStyle={styles.sectores}>
+          {[{ id: '', name: 'Todos los sectores' }, ...SECTORS].map((s) => <PressableScale key={s.id} accessibilityRole="radio" accessibilityLabel={s.name} accessibilityState={{ checked: sector === s.id }} onPress={() => setSector(s.id)} style={[styles.sector, sector === s.id && styles.sectorActivo]}>
+            <Text style={[styles.sectorTexto, sector === s.id && styles.sectorTextoActivo]}>{s.name}</Text>
+          </PressableScale>)}
+        </ScrollView>
       </View>
 
       {!cargado && !error ? (
@@ -131,7 +139,8 @@ export const AdminPlacesScreen: React.FC = () => {
         </View>
       ) : (
         <FlatList
-          data={lugares}
+          data={error ? [] : lugares}
+          keyboardShouldPersistTaps="handled"
           keyExtractor={(l) => l.id}
           contentContainerStyle={[styles.lista, { paddingBottom: insets.bottom + SPACING.lg }]}
           refreshControl={
@@ -139,7 +148,7 @@ export const AdminPlacesScreen: React.FC = () => {
           }
           ListHeaderComponent={
             error ? (
-              <Text style={styles.error} accessibilityRole="alert">{error}</Text>
+              <View><Text style={styles.error} accessibilityRole="alert">{error}</Text><GlassButton label="Reintentar" variant="ghost" onPress={() => void refrescar()} loading={refrescando} /></View>
             ) : null
           }
           ListEmptyComponent={
@@ -151,7 +160,7 @@ export const AdminPlacesScreen: React.FC = () => {
               </View>
             )
           }
-          ListFooterComponent={lugares.length > 0 ? <Text style={styles.atribucion}>{ATRIBUCION_OSM}</Text> : null}
+          ListFooterComponent={!error && lugares.length > 0 ? <Text style={styles.atribucion}>{lugares.length === 200 ? 'Primeros 200 resultados. Afina la búsqueda o el sector.\n' : ''}{ATRIBUCION_OSM}</Text> : null}
           renderItem={({ item }) => (
             <PressableScale
               onPress={() => router.push(`/(app)/(admin)/lugares/${item.id}` as never)}
@@ -205,6 +214,12 @@ const styles = StyleSheet.create({
   },
   subtitulo: { fontSize: FONTS.sizes.sm, fontFamily: FONTS.body, color: COLORS.glassTextMutedDark, marginTop: 2 },
   filtros: { paddingHorizontal: SPACING.md, paddingTop: SPACING.md },
+  filtroLabel: { color: COLORS.ink, fontFamily: FONTS.body, fontSize: FONTS.sizes.sm, marginBottom: SPACING.xs },
+  sectores: { gap: SPACING.sm, paddingBottom: SPACING.sm },
+  sector: { minHeight: 48, justifyContent: 'center', paddingHorizontal: SPACING.md, borderRadius: SHAPES.borderRadiusSm, backgroundColor: COLORS.glassBgDark },
+  sectorActivo: { backgroundColor: COLORS.wineSoft },
+  sectorTexto: { color: COLORS.glassTextMutedDark, fontFamily: FONTS.body, fontSize: FONTS.sizes.sm },
+  sectorTextoActivo: { color: COLORS.wine },
   centro: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   lista: { padding: SPACING.md, flexGrow: 1 },
   tarjeta: {

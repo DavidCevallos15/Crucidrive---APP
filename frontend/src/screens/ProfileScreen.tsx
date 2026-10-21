@@ -36,7 +36,7 @@ export default function ProfileScreen() {
         contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.lg }]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.brand}><BrandLockup compact /><AppMenuButton /></View>
+        <View style={styles.brand}><AppMenuButton /><BrandLockup compact /></View>
         {/* Avatar y nombre */}
         <Animated.View
           entering={PANEL_IN}

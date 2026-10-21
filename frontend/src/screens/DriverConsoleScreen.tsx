@@ -27,6 +27,7 @@ import { MotivoCancelacion } from '../components/MotivoCancelacion';
 import { esCompacta } from '../utils/compacto';
 import { separacionInferior } from '../utils/barraPestanas';
 import { distanciaMetros } from '../utils/geo';
+import { AVISO_FUERA_ZONA, estadoZona } from '../utils/zonaServicio';
 import {
   confirmacionDelPaso,
   enlaceComoLlegar,
@@ -88,6 +89,7 @@ export const DriverConsoleScreen: React.FC = () => {
   const consola = useConsolaConductor(socket);
   const { estado, cambiando, ofertas, segundosDe, aceptando, parametros } = consola;
   const disponible = estado === 'disponible';
+  const fueraDeZona = estadoZona(userCoords) === 'fuera';
   const seguimiento = useSeguimientoFondo(estado, parametros);
   const router = useRouter();
 
@@ -309,12 +311,17 @@ export const DriverConsoleScreen: React.FC = () => {
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={styles.statValue} numberOfLines={1}>
-                {nombreSector(currentSectorId) || '--'}
+                {fueraDeZona ? 'Fuera de Crucita' : nombreSector(currentSectorId) || '--'}
               </Text>
               <Text style={styles.statLabel}>Sector</Text>
             </View>
           </View>
         </BlurContainer>
+
+        {fueraDeZona && <View style={styles.offlineBanner} accessibilityRole="alert">
+          <Ionicons name="location-outline" size={18} color={COLORES_OFERTA.avisoTexto} />
+          <Text style={styles.offlineText}>{AVISO_FUERA_ZONA}. Durante el piloto puedes cambiar tu disponibilidad.</Text>
+        </View>}
 
         {/* Regla 6: el estado sin conexión siempre es visible */}
         {!isConnected && (

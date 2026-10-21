@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const { rateLimit } = require('express-rate-limit');
 const { errorResponse } = require('./utils/response');
+const { leerTrustProxy } = require('./config/trustProxy');
 
 const authRoutes = require('./routes/authRoutes');
 const viajeRoutes = require('./routes/viajeRoutes');
@@ -35,11 +36,9 @@ const toInt = (value, fallback) => {
 const createApp = () => {
   const app = express();
 
-  // Detrás de un proxy (Render, Railway…) el IP real llega en X-Forwarded-For.
-  // Sin esto el rate limit contaría a todos como un solo cliente.
-  if (process.env.TRUST_PROXY) {
-    app.set('trust proxy', toInt(process.env.TRUST_PROXY, 1));
-  }
+  // Solo confiar en el proxy declarado por el despliegue. Nunca usar true ni inferirlo
+  // de una cabecera que también puede enviar un cliente sin proxy.
+  app.set('trust proxy', leerTrustProxy(process.env.TRUST_PROXY));
 
   app.use(helmet());
   // Sesiones, coordenadas y documentos de identidad no deben quedar en cachés HTTP.

@@ -20,6 +20,7 @@ import { COLORS } from '../src/constants/theme';
 import { destinoGuardia, mostrarCargaInicial } from '../src/utils/routing';
 import { useRespuestaAvisos } from '../src/hooks/useRespuestaAvisos';
 import { variablesFaltantes } from '../src/constants/config';
+import { AppMenuProvider } from '../src/components/AppMenuButton';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -118,7 +119,7 @@ function AppRaiz() {
   return (
     <GestureHandlerRootView style={styles.root}>
       <StatusBar style="dark" />
-      <Slot />
+      <AppMenuProvider><Slot /></AppMenuProvider>
     </GestureHandlerRootView>
   );
 }

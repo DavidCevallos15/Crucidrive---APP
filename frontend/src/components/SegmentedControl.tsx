@@ -69,11 +69,11 @@ const styles = StyleSheet.create({
     borderRadius: SHAPES.borderRadiusSm,
     borderWidth: SHAPES.glassBorderWidth,
     borderColor: COLORS.glassBorderDark,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: COLORS.surface,
   },
   opcionActiva: {
     borderColor: COLORS.primaryLight,
-    backgroundColor: 'rgba(13, 148, 136, 0.28)',
+    backgroundColor: COLORS.wineSoft,
   },
   texto: {
     color: COLORS.glassTextMutedDark,
@@ -81,5 +81,5 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.heading,
     fontWeight: FONTS.weights.semibold,
   },
-  textoActivo: { color: COLORS.white },
+  textoActivo: { color: COLORS.wine },
 });
