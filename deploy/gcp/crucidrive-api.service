@@ -1,0 +1,31 @@
+# Backend de CruciDrive en la VM de prueba (spec 008, backend de prueba).
+# Una sola instancia: el despacho guarda sus temporizadores y conexiones en memoria.
+[Unit]
+Description=CruciDrive API (REST + Socket.io)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=crucidrive
+Group=crucidrive
+WorkingDirectory=/opt/crucidrive/backend
+# Claves y parámetros: solo en este archivo de la VM, nunca en el repo (modo 640, root:crucidrive).
+EnvironmentFile=/etc/crucidrive/api.env
+Environment=NODE_ENV=production
+Environment=PORT=3000
+ExecStart=/usr/bin/node src/index.js
+# Si se cae, vuelve solo; al volver, el despacho recupera los viajes desde la BD.
+Restart=always
+RestartSec=5
+# El backend se cierra ordenadamente con SIGTERM (src/apagado.js); 15 s de margen.
+TimeoutStopSec=15
+# Endurecimiento básico: sin privilegios nuevos ni escritura fuera de su carpeta.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/crucidrive
+
+[Install]
+WantedBy=multi-user.target

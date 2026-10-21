@@ -4,6 +4,7 @@
   "description": "Servidor Express.js y conexión con Supabase para la aplicación hiperlocal de transporte CruciDrive.",
   "main": "src/index.js",
   "scripts": {
+    "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "test": "jest --coverage",
     "test:watch": "jest --watch",
@@ -18,6 +19,9 @@
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "engines": {
+    "node": ">=22"
+  },
   "bugs": {
     "url": "https://github.com/DavidCevallos15/Crucidrive---APP/issues"
   },

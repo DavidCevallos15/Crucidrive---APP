@@ -2,6 +2,28 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.74.0] - 2026-10-21 (Hora Local)
+
+### 008 · Backend de prueba en Google Cloud (D-16)
+- **Para qué:** probar en Crucita con datos móviles, sin Wi-Fi ni la PC de David, y sin pagar todavía. Es una VM e2-micro del nivel gratuito de Google Cloud, siempre encendida, con una sola instancia, porque el despacho guarda temporizadores y conexiones en memoria.
+- **Backend:**
+  - `npm start` y `engines` (Node 22).
+  - Cierre ordenado con SIGTERM (`src/apagado.js`): detiene el despacho, cierra los sockets y el servidor, y sale igual si algo tarda más de 10 s. Al volver, `recuperar()` retoma los viajes desde la BD.
+- **`deploy/gcp/`:**
+  - servicio systemd con reinicio automático y endurecimiento básico;
+  - Caddy con HTTPS automático usando `<IP>.sslip.io`;
+  - `api.env.ejemplo` sin valores;
+  - `instalar.sh`, que se puede volver a correr para actualizar;
+  - guía paso a paso con `gcloud`.
+- **Lo que hace David:**
+  - crear la VM (`us-east1`) y cargar las claves en `/etc/crucidrive/api.env`;
+  - definir `EXPO_PUBLIC_API_BASE_URL`, `EXPO_PUBLIC_SOCKET_URL` y `EXPO_PUBLIC_ZONA_PRUEBA` en EAS `preview`, y generar el APK.
+  - Si su cuenta cobra la IP externa, son unos 3 USD al mes.
+- **Spec y estado:** spec en `specs/008-piloto/backend-de-prueba.md`, con D-16 en la constitución. En `specs/README.md`, los estados del 004 y del 005 se pusieron al día y el 008 pasa a «en curso».
+- Pruebas: backend 392/392 (4 nuevas del cierre ordenado). `bash -n instalar.sh` sin errores.
+
+---
+
 ## [1.73.0] - 2026-10-21 (Hora Local)
 
 ### Cierre de sesión en Android y zona de prueba

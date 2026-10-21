@@ -1,0 +1,7 @@
+# HTTPS automático (Let's Encrypt) delante del backend. DOMINIO lo reemplaza instalar.sh por
+# <IP>.sslip.io, un nombre gratuito que apunta a la IP de la VM. Caddy renueva el certificado.
+DOMINIO {
+	encode gzip
+	# Socket.io usa WebSocket: Caddy lo reenvía sin configuración extra.
+	reverse_proxy 127.0.0.1:3000
+}
