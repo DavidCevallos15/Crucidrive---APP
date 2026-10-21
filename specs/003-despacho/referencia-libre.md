@@ -11,7 +11,15 @@ Solicitada por David el 20 oct 2026. Ejecuta el respaldo ya aprobado en D-09 y e
 
 ## Tareas y evidencia
 
-- [ ] R1 · Nombre libre en origen/destino, sector obligatorio, sin publicación en catálogo. Prueba: nombre + sector generan descripciones correctas en la solicitud y no IDs de lugares; vacíos/sector inválido no avanzan.
-- [ ] R2 · Flujo visible en 360×640, error de búsqueda y ficha con nombre editable. Prueba web y revisión independiente; Android físico pendiente.
-- [ ] R3 · CORS exacto para localhost/127.0.0.1:8082, con lista de producción respetada. Prueba de preflight y verificación contra backend local.
+- [x] R1 · Nombre libre en origen/destino, sector obligatorio, sin publicación en catálogo. Prueba: nombre + sector generan descripciones correctas en la solicitud y no IDs de lugares; vacíos/sector inválido no avanzan. `tests/referenciaLibre.test.ts`.
+- [x] R2 · Flujo en 360×640 y 1280×800, disponible durante búsqueda sin depender de resultados; ficha con nombre editable. Prueba web y revisión independiente: borrado al sustituir un punto corregido y verificado. Sin inducción de caída real de Supabase; disponibilidad en error revisada por código. Android físico pendiente.
+- [x] R3 · CORS exacto para localhost/127.0.0.1:8082, con lista de producción respetada. Pruebas preflight, JWT y origen ajeno; OPTIONS real a la API LAN devolvió 204 y origen permitido exacto. Configuración local `.env` corregida sin subirla a Git.
 - [ ] R4 · Suites/TypeScript/export, documentación, registro, commit y PR hacia main.
+
+## Evidencia de cierre
+
+- 388/388 frontend, 388/388 backend, TypeScript y export web correctos.
+- Capturas `.impeccable/review/referencia-libre/`: selección, ficha y encomienda móvil; ficha amplia; transición a otro sector con nombre previo borrado.
+- Navegador: nombre vacío deshabilita sectores; selección de origen/destino libres en Malecón; volver al buscador conserva nombre; cambiar origen libre por sector La Boca vacía el nombre y conserva destino/datos de encomienda; elegir nombre libre nuevamente lo reasigna sin perderlos.
+- Revisión independiente: hallazgo de referencia antigua resuelto, verdict **ship limitado a esa corrección y evidencia web**. Sin Android físico ni envío real de solicitudes.
+- Aclaración previa al código: `60807a3`.

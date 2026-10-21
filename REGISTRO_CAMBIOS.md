@@ -2,6 +2,19 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.71.0] - 2026-10-20 (Hora Local)
+
+### 003 · Usar nombres de lugares aunque no estén en el catálogo
+- Petición de David, ya cubierta por D-09/criterio 20: aclaración y plan en `60807a3`; implementación en `f8e63a0`.
+- El buscador ofrece **«Usar este nombre»** aunque esté cargando, falle o devuelva otras coincidencias. El usuario conserva y puede editar el nombre, elige el sector y lo ve como referencia en la ficha/solicitud. Sirve para recogida y destino de viajes/encomiendas y permite ambos puntos dentro del mismo sector.
+- Usa la ubicación aproximada del sector: no inventa coordenadas del negocio ni añade el texto al catálogo público. JWT, RLS y precios del servidor conservan sus reglas.
+- Corregida durante la revisión la referencia antigua al sustituir un punto: elegir otro origen/destino limpia su nota; solo elegir explícitamente un nombre libre la reasigna. Probado origen libre → La Boca → nombre libre nuevo, conservando destino y datos de encomienda; volver al buscador conserva el texto.
+- **CORS de la captura:** se añadieron los orígenes exactos localhost/127.0.0.1:8082 al ejemplo/default y a la lista local ignorada por Git. OPTIONS real a la API LAN: **204**, `Access-Control-Allow-Origin: http://127.0.0.1:8082`. Una lista de producción explícita sigue sin autorizar orígenes locales ni ajenos; el GET continúa exigiendo JWT.
+- Verificación: **388 frontend, 388 backend**, TypeScript y export web correctos. Revisión independiente: hallazgo resuelto, verdict **ship sobre la corrección y evidencia web**. Documentación del sistema mantenida.
+- Capturas `.impeccable/review/referencia-libre/`; detalle en `specs/003-despacho/referencia-libre.md`. Sin Android físico ni envío real de solicitudes; no se generó otro APK en esta corrección. Sin migraciones ni dependencias nuevas; `.env` permanece fuera de Git.
+
+---
+
 ## [1.70.0] - 2026-10-20 (Hora Local)
 
 ### 012 · Navegación y mapa, aprobados por David
