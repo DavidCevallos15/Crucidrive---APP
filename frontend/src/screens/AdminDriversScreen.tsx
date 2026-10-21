@@ -74,7 +74,7 @@ export const AdminDriversScreen: React.FC = () => {
           onPress={() => router.push('/(app)/(admin)/lugares' as never)}
           variant="ghost"
           size="sm"
-          leftIcon={<Ionicons name="location" size={16} color={COLORS.white} />}
+          leftIcon={<Ionicons name="location" size={16} color={COLORS.glassTextDark} />}
           style={styles.botonLugares}
         />
         <GlassButton label="Salir" onPress={signOut} variant="ghost" size="sm" />

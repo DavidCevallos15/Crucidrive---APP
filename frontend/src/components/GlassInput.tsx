@@ -163,10 +163,13 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sizes.base,
     fontFamily: FONTS.body,
   },
+  // Campo, 20 oct 2026: a 12 px y con el teclado abierto, «Escribe tu contraseña» pasaba
+  // desapercibido. A 14 px y en negrita se ve al primer intento.
   errorText: {
     color: COLORS.dangerLight,
-    fontSize: FONTS.sizes.xs,
+    fontSize: FONTS.sizes.sm,
     fontFamily: FONTS.body,
+    fontWeight: FONTS.weights.semibold,
     marginTop: SPACING.xs,
   },
   helperText: {

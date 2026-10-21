@@ -3,21 +3,8 @@ import { Platform, StyleSheet, Text, View } from 'react-native';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import MapViewNative, { Marker, PROVIDER_GOOGLE, Region, type MapViewProps } from 'react-native-maps';
 import { COLORS } from '../constants/theme';
+import { ESTILO_MAPA } from '../utils/estiloMapa';
 
-/**
- * Estilo claro de Google Maps: papel, caminos blancos y agua azul suave.
- */
-const COASTAL_MAP_STYLE = [
-  { elementType: 'geometry', stylers: [{ color: '#F3EEE8' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#74636D' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#FFFFFF' }] },
-  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#E5EAE0' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#FFFFFF' }] },
-  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#FEE8C1' }] },
-  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#C8DCF4' }] },
-];
 
 /**
  * En Android, react-native-maps sin la clave de Google Maps cierra la app al pintar el mapa.
@@ -36,7 +23,7 @@ const MapView = forwardRef<MapViewNative, MapViewProps>((props, ref) => {
       </View>
     );
   }
-  return <MapViewNative ref={ref} customMapStyle={COASTAL_MAP_STYLE} {...props} />;
+  return <MapViewNative ref={ref} customMapStyle={ESTILO_MAPA} {...props} />;
 });
 MapView.displayName = 'MapView';
 
