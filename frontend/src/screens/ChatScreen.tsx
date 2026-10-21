@@ -5,7 +5,6 @@ import {
   Text,
   FlatList,
   KeyboardAvoidingView,
-  Platform,
   type ListRenderItem,
 } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -23,6 +22,7 @@ import { COLORS, FONTS, SPACING, SHAPES } from '../constants/theme';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { alturaBarraPestanas } from '../utils/barraPestanas';
+import { useTecladoVisible } from '../hooks/useTecladoVisible';
 import {
   useSharedValue,
   useAnimatedStyle,
@@ -60,7 +60,10 @@ export const ChatScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
   const activeRide = useRideStore((s) => s.activeRide);
-  const { joinChat, sendMessage, onEvent } = useSocket();
+  const { joinChat, sendMessage, onEvent, isConnected } = useSocket();
+  const tecladoVisible = useTecladoVisible();
+  // Lo que respondió el servidor si el mensaje no se guardó (por ejemplo, el chat se cerró).
+  const [avisoEnvio, setAvisoEnvio] = useState<string | null>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
@@ -122,6 +125,12 @@ export const ChatScreen: React.FC = () => {
     return unsubscribe;
   }, [onEvent]);
 
+  // ─── Si el mensaje no se guardó, se dice (005, criterio 7; campo 20 oct 2026) ─────
+  // El socket es compartido: solo los errores del chat (no los de ubicación, por ejemplo).
+  useEffect(() => onEvent('error_message', (mensaje) => {
+    if (typeof mensaje === 'string' && /mensaje|chat/i.test(mensaje)) setAvisoEnvio(mensaje);
+  }), [onEvent]);
+
   // ─── Auto-scroll al último mensaje ────────────────────────
   useEffect(() => {
     if (messages.length > 0) {
@@ -134,10 +143,15 @@ export const ChatScreen: React.FC = () => {
   // ─── Enviar mensaje ───────────────────────────────────────
   const handleSend = useCallback(() => {
     if (!inputText.trim() || !threadId) return;
-
+    // Sin conexión no se envía ni se borra lo escrito: el mensaje no llegaría (criterio 20).
+    if (!isConnected) {
+      setAvisoEnvio('Sin conexión: tu mensaje no se envió. Inténtalo cuando vuelva la señal.');
+      return;
+    }
+    setAvisoEnvio(null);
     sendMessage(threadId, inputText.trim());
     setInputText('');
-  }, [inputText, threadId, sendMessage]);
+  }, [inputText, threadId, sendMessage, isConnected]);
 
   // ─── Botón de enviar con micro-animación ──────────────────
   const sendScale = useSharedValue(1);
@@ -219,12 +233,14 @@ export const ChatScreen: React.FC = () => {
               {activeRide?.driver?.nombre ?? 'Chat del viaje'}
             </Text>
             <Text style={styles.chatHeaderStatus}>
-              {activeRide?.status === 'en_curso' ? 'En camino' : 'Conectado'}
+              {!isConnected ? 'Sin conexión' : activeRide?.status === 'en_curso' ? 'En camino' : 'Conectado'}
             </Text>
           </View>
         </View>
       </BlurContainer>
 
+      {/* Teclado: en Android sin 'padding' el campo quedaba debajo del teclado (campo, 20 oct) */}
+      <KeyboardAvoidingView style={styles.cuerpo} behavior="padding">
       {/* ─── LISTA DE MENSAJES ─────────────────────────────── */}
       <FlatList
         ref={flatListRef}
@@ -237,18 +253,18 @@ export const ChatScreen: React.FC = () => {
       />
 
       {/* ─── BARRA DE ENTRADA ─────────────────────────────── */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={90}
-      >
-        <BlurContainer intensity={30} style={[styles.inputBar, { paddingBottom: alturaBarraPestanas(insets.bottom) + SPACING.sm }]}>
+        {avisoEnvio && (
+          <Text style={styles.avisoEnvio} accessibilityRole="alert">{avisoEnvio}</Text>
+        )}
+        {/* Con el teclado arriba la barra de pestañas queda tapada: su espacio sobra */}
+        <BlurContainer intensity={30} style={[styles.inputBar, { paddingBottom: (tecladoVisible ? 0 : alturaBarraPestanas(insets.bottom)) + SPACING.sm }]}>
           <View style={styles.inputBarContent}>
             <View style={styles.inputWrapper}>
               <GlassInput
                 label=""
                 placeholder="Escribir mensaje..."
                 value={inputText}
-                onChangeText={setInputText}
+                onChangeText={(texto) => { setInputText(texto); setAvisoEnvio(null); }}
                 containerStyle={styles.chatInputContainer}
                 returnKeyType="send"
                 onSubmitEditing={handleSend}
@@ -286,6 +302,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.darkBg,
+  },
+  cuerpo: { flex: 1 },
+  avisoEnvio: {
+    color: COLORS.danger,
+    backgroundColor: COLORS.glassSurface,
+    fontFamily: FONTS.body,
+    fontSize: FONTS.sizes.sm,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
   },
 
   // ─── Header ──────────────────────────────────────────────
