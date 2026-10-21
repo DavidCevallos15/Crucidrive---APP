@@ -56,7 +56,9 @@ export const destinoGuardia = (segmentos: string[], estado: EstadoGuardia): stri
   if (!estado.hasSession) {
     // La URL / también pertenece al índice privado del pasajero. Indicar el
     // destino público evita resolver de nuevo el privado y redirigir en bucle.
-    return inAppGroup ? '/explorar' : null;
+    if (inAppGroup) return '/explorar';
+    // «Completa tu perfil» no sirve sin cuenta: al cerrar sesión desde ahí, al login.
+    return inAuthGroup && segmentos[1] === 'perfil' ? '/(auth)/login' : null;
   }
 
   if (!estado.profileChecked) return null;
@@ -83,3 +85,18 @@ export const mostrarCargaInicial = (
   hasFontError: boolean
 ): boolean => !isInitialized || (!fontsLoaded && !hasFontError);
 
+
+/**
+ * Qué muestra el layout privado `(app)` (campo, 21 oct 2026). Mientras se cierra la sesión, o si
+ * el cierre falló, se muestra una pantalla de salida sin mapa ni animaciones: así el mapa, el
+ * menú y sus animaciones se desmontan con la sesión aún válida, y no en el mismo instante en que
+ * se monta otro mapa en /explorar (la app se colgaba o se cerraba en Android).
+ */
+export const vistaPrivada = (estado: {
+  hasSession: boolean;
+  isSigningOut: boolean;
+  logoutError: string | null;
+}): 'nada' | 'salida' | 'app' => {
+  if (!estado.hasSession) return 'nada';
+  return estado.isSigningOut || estado.logoutError ? 'salida' : 'app';
+};

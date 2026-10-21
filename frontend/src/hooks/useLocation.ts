@@ -25,6 +25,10 @@ export const useLocation = (enableTracking: boolean = false) => {
   } = useLocationStore();
 
   const watchSubscriptionRef = useRef<Location.LocationSubscription | null>(null);
+  // Cada inicio o parada cambia el intento. Si la pantalla se desmonta mientras
+  // watchPositionAsync todavía no respondió, la suscripción que llegue tarde se cancela:
+  // antes quedaba el GPS encendido sin nadie que la quitara.
+  const intentoRef = useRef(0);
 
   // ─── Solicitar permisos de ubicación ───────────────────────
   const requestPermissions = useCallback(async (): Promise<boolean> => {
@@ -95,8 +99,9 @@ export const useLocation = (enableTracking: boolean = false) => {
   // ─── Iniciar tracking continuo ─────────────────────────────
   const startTracking = useCallback(async () => {
     try {
+      const intento = ++intentoRef.current;
       const granted = hasPermission || (await requestPermissions());
-      if (!granted) return;
+      if (!granted || intento !== intentoRef.current) return;
 
       // Detener tracking previo si existe
       if (watchSubscriptionRef.current) {
@@ -123,6 +128,10 @@ export const useLocation = (enableTracking: boolean = false) => {
         }
       );
 
+      if (intento !== intentoRef.current) {
+        subscription.remove();
+        return;
+      }
       watchSubscriptionRef.current = subscription;
       setTracking(true);
     } catch (error) {
@@ -132,6 +141,7 @@ export const useLocation = (enableTracking: boolean = false) => {
 
   // ─── Detener tracking ──────────────────────────────────────
   const stopTracking = useCallback(() => {
+    intentoRef.current += 1;
     if (watchSubscriptionRef.current) {
       watchSubscriptionRef.current.remove();
       watchSubscriptionRef.current = null;
