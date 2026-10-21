@@ -5,7 +5,8 @@ const { createApp, getAllowedOrigins } = require('./app');
 const initSocketHandler = require('./sockets/socketHandler');
 const { leerConfigDespacho } = require('./despacho/config');
 const { leerConfigUbicacion, validarConDespacho } = require('./ubicacion/config');
-const { iniciarDespacho } = require('./despacho');
+const { iniciarDespacho, detenerDespacho } = require('./despacho');
+const { crearApagado } = require('./apagado');
 
 dotenv.config();
 
@@ -42,6 +43,10 @@ iniciarDespacho(io, configDespacho)
     server.listen(port, () => {
       console.log(`[CruciDrive] REST + Socket.io escuchando en el puerto ${port}`);
     });
+    // Reinicio o apagado de la VM (systemd manda SIGTERM): cierre ordenado (008).
+    const apagar = crearApagado({ server, io, detenerDespacho });
+    process.on('SIGTERM', () => apagar('SIGTERM'));
+    process.on('SIGINT', () => apagar('SIGINT'));
   })
   .catch((err) => {
     console.error(`[CruciDrive] No se pudo iniciar el despacho: ${err.message}`);
