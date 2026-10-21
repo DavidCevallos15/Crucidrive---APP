@@ -16,7 +16,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { GlassCard } from '../components/GlassCard';
 import { GlassButton } from '../components/GlassButton';
-import { BlurContainer } from '../components/BlurContainer';
 import { PressableScale } from '../components/PressableScale';
 import { PanicButton } from '../components/PanicButton';
 import { TricimotoIcon } from '../components/TricimotoIcon';
@@ -39,7 +38,7 @@ import { useRideStore, type ActiveRide } from '../store/useRideStore';
 import { SECTORS, MAX_PASSENGERS } from '../constants/sectors';
 import { COLORS, FONTS, SPACING, SHAPES, Z_INDEX } from '../constants/theme';
 import { PANEL_IN, PANEL_OUT } from '../constants/motion';
-import { rutaInicial } from '../utils/routing';
+import { AVISO_FUERA_ZONA, estadoZona, gpsDeServicio } from '../utils/zonaServicio';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../store/useAuthStore';
 import { separacionInferior } from '../utils/barraPestanas';
@@ -67,11 +66,10 @@ type Panel = 'destino' | 'origen' | 'ficha';
  *
  * Muestra:
  * - Mapa interactivo a pantalla completa con marcadores de tricimotos
- * - Píldora de estado con el sector donde estás
+ * - Sector y SOS en la cabecera fija de la hoja inferior
  * - Elección de destino y de origen (GPS, lugar o sector; paso 003, criterio 21)
  * - Ficha con el total (0,50 USD por persona) y el estado de la solicitud:
  *   "Buscando tricimoto…", "sin conductor" con "Volver a pedir" y "aceptado" (criterios 10, 11, 16)
- * - Botón de Pánico (SOS) flotante
  *
  * Diseño: DESIGN.md §3.B — Panel del Mapa y Ficha de Destino
  */
@@ -81,9 +79,10 @@ export const MapScreen: React.FC = () => {
   // Con sesión hay barra de pestañas (absoluta): las hojas suben lo que ella mide.
   const conBarra = useAuthStore((st) => Boolean(st.session));
   const separacion = separacionInferior(conBarra, insets.bottom);
-  const sheetMaxHeight = Math.max(220, height - insets.top - (conBarra ? separacion : insets.bottom) - 132);
+  const [safetyHeight, setSafetyHeight] = useState(96);
+  const sheetMaxHeight = Math.max(120, height - insets.top - (conBarra ? separacion : insets.bottom) - 132 - safetyHeight);
   // Panel de destino u origen: deja a la vista al menos un 35 % del mapa (010, criterio 2).
-  const panelMaxHeight = altoMaximoHoja(height, conBarra ? separacion : insets.bottom);
+  const panelMaxHeight = Math.max(120, altoMaximoHoja(height, conBarra ? separacion : insets.bottom) - safetyHeight);
   const compacta = esCompacta(height);
   const service = useServiceStore((s) => s.service);
   const selectService = useServiceStore((s) => s.selectService);
@@ -94,8 +93,6 @@ export const MapScreen: React.FC = () => {
   const [parcelError, setParcelError] = useState<string | null>(null);
   const router = useRouter();
   const session = useAuthStore((st) => st.session);
-  const authProfile = useAuthStore((st) => st.profile);
-  const authVerification = useAuthStore((st) => st.verification);
   const { userCoords, currentSectorId, hasPermission } = useLocation(false);
   const socket = useSocket();
   const { joinSector, onEvent } = socket;
@@ -119,8 +116,10 @@ export const MapScreen: React.FC = () => {
 
   const { formattedPrice, formattedPricePerPerson } = useTariff(passengers);
 
+  const zona = estadoZona(userCoords);
+  const fueraDeZona = zona === 'fuera';
   const gps: Gps = useMemo(
-    () => (userCoords && currentSectorId ? { coords: userCoords, sectorId: currentSectorId } : null),
+    () => gpsDeServicio(userCoords, currentSectorId),
     [userCoords, currentSectorId]
   );
   const origen = resolverOrigen(origenElegido, gps);
@@ -132,21 +131,21 @@ export const MapScreen: React.FC = () => {
     return posicionConductor && partida ? distanciaMetros(posicionConductor, partida) : null;
   }, [posicionConductor, ultimaSolicitud, gps]);
 
-  const statusText = currentSectorId
+  const statusText = fueraDeZona ? AVISO_FUERA_ZONA : currentSectorId
     ? `Estás en ${nombreSector(currentSectorId)}`
     : hasPermission
       ? 'Buscando tu ubicación...'
       : 'Activa tu ubicación';
 
   // ─── Región inicial del mapa ───────────────────────────────
-  const initialRegion = useMapRegion(userCoords);
+  const initialRegion = useMapRegion(zona === 'dentro' ? userCoords : null);
 
   // ─── Suscribirse al sector cuando se determina ────────────
   useEffect(() => {
-    if (currentSectorId) {
+    if (currentSectorId && !fueraDeZona) {
       joinSector(currentSectorId);
     }
-  }, [currentSectorId, joinSector]);
+  }, [currentSectorId, fueraDeZona, joinSector]);
 
   // ─── Escuchar actualizaciones de ubicación de conductores ──
   useEffect(() => {
@@ -266,7 +265,7 @@ export const MapScreen: React.FC = () => {
     <View style={styles.routeRow}>
       <Ionicons name={origen?.tipo === 'gps' ? 'navigate' : 'radio-button-on'} size={16} color={COLORS.success} />
       <Text style={[styles.routeText, !origen && styles.routeTextMissing]} numberOfLines={1}>
-        {origen ? `Desde: ${nombreOrigen(origen)}` : 'Sin GPS: elige desde dónde sales'}
+        {origen ? `Desde: ${nombreOrigen(origen)}` : fueraDeZona ? 'Elige un lugar o sector de salida' : 'Sin GPS: elige desde dónde sales'}
       </Text>
       <PressableScale
         onPress={() => abrirPanel('origen')}
@@ -288,15 +287,27 @@ export const MapScreen: React.FC = () => {
     </PressableScale>)}
   </View>;
 
+  const safetyHeader = <View style={styles.safetyHeader} onLayout={(e) => setSafetyHeight(e.nativeEvent.layout.height)}>
+    <View style={styles.safetyContext}>
+      <View style={styles.safetyLocation}>
+        <Ionicons name="location-outline" size={18} color={COLORS.wine} />
+        <Text style={styles.statusText} accessibilityLiveRegion="polite">{statusText}</Text>
+      </View>
+      <Text style={styles.safetyHint}>Emergencia: mantén SOS 2 segundos</Text>
+    </View>
+    <PanicButton onActivate={handlePanic} />
+  </View>;
+
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
 
       {/* ─── MAPA DE PANTALLA COMPLETA ──────────────────────── */}
       <MapView
+        key={zona}
         style={StyleSheet.absoluteFill}
         initialRegion={initialRegion}
-        showsUserLocation
+        showsUserLocation={!fueraDeZona}
         showsMyLocationButton={false}
         showsCompass={false}
         mapType="standard"
@@ -352,31 +363,6 @@ export const MapScreen: React.FC = () => {
       >
         <View style={styles.statusRow}>
         <AppMenuButton />
-        <BlurContainer intensity={30} style={styles.statusPill}>
-          <Ionicons
-            name={currentSectorId ? 'location' : 'location-outline'}
-            size={18}
-            color={currentSectorId ? COLORS.primaryLight : COLORS.secondaryLight}
-          />
-          <Text style={styles.statusText} numberOfLines={1}>
-            {statusText}
-          </Text>
-        </BlurContainer>
-        <PressableScale
-          onPress={() =>
-            router.push(
-              (session && authProfile
-                ? rutaInicial(authProfile.rol, authVerification?.estado ?? null)
-                : '/(auth)/login') as never
-            )
-          }
-          accessibilityRole="button"
-          accessibilityLabel={session ? 'Mi cuenta' : 'Iniciar sesión'}
-          style={styles.accountButton}
-        >
-          <Ionicons name={session ? 'person-circle' : 'log-in'} size={20} color={COLORS.white} />
-          <Text style={styles.accountText}>{session ? 'Mi cuenta' : 'Entrar'}</Text>
-        </PressableScale>
         </View>
       </Animated.View>
 
@@ -392,6 +378,7 @@ export const MapScreen: React.FC = () => {
             style={styles.destinationCard}
             noPadding
           >
+            {safetyHeader}
             <HojaDesplazable maxHeight={panelMaxHeight} contentContainerStyle={[styles.sheetBody, { paddingBottom: (conBarra ? 0 : insets.bottom) + SPACING.md }]} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
             {serviceSelector}
             <Text style={[styles.sectionTitle, compacta && styles.sectionTitleCompact]} accessibilityRole="header">
@@ -495,6 +482,7 @@ export const MapScreen: React.FC = () => {
           style={[styles.rideSheetContainer, { bottom: separacion }]}
         >
           <GlassCard style={styles.rideSheet} noPadding>
+            {safetyHeader}
             <HojaDesplazable maxHeight={sheetMaxHeight} contentContainerStyle={[styles.sheetBody, { paddingBottom: (conBarra ? 0 : insets.bottom) + SPACING.md }]} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
             {serviceSelector}
             {/* Encabezado con el total */}
@@ -605,10 +593,8 @@ export const MapScreen: React.FC = () => {
           style={[styles.rideSheetContainer, { bottom: separacion }]}
         >
           <GlassCard style={styles.rideSheet} noPadding>
-            <View
-              style={[styles.sheetBody, { paddingBottom: (conBarra ? 0 : insets.bottom) + SPACING.md }]}
-              accessibilityLiveRegion="polite"
-            >
+            {safetyHeader}
+            <HojaDesplazable maxHeight={sheetMaxHeight} contentContainerStyle={[styles.sheetBody, { paddingBottom: (conBarra ? 0 : insets.bottom) + SPACING.md }]} keyboardShouldPersistTaps="handled">
               <EstadoViaje
                 ride={activeRide}
                 distanciaConductor={distanciaConductor}
@@ -623,13 +609,11 @@ export const MapScreen: React.FC = () => {
                 }}
                 onChat={() => router.push('/(app)/(passenger)/chat' as never)}
               />
-            </View>
+            </HojaDesplazable>
           </GlassCard>
         </Animated.View>
       )}
 
-      {/* ─── BOTÓN DE PÁNICO (SOS) ────────────────────────── */}
-      <PanicButton onActivate={handlePanic} />
     </View>
   );
 };
@@ -768,6 +752,10 @@ const EstadoViaje: React.FC<EstadoViajeProps> = ({
 };
 
 const styles = StyleSheet.create({
+  safetyHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, padding: SPACING.md, borderBottomWidth: 1, borderBottomColor: COLORS.outline },
+  safetyContext: { flex: 1, minWidth: 0 },
+  safetyLocation: { flexDirection: 'row', alignItems: 'center' },
+  safetyHint: { color: COLORS.glassTextMutedDark, fontFamily: FONTS.body, fontSize: FONTS.sizes.xs, lineHeight: 18, marginTop: SPACING.xs },
   serviceTabs: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.lg },
   serviceOption: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm, minHeight: 56, borderRadius: 12, backgroundColor: COLORS.glassBgDark, padding: SPACING.sm },
   serviceTabsCompact: { marginBottom: SPACING.md },
@@ -845,37 +833,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: SPACING.sm,
   },
-  statusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexShrink: 1,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 12,
-    borderRadius: SHAPES.borderRadiusSm,
-    borderWidth: 1,
-    borderColor: COLORS.glassBorderDark,
-  },
   statusText: {
     color: COLORS.glassTextDark,
     fontSize: FONTS.sizes.sm,
     fontFamily: FONTS.body,
     marginLeft: SPACING.sm,
     flexShrink: 1,
-  },
-  accountButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 44,
-    paddingHorizontal: SPACING.md,
-    borderRadius: SHAPES.borderRadiusFull,
-    backgroundColor: COLORS.primary,
-    gap: SPACING.xs,
-  },
-  accountText: {
-    color: COLORS.white,
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONTS.heading,
-    fontWeight: FONTS.weights.semibold,
   },
   sheetBody: {
     paddingHorizontal: SPACING.md,

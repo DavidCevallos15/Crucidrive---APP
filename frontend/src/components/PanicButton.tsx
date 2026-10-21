@@ -2,18 +2,15 @@ import React, { useCallback, useEffect } from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 import Animated, {
   Easing,
-  ReduceMotion,
   cancelAnimation,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
-  withRepeat,
   withTiming,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, ANIMATION, FONTS, Z_INDEX } from '../constants/theme';
+import { COLORS, ANIMATION, FONTS } from '../constants/theme';
 
 /**
  * Props del botón de pánico (SOS).
@@ -36,17 +33,13 @@ const BUTTON_SIZE = 64;
  * - Hay que mantenerlo presionado 2 s: evita activaciones accidentales.
  * - Mientras se mantiene, un relleno claro crece de forma lineal: el usuario ve
  *   cuánto falta. Al soltar antes, el relleno retrocede rápido (200 ms).
- * - Un solo anillo de latido lento y discreto lo mantiene localizable sin
- *   competir con el resto de la pantalla; se apaga con "reducir movimiento".
- * - Flota arriba a la derecha, bajo la barra de estado: nunca queda tapado por
- *   la ficha del viaje que sube desde abajo.
+ * - Se coloca en la cabecera fija de la hoja: permanece visible al desplazar su contenido.
  */
 export const PanicButton: React.FC<PanicButtonProps> = ({
   onActivate,
   isActivated = false,
   disabled = false,
 }) => {
-  const insets = useSafeAreaInsets();
   const buttonScale = useSharedValue(1);
   const hold = useSharedValue(0);
   const ringScale = useSharedValue(1);
@@ -98,7 +91,7 @@ export const PanicButton: React.FC<PanicButtonProps> = ({
   }));
 
   return (
-    <View style={[styles.wrapper, { top: insets.top + 76 }]} pointerEvents="box-none">
+    <View style={styles.wrapper} pointerEvents="box-none">
       {!isActivated && <Animated.View style={[styles.ring, ringStyle]} pointerEvents="none" />}
 
       <GestureDetector gesture={longPress}>
@@ -106,7 +99,12 @@ export const PanicButton: React.FC<PanicButtonProps> = ({
           style={[styles.button, isActivated && styles.buttonActivated, buttonStyle]}
           accessibilityRole="button"
           accessibilityLabel="Botón de emergencia SOS. Mantén presionado 2 segundos para activar."
-          accessibilityHint="Envía una alerta de emergencia con tu ubicación actual"
+          accessibilityHint="Abre el marcador con el 911. CruciDrive no sustituye a los servicios de emergencia."
+          accessibilityState={{ disabled }}
+          accessibilityActions={[{ name: 'longpress', label: 'Abrir el marcador con el 911' }]}
+          onAccessibilityAction={(event) => {
+            if (!disabled && event.nativeEvent.actionName === 'longpress') handleActivation();
+          }}
         >
           <Animated.View style={[styles.fill, fillStyle]} pointerEvents="none" />
           <Ionicons name={isActivated ? 'alert' : 'alert-outline'} size={26} color={COLORS.white} />
@@ -119,13 +117,10 @@ export const PanicButton: React.FC<PanicButtonProps> = ({
 
 const styles = StyleSheet.create({
   wrapper: {
-    position: 'absolute',
-    right: 16,
     width: BUTTON_SIZE,
     height: BUTTON_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: Z_INDEX.panicButton,
   },
   ring: {
     position: 'absolute',

@@ -83,8 +83,9 @@ export default function SettingsScreen({ page }: { page: SettingsPage }) {
   };
   return <View style={styles.screen}>
     <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
+      <AppMenuButton edgeSwipe={false} />
+      <Text style={styles.headerTitle}>{page === 'configuracion' ? 'Tu CruciDrive' : 'Configuración'}</Text>
       <PressableScale onPress={() => router.canGoBack() ? router.back() : router.replace('/')} accessibilityRole="button" accessibilityLabel="Volver" style={styles.iconButton}><Ionicons name="arrow-back" size={24} color={COLORS.glassTextDark} /></PressableScale>
-      <Text style={styles.headerTitle}>{page === 'configuracion' ? 'Tu CruciDrive' : 'Configuración'}</Text><AppMenuButton />
     </View>
     <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + SPACING.xxl }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
       <Text style={styles.title} accessibilityRole="header">{titles[page]}</Text>

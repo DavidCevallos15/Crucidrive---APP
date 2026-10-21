@@ -1,6 +1,16 @@
 import { SECTORS } from '../constants/sectors';
 import type { CategoriaLugar } from './lugares';
 
+export type FiltroLugares = 'todos' | 'visibles' | 'ocultos';
+
+export function parametrosLugares(texto: string, filtro: FiltroLugares, sector: string): string {
+  const params = new URLSearchParams();
+  if (texto.trim()) params.set('q', texto.trim());
+  if (filtro !== 'todos') params.set('visible', String(filtro === 'visibles'));
+  if (sector) params.set('sector', sector);
+  return params.toString();
+}
+
 /**
  * Lugares del catálogo para el administrador (paso 003, T15, criterio 24). Sin React.
  * Las reglas son las mismas de la BD (CHECK de 0011) y del backend (utils/validation.js):

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../store/useAuthStore';
@@ -11,10 +11,68 @@ import { COLORS, FONTS, SPACING } from '../constants/theme';
 import { TricimotoIcon } from './TricimotoIcon';
 import { BrandLockup } from './BrandLockup';
 import { PressableScale } from './PressableScale';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, { ReduceMotion, runOnJS, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { abrirTrasDeslizar, BORDE_MENU, cerrarTrasDeslizar } from '../utils/menuGesture';
 
-export function AppMenuButton() {
+const MenuContext = createContext({ open: false, abrir: () => {}, registrar: (_delta: number) => {} });
+
+/** Solo reserva el borde en pantallas que tienen un botón de menú montado. */
+export function AppMenuProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [triggers, setTriggers] = useState(0);
+  const pathname = usePathname();
+  const insets = useSafeAreaInsets();
+  const abrir = useCallback(() => setOpen(true), []);
+  const registrar = useCallback((delta: number) => setTriggers((n) => Math.max(0, n + delta)), []);
+  const context = useMemo(() => ({ open, abrir, registrar }), [open, abrir, registrar]);
+  useEffect(() => setOpen(false), [pathname]);
+  const borde = Gesture.Pan().maxPointers(1).activeOffsetX(18).failOffsetX(-10).failOffsetY([-12, 12])
+    .onEnd((e) => { if (abrirTrasDeslizar(e.translationX, e.velocityX)) runOnJS(abrir)(); });
+  return <MenuContext.Provider value={context}>
+    {children}
+    {triggers > 0 && !open && <GestureDetector gesture={borde}>
+      <View accessible={false} style={[styles.edge, { top: insets.top + 64, bottom: insets.bottom + 85 }]} />
+    </GestureDetector>}
+    <MenuDrawer open={open} setOpen={setOpen} />
+  </MenuContext.Provider>;
+}
+
+export function AppMenuButton({ edgeSwipe = true }: { edgeSwipe?: boolean }) {
+  const { open, abrir, registrar } = useContext(MenuContext);
+  useFocusEffect(useCallback(() => {
+    if (!edgeSwipe) return;
+    registrar(1);
+    return () => registrar(-1);
+  }, [registrar, edgeSwipe]));
+  return <PressableScale onPress={abrir} accessibilityRole="button" accessibilityLabel="Abrir menú de CruciDrive" accessibilityState={{ expanded: open }} style={styles.trigger}>
+    <Ionicons name="menu-outline" size={26} color={COLORS.glassTextDark} />
+  </PressableScale>;
+}
+
+function MenuDrawer({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => void }) {
   const { width } = useWindowDimensions();
+  const drawerWidth = Math.min(width - 36, 360);
+  const offset = useSharedValue(-drawerWidth);
+  const cerrado = useCallback(() => setOpen(false), [setOpen]);
+  const cerrar = useCallback(() => {
+    offset.set(withSpring(-drawerWidth, { duration: 300, dampingRatio: 1, overshootClamping: true, reduceMotion: ReduceMotion.System }, (finished) => {
+      if (finished) runOnJS(cerrado)();
+    }));
+  }, [offset, drawerWidth, cerrado]);
+  useEffect(() => {
+    offset.set(open ? withSpring(0, { duration: 300, dampingRatio: 1, reduceMotion: ReduceMotion.System }) : -drawerWidth);
+  }, [open, drawerWidth, offset]);
+  const panelStyle = useAnimatedStyle(() => ({ transform: [{ translateX: offset.get() }] }));
+  const closeGesture = Gesture.Pan().maxPointers(1).activeOffsetX(-16).failOffsetY([-12, 12])
+    .onUpdate((e) => offset.set(Math.max(-drawerWidth, Math.min(0, e.translationX))))
+    .onEnd((e) => {
+      if (cerrarTrasDeslizar(e.translationX, e.velocityX, drawerWidth)) runOnJS(cerrar)();
+      else offset.set(withSpring(0, { duration: 300, dampingRatio: 1, reduceMotion: ReduceMotion.System }));
+    })
+    .onFinalize((_e, success) => {
+      if (!success) offset.set(withSpring(0, { duration: 300, dampingRatio: 1, reduceMotion: ReduceMotion.System }));
+    });
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { profile, session, verification } = useAuthStore();
@@ -32,15 +90,12 @@ export function AppMenuButton() {
       <Ionicons name="chevron-forward" size={16} color={COLORS.glassTextMutedDark} />
     </PressableScale>
   );
-  return <>
-    <PressableScale onPress={() => setOpen(true)} accessibilityRole="button" accessibilityLabel="Abrir menú de CruciDrive" accessibilityState={{ expanded: open }} style={styles.trigger}>
-      <Ionicons name="menu-outline" size={26} color={COLORS.glassTextDark} />
-    </PressableScale>
-    <Modal visible={open} transparent animationType="none" onRequestClose={() => setOpen(false)} statusBarTranslucent>
-      <View style={styles.overlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={() => setOpen(false)} accessible={false} focusable={false} />
-        <View style={[styles.drawer, { width: Math.min(width - 36, 360), paddingTop: insets.top + SPACING.md, paddingBottom: insets.bottom + SPACING.md }]} accessibilityViewIsModal>
-          <View style={styles.heading}><BrandLockup compact /><PressableScale accessibilityRole="button" accessibilityLabel="Cerrar menú" onPress={() => setOpen(false)} style={styles.close}><Ionicons name="close" size={24} color={COLORS.glassTextDark} /></PressableScale></View>
+  return <Modal visible={open} transparent animationType="none" onRequestClose={cerrar} statusBarTranslucent>
+      <GestureHandlerRootView style={styles.overlay}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={cerrar} accessible={false} focusable={false} />
+        <GestureDetector gesture={closeGesture}>
+        <Animated.View style={[styles.drawer, { width: drawerWidth, paddingTop: insets.top + SPACING.md, paddingBottom: insets.bottom + SPACING.md }, panelStyle]} accessibilityViewIsModal>
+          <View style={styles.heading}><BrandLockup compact /><PressableScale accessibilityRole="button" accessibilityLabel="Cerrar menú" onPress={cerrar} style={styles.close}><Ionicons name="close" size={24} color={COLORS.glassTextDark} /></PressableScale></View>
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.account}><View style={styles.avatar}><Ionicons name="person-outline" size={24} color={COLORS.primaryLight} /></View><View style={styles.flex}><Text style={styles.name}>{profile?.nombre ?? 'Hola, te damos la bienvenida'}</Text><Text style={styles.muted}>{profile?.rol === 'conductor' ? 'Conductor de tricimoto' : profile?.rol === 'admin' ? 'Administración' : session ? 'Tu cuenta CruciDrive' : 'Inicia sesión para solicitar'}</Text></View></View>
             <Text style={styles.group}>Servicios</Text>
@@ -61,18 +116,19 @@ export function AppMenuButton() {
             {authError && <Text style={styles.error} accessibilityRole="alert">{authError}</Text>}
             <Text style={styles.footer}>Crucita · Solo tricimotos</Text>
           </View>
-        </View>
-      </View>
-    </Modal>
-  </>;
+        </Animated.View>
+        </GestureDetector>
+      </GestureHandlerRootView>
+    </Modal>;
 }
 
 const styles = StyleSheet.create({
   trigger: { width: 48, height: 48, borderRadius: 16, backgroundColor: COLORS.darkBg, alignItems: 'center', justifyContent: 'center' },
+  edge: { position: 'absolute', top: 72, bottom: 0, left: 0, width: BORDE_MENU, zIndex: 100 },
   overlay: { flex: 1, backgroundColor: COLORS.overlay },
   drawer: { flex: 1, backgroundColor: COLORS.darkBg, paddingHorizontal: SPACING.md },
   heading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: SPACING.lg },
-  close: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  close: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   row: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: SPACING.md, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, borderRadius: 12, marginBottom: SPACING.xs },
   selected: { backgroundColor: COLORS.wineSoft },
   rowText: { flex: 1, color: COLORS.glassTextDark, fontFamily: FONTS.body, fontSize: FONTS.sizes.sm },
