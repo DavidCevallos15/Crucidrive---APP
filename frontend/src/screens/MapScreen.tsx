@@ -759,7 +759,7 @@ const EstadoViaje: React.FC<EstadoViajeProps> = ({
           onPress={onChat}
           variant="ghost"
           size="md"
-          leftIcon={<Ionicons name="chatbubbles" size={18} color={COLORS.white} />}
+          leftIcon={<Ionicons name="chatbubbles" size={18} color={COLORS.glassTextDark} />}
           style={styles.cancelButton}
         />
       )}

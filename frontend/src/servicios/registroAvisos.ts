@@ -5,11 +5,20 @@
  * Así se prueba con dobles y `avisos.ts` solo conecta las piezas reales.
  */
 
+import { conLimite } from '../utils/conLimite';
+
 /** Llamadas al backend: `POST /api/dispositivos` y `DELETE /api/dispositivos/:token`. */
 export interface ApiDispositivos {
   registrar: (token: string) => Promise<boolean>;
   olvidar: (token: string) => Promise<boolean>;
 }
+
+/**
+ * Lo más que puede ocupar la cola una operación. Pedir el token sin Google Play (emulador) o
+ * un backend que no responde no terminan nunca: sin límite, «olvidar» quedaba detrás para
+ * siempre y cerrar sesión se colgaba.
+ */
+export const LIMITE_TAREA_AVISOS_MS = 15000;
 
 export interface DependenciasRegistro {
   /** Token de Expo de este teléfono, o null si no hay avisos (web, Expo Go, permiso negado). */
@@ -42,7 +51,8 @@ export const crearRegistroAvisos = ({
   let cola: Promise<unknown> = Promise.resolve();
   const enCola = <T>(tarea: () => Promise<T>): Promise<T> => {
     const resultado = cola.then(tarea, tarea);
-    cola = resultado.catch(() => undefined);
+    // La cola avanza aunque la tarea no termine; quien la pidió sigue esperando su resultado.
+    cola = conLimite(resultado, LIMITE_TAREA_AVISOS_MS, undefined).catch(() => undefined);
     return resultado;
   };
 

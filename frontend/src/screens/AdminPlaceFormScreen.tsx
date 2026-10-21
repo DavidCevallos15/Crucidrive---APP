@@ -192,7 +192,7 @@ export const AdminPlaceFormScreen: React.FC = () => {
           variant="ghost"
           size="md"
           loading={ubicando}
-          leftIcon={<Ionicons name="navigate" size={18} color={COLORS.white} />}
+          leftIcon={<Ionicons name="navigate" size={18} color={COLORS.glassTextDark} />}
           style={styles.botonUbicacion}
         />
         <View style={styles.fila}>

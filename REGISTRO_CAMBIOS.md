@@ -2,6 +2,32 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.69.0] - 2026-10-21 (Hora Local)
+
+### Correcciones de la prueba en emulador y teléfono (APK del 011)
+- **Cerrar sesión ya no se queda en «Cerrando sesión…».** Antes de revocar la sesión se apaga el GPS y se olvida el teléfono para avisos, y esa limpieza esperaba sin límite:
+  - en un emulador sin Google Play, pedir el token de avisos no responde nunca, y «olvidar» quedaba en cola detrás para siempre;
+  - en Android `fetch` no tiene límite de tiempo, así que con un backend que no responde la petición quedaba colgada.
+
+  Ahora la limpieza espera como mucho 4 s, la cola de avisos avanza a los 15 s y `authFetch` cancela a los 15 s y falla como «sin conexión».
+- **Chat:**
+  - el teclado ya no tapa el campo de escribir;
+  - sin conexión no se envía ni se borra lo escrito, y se avisa;
+  - los errores del servidor (por ejemplo, el chat cerrado) se muestran;
+  - la cabecera dice «Sin conexión» cuando corresponde.
+- **Íconos que no se veían:** «Abrir chat», «Lugares» del administrador y «Usar mi ubicación» eran blancos sobre botón claro.
+- **El error de un campo** («Escribe tu contraseña») pasa de 12 a 14 px y en negrita. En web ya aparecía, pero en el teléfono pasaba desapercibido.
+- **Mapa:** se ven los lugares de Google (restaurantes, tiendas), como pidió David. Solo se oculta el transporte público.
+- **Spec 012 en borrador:** menú a la izquierda con deslizamiento, «Mi cuenta» dentro del menú, SOS y sector dentro de la hoja, y aviso fuera de la zona de Crucita. Espera la aprobación de David.
+- **Lo que no era un bug del código:**
+  - El APK probado salió de la rama del #56 (`f3c4df7`), antes del #55. Por eso el conductor no tenía la tarjeta del viaje ni «Cancelar viaje» y su chat decía «Sin chat activo».
+  - El viaje de prueba del 20 oct (17:45) seguía «aceptado» en la BD. Por eso el pasajero veía «va en camino».
+  - Los «hola» del pasajero sí se guardaron (4 mensajes); el conductor no los vio porque ese APK no recupera el chat.
+  - La tricimoto en Madrid era la ubicación del emulador.
+- Pruebas: frontend 365/365 (7 nuevas; las del cuelgue fallan sin el cambio). `tsc` sin errores.
+
+---
+
 ## [1.68.0] - 2026-10-20 (Hora Local)
 
 ### 011 · Diseño costero y bienvenida (PR #56, integrado sobre el 005)

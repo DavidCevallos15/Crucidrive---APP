@@ -1,3 +1,12 @@
+import { conLimite } from './conLimite';
+
+/**
+ * Lo más que se espera a apagar el GPS y a olvidar el teléfono antes de revocar la sesión.
+ * Son limpiezas de cortesía: sin red o sin Google Play pueden no responder nunca, y en el
+ * campo eso dejaba «Cerrando sesión…» para siempre (20 oct 2026).
+ */
+export const LIMITE_LIMPIEZA_MS = 4000;
+
 interface LogoutActions {
   stopTracking(): Promise<unknown>;
   forgetDevice(): Promise<unknown>;
@@ -8,8 +17,8 @@ interface LogoutActions {
 /** Solo anunciar salida cuando Auth confirmó la eliminación de sus credenciales. */
 export async function closeAccountSession(actions: LogoutActions): Promise<boolean> {
   await Promise.allSettled([
-    Promise.resolve().then(() => actions.stopTracking()),
-    Promise.resolve().then(() => actions.forgetDevice()),
+    conLimite(Promise.resolve().then(() => actions.stopTracking()), LIMITE_LIMPIEZA_MS, undefined),
+    conLimite(Promise.resolve().then(() => actions.forgetDevice()), LIMITE_LIMPIEZA_MS, undefined),
   ]);
   try {
     const { error } = await actions.revoke();
