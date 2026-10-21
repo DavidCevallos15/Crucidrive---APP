@@ -35,6 +35,8 @@ En esa prueba David encontró dos grupos de problemas:
 7. **Dado** un GPS fuera de la zona de servicio de Crucita, **cuando** el pasajero abre el mapa, **entonces** ve «Estás fuera de la zona de servicio de Crucita» y el mapa se centra en Crucita. No puede usar su GPS como punto de salida, pero sí elegir un lugar o un sector.
 8. **Dado** un conductor con el GPS fuera de la zona, **cuando** abre la consola o intenta ponerse disponible, **entonces** ve el aviso «Estás fuera de la zona de servicio de Crucita». Durante el piloto puede cambiar su disponibilidad; las reglas actuales del servidor siguen decidiendo el resultado.
 
+8a. **Dado** un APK de prueba (`preview`) con una zona de prueba configurada, **cuando** el GPS está dentro de esa zona, **entonces** la app lo trata como dentro de la zona de servicio: sirve para probar desde otra ciudad (pedido de David, 21 oct 2026). El APK de producción no trae zona de prueba y solo acepta Crucita. Una zona mal escrita o demasiado grande se ignora.
+
 ### Lugares del administrador
 9. **Dado** el catálogo del administrador, **cuando** lo abre, **entonces** ve solo lugares visibles. Puede buscar por nombre y elegir un sector; ambos filtros se combinan antes de limitar los resultados.
 10. **Dado** ese catálogo, **cuando** elige «Ocultos» o «Todos», **entonces** puede consultar los lugares desactivados conservando búsqueda y sector. Cambiar filtros indica la carga y no muestra resultados viejos como si pertenecieran al filtro nuevo.

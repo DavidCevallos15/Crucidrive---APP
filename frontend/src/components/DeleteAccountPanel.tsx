@@ -11,6 +11,8 @@ import { supabase } from '../utils/supabaseClient';
 import { detenerSeguimientoFondo } from '../tareas/ubicacionFondo';
 import { registroAvisos } from '../servicios/avisos';
 import { COLORS, FONTS, SPACING } from '../constants/theme';
+import { conLimite } from '../utils/conLimite';
+import { LIMITE_LIMPIEZA_MS } from '../utils/closeAccountSession';
 
 export function DeleteAccountPanel() {
   const [open, setOpen] = useState(false);
@@ -30,7 +32,11 @@ export function DeleteAccountPanel() {
       const body = await response.json().catch(() => null);
       if (!account.isCurrent()) return;
       if (!response.ok) { setError(body?.message ?? 'No se pudo eliminar la cuenta. Inténtalo de nuevo.'); return; }
-      await Promise.allSettled([detenerSeguimientoFondo(), registroAvisos.olvidar()]);
+      // Limpiezas de cortesía con límite: sin Google Play o sin red no deben colgar la pantalla.
+      await Promise.allSettled([
+        conLimite(Promise.resolve().then(detenerSeguimientoFondo), LIMITE_LIMPIEZA_MS, undefined),
+        conLimite(registroAvisos.olvidar(), LIMITE_LIMPIEZA_MS, undefined),
+      ]);
       if (!account.isCurrent()) return;
       await supabase.auth.signOut({ scope: 'local' });
       const currentUser = useAuthStore.getState().user;

@@ -59,6 +59,8 @@ interface AuthState {
   logoutError: string | null;
   beginSignOut: () => boolean;
   endSignOut: (error: string | null) => void;
+  /** Cierra el aviso de un cierre de sesión fallido y vuelve a la app con la sesión intacta. */
+  descartarErrorSalida: () => void;
 
   // ─── Acciones ──────────────────────────────────────────────
   /** Establece la sesión y el usuario tras el login */
@@ -130,6 +132,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     return iniciado;
   },
   endSignOut: (logoutError) => set({ isSigningOut: false, isLoading: false, logoutError }),
+  descartarErrorSalida: () => set({ logoutError: null }),
 
   clearSession: () => {
     limpiarDatosDeCuenta();

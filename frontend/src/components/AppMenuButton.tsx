@@ -18,6 +18,9 @@ import { abrirTrasDeslizar, BORDE_MENU, cerrarTrasDeslizar } from '../utils/menu
 const MenuContext = createContext({ open: false, abrir: () => {}, registrar: (_delta: number) => {} });
 
 /** Solo reserva el borde en pantallas que tienen un botón de menú montado. */
+/** Margen para que el menú termine de cerrarse antes de empezar a cerrar la sesión. */
+const MENU_CERRADO_MS = 150;
+
 export function AppMenuProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [triggers, setTriggers] = useState(0);
@@ -83,6 +86,10 @@ function MenuDrawer({ open, setOpen }: { open: boolean; setOpen: (open: boolean)
   const passenger = !profile || profile.rol === 'pasajero';
   const home = profile ? rutaInicial(profile.rol, verification?.estado ?? null) : '/';
   const go = (route: string) => { setOpen(false); router.push(route as never); };
+  // Primero se cierra el menú y después empieza la salida (campo, 21 oct 2026): así el menú no
+  // se desmonta en el mismo instante que el mapa. El progreso y el error los muestra la
+  // pantalla de salida del layout privado.
+  const salir = () => { setOpen(false); setTimeout(() => { void signOut(); }, MENU_CERRADO_MS); };
   const choose = (next: ServiceType) => { selectService(next); go(home); };
   const row = (label: string, icon: keyof typeof Ionicons.glyphMap, action: () => void, selected = false, busy = false) => (
     <PressableScale onPress={action} disabled={isSigningOut} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ selected, disabled: isSigningOut, busy }} style={[styles.row, selected && styles.selected]}>
@@ -113,7 +120,7 @@ function MenuDrawer({ open, setOpen }: { open: boolean; setOpen: (open: boolean)
             {row('Acerca de CruciDrive', 'information-circle-outline', () => go('/(settings)/acerca'))}
           </ScrollView>
           <View style={styles.bottom}>
-            {session ? row(isSigningOut ? 'Cerrando sesión…' : 'Cerrar sesión', 'log-out-outline', signOut, false, isSigningOut) : row('Iniciar sesión o crear cuenta', 'log-in-outline', () => go('/(auth)/login'))}
+            {session ? row(isSigningOut ? 'Cerrando sesión…' : 'Cerrar sesión', 'log-out-outline', salir, false, isSigningOut) : row('Iniciar sesión o crear cuenta', 'log-in-outline', () => go('/(auth)/login'))}
             {isSigningOut && <Text style={styles.footer} accessibilityLiveRegion="polite">Estamos cerrando tu sesión. Puede tardar unos segundos.</Text>}
             {authError && <Text style={styles.error} accessibilityRole="alert">{authError}</Text>}
             <Text style={styles.footer}>Crucita · Solo tricimotos</Text>
