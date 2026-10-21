@@ -2,6 +2,25 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.73.0] - 2026-10-21 (Hora Local)
+
+### Cierre de sesión en Android y zona de prueba
+- **Cerrar sesión ya no desmonta el mapa y el menú en el mismo instante en que monta otro mapa.** David seguía viendo que la app se colgaba o se cerraba al salir, en los tres roles. El #61 había quitado el bucle de redirecciones, pero solo se probó en web, y la causa más probable que queda es nativa: en un mismo commit se desmontaban el mapa, el menú y sus animaciones, y se montaba el mapa de `/explorar`. Ahora:
+  - el menú se cierra antes de empezar la salida;
+  - el layout privado cambia a una pantalla «Cerrando sesión…» sin mapa ni animaciones, con la sesión todavía válida;
+  - solo cuando Auth confirma, la guardia lleva a `/explorar`;
+  - si el cierre falla, esa pantalla muestra el error con «Reintentar» y «Volver a la app».
+
+  **Hace falta confirmarlo en el teléfono con `adb logcat`.**
+- **Otros bugs del cierre:**
+  - Cerrar sesión desde «Completa tu perfil» dejaba al usuario en el formulario; ahora va al login.
+  - Eliminar la cuenta esperaba sin límite a apagar el GPS y olvidar el teléfono; ahora espera como mucho 4 s.
+  - Si la pantalla se desmontaba antes de que el GPS respondiera, la suscripción quedaba viva; ahora se cancela.
+- **Zona de prueba (spec 012, criterio 8a).** El APK `preview` acepta una caja extra en `EXPO_PUBLIC_ZONA_PRUEBA` («sur,oeste,norte,este», máximo 2° por lado), para probar desde otra ciudad sin el aviso «fuera de Crucita». Si falta o está mal escrita se ignora. No va en producción.
+- Pruebas: frontend 427/427, con 16 nuevas. `tsc` sin errores.
+
+---
+
 ## [1.72.0] - 2026-10-20 (Hora Local)
 
 ### 002 · Salida sin bucles y pruebas de los tres roles
