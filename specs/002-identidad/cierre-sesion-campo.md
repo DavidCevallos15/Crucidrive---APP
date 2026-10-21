@@ -28,7 +28,7 @@ solicitado por David tras un bloqueo. No añade funcionalidades ni cambia permis
 - [x] Prueba web con las tres cuentas: login, pantalla del rol, chat si está
   disponible, salida, recarga y navegación protegida sin resucitar sesión.
 - [x] Tests frontend/backend, TypeScript, exportación y revisión independiente UI.
-- [ ] Registro, commit y PR con CI. Android físico se declara pendiente si ADB no
+- [x] Registro, commit y PR con CI. Android físico se declara pendiente si ADB no
   expone dispositivos; no sustituir esa prueba por evidencia web.
 
 Las credenciales de prueba se usan solo en memoria y no se guardan en Git.
@@ -70,3 +70,6 @@ El menú deja la navegación únicamente al guard y se cierra al cambiar identid
   aplicar solicitudes/cancelaciones/pasos y sus finally. Quince pruebas ejercitan
   las acciones reales con red diferida → salir/cambiar/volver a la misma cuenta.
   Veredicto posterior **ship al P1 revisado, resolved**; no amplía la evidencia nativa.
+- Entrega: [PR #61](https://github.com/DavidCevallos15/Crucidrive---APP/pull/61),
+  implementación `adb43b4`. CI backend/frontend y Vercel en verde; Supabase Preview
+  omitido al no cambiar la BD. El PR queda abierto para revisión y fusión de David.

@@ -13,6 +13,7 @@
 - **412 pruebas frontend, 388 backend**, TypeScript y export web correctos. Prueba con SDK real y almacenamiento simulado: error conserva sesión, reintento la elimina y reiniciar no la restaura. Android/Hermes exportado; teléfono pendiente por ausencia de dispositivo ADB. Capturas en `.impeccable/review/logout/`.
 - Revisión independiente: capturas correctas; hallazgo P1 de respuestas tardías en mutaciones corregido y calificado **resolved, ship al P1 revisado**. Quince regresiones de acciones reales cubren solicitud, cancelación y pasos del conductor tras salir/cambiar/volver a la misma cuenta, incluidos finally y callbacks.
 - Sin cambios de BD, dependencias nuevas ni credenciales guardadas. Detalle en `specs/002-identidad/cierre-sesion-campo.md`.
+- Entrega: [PR #61](https://github.com/DavidCevallos15/Crucidrive---APP/pull/61), backend/frontend y Vercel en verde; Supabase Preview omitido. Abierto para revisión y fusión de David.
 
 ---
 
