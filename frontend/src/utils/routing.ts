@@ -54,7 +54,9 @@ export const destinoGuardia = (segmentos: string[], estado: EstadoGuardia): stri
   const inAppGroup = segmentos[0] === '(app)';
 
   if (!estado.hasSession) {
-    return inAppGroup ? '/' : null;
+    // La URL / también pertenece al índice privado del pasajero. Indicar el
+    // destino público evita resolver de nuevo el privado y redirigir en bucle.
+    return inAppGroup ? '/explorar' : null;
   }
 
   if (!estado.profileChecked) return null;

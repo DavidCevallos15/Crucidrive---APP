@@ -34,7 +34,7 @@ interface Errores {
  * LOPDP. Sin aceptar el consentimiento el servidor no crea el perfil (spec 002, criterio 1).
  */
 export const CompleteProfileScreen: React.FC = () => {
-  const { completeProfile, signOut, user } = useSupabaseAuth();
+  const { completeProfile, signOut, user, isSigningOut, authError } = useSupabaseAuth();
 
   const [rol, setRol] = useState<Rol>('pasajero');
   const [nombre, setNombre] = useState('');
@@ -169,12 +169,14 @@ export const CompleteProfileScreen: React.FC = () => {
           style={styles.principal}
         />
         <GlassButton
-          label="Cerrar sesión"
+          label={isSigningOut ? 'Cerrando sesión…' : 'Cerrar sesión'}
           onPress={signOut}
+          loading={isSigningOut}
           variant="ghost"
           size="sm"
           style={styles.salir}
         />
+        {authError && <Text style={styles.errorGeneral} accessibilityRole="alert">{authError}</Text>}
       </GlassCard>
     </AuthScaffold>
   );

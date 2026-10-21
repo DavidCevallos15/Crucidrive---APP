@@ -74,6 +74,14 @@ Los títulos grandes usan tracking cercano a −0,02 em; el cuerpo mantiene espa
 | `CoastalScene` | Escena de marca | Tricimoto vino/arena y costa azul, sin datos de un viaje. No es un mapa de ruta. |
 | `CoastalIntro` | `onFinish` | Pasada única de espuma, Omitir; no reproduce sonido. |
 
+### Salida de sesión y cabecera administrativa
+
+Menú, perfil, completar perfil, verificación y administrador comparten una única salida en curso y el mismo error. Al pulsar «Cerrar sesión», el control comunica «Cerrando sesión…» como nombre accesible, muestra indicador y anuncia busy/disabled; bloquea reenvíos. El menú conserva además el texto visible de progreso y deshabilita sus opciones mientras espera. Los botones mantienen sus variantes y mínimos compartidos, incluido el mínimo Android de 48 puntos.
+
+Si Auth no confirma, mostrar el error como alerta y habilitar «Cerrar sesión» para reintentar; no anunciar éxito ni borrar solo la identidad visual. La navegación posterior pertenece al guard raíz: al salir de una pantalla privada, dirige a `/explorar`. El menú se cierra al cambiar la identidad. Viaje, chat, última referencia y conductores cercanos pertenecen a su cuenta; ninguna respuesta pendiente de la sesión anterior puede restaurarlos, tampoco al volver a entrar con la misma cuenta.
+
+En el panel de conductores por revisar, título y nombre del administrador ocupan la primera fila. «Lugares» y «Cerrar sesión» comparten una segunda fila, con separación del tema, anchura disponible y máximo de 520 puntos; ambas acciones quedan bloqueadas durante la salida. Conservar título y etiquetas completos a 360 puntos, sin reducir tipografía para acomodarlos. Esta composición es propia de esa cabecera, sin cambiar tokens ni convertirla en regla para todas las pantallas.
+
 ### Ejemplo de uso
 
 ```tsx
@@ -158,6 +166,8 @@ Esta versión define una apariencia clara; no promete alternancia automática cl
 Evidencia 012: `.impeccable/review/campo012/` contiene mapa, menú, ficha, encomienda y configuración a 360×640, más mapa a 1280×800. Se reportan 381 pruebas frontend, 386 backend (incluidas las correcciones de configuración posteriores a la revisión UI), TypeScript y exportaciones web/Android correctos. Las capturas son web, sin Android físico ni sesión admin; quedan pendientes los gestos nativos, estados activos con cuentas reales, recepción de chat y filtros admin en dispositivo. Estas comprobaciones no implementan el registro SOS del 006.
 
 Evidencia de referencia libre: `.impeccable/review/referencia-libre/` contiene nombre, ficha editable, encomienda y cambio de sector a 360×640, más ficha a 1280×800. `cambio-sector-360x640.png` muestra que cambiar de punto elimina la nota anterior; la revisión independiente concluyó «ship» tras corregirlo. Se reportan 388 pruebas frontend, 388 backend, TypeScript y exportación web correctos. Son capturas web con nombres de prueba, sin solicitudes reales ni Android físico; no acreditan coordinación con conductor en este flujo. La extensión conserva tokens, muestras, paleta y movimiento del sistema existente.
+
+Evidencia de cierre de sesión: `.impeccable/review/logout/` contiene la cabecera administrativa a 360×640 y 1280×800, menú de pasajero y salida pública a 360×640. Las capturas contrastan composición y apariencia web; los estados de espera, fallo, reintento y descarte de respuestas tardías se respaldan en las regresiones, no en esas imágenes estáticas. Se reporta acceso, salida y recarga con los tres roles en web. La revisión independiente aceptó la corrección del P1 de respuestas tardías tras incorporar scopes de cuenta y 15 regresiones; ese dictamen se limita al hallazgo corregido. No hubo Android físico y estas pruebas no acreditan interacción nativa. Se conserva papel, vino, arena, azul, Outfit/Inter y movimiento existentes; la especificación de campo permanece en `specs/002-identidad/cierre-sesion-campo.md`. No guardar credenciales en documentación ni capturas.
 
 ## Skills consultados
 

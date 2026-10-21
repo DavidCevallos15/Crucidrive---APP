@@ -5,6 +5,7 @@ import { API_CONFIG } from '../constants/config';
 import { calculateFare } from '../constants/sectors';
 import { useAuthStore } from '../store/useAuthStore';
 import { useRideStore } from '../store/useRideStore';
+import { captureAccountScope } from '../utils/accountScope';
 import {
   crearBuzonEventos,
   sincronizarViaje,
@@ -66,6 +67,7 @@ const lector: LectorViaje = {
 };
 
 type Resultado = { ok: true } | { ok: false; mensaje: string };
+const SESION_CAMBIO = 'Tu sesión cambió. Vuelve a abrir el viaje con tu cuenta.';
 
 /**
  * Ciclo de la solicitud del pasajero (paso 003, T13): pedir, "Buscando tricimoto…",
@@ -96,11 +98,13 @@ export const useViajePasajero = (socket: Pick<ReturnType<typeof useSocket>, 'onE
   const sincronizar = useCallback(async () => {
     if (!userId || sincronizando.current) return;
     sincronizando.current = true;
+    const scope = captureAccountScope(useAuthStore.getState);
+    if (scope.userId !== userId || !scope.isCurrent()) { sincronizando.current = false; return; }
     try {
       const local = useRideStore.getState().activeRide;
       const siguiente = await sincronizarViaje(lector, local, userId);
       // Si mientras tanto cambió el viaje local (otro aviso o una nueva solicitud), gana lo local.
-      if (useRideStore.getState().activeRide === local) useRideStore.getState().setActiveRide(siguiente);
+      if (scope.isCurrent() && useRideStore.getState().activeRide === local) useRideStore.getState().setActiveRide(siguiente);
     } catch (error) {
       console.warn('[Viaje] No se pudo leer el estado del viaje:', error);
     } finally {
@@ -122,6 +126,8 @@ export const useViajePasajero = (socket: Pick<ReturnType<typeof useSocket>, 'onE
 
   // ─── Acciones ──────────────────────────────────────────────
   const solicitar = useCallback(async (solicitud: Solicitud): Promise<Resultado> => {
+    const scope = captureAccountScope(useAuthStore.getState);
+    if (!scope.isCurrent()) return { ok: false, mensaje: SESION_CAMBIO };
     const { setRequesting, setActiveRide, setUltimaSolicitud } = useRideStore.getState();
     setRequesting(true);
     try {
@@ -130,6 +136,7 @@ export const useViajePasajero = (socket: Pick<ReturnType<typeof useSocket>, 'onE
         body: JSON.stringify(armarCuerpoSolicitud(solicitud)),
       });
       const body = await response.json().catch(() => null);
+      if (!scope.isCurrent()) return { ok: false, mensaje: SESION_CAMBIO };
       if (!response.ok) {
         // 409: ya tiene un viaje activo (criterio 13); se muestra ese viaje.
         if (response.status === 409) void sincronizar();
@@ -158,12 +165,14 @@ export const useViajePasajero = (socket: Pick<ReturnType<typeof useSocket>, 'onE
       console.error('[Viaje] Error al solicitar:', error);
       return { ok: false, mensaje: 'No se pudo conectar con el servidor. Revisa tu conexión.' };
     } finally {
-      setRequesting(false);
+      if (scope.isCurrent()) setRequesting(false);
     }
   }, [sincronizar, buzon]);
 
   /** Cancela mientras se busca conductor (criterio 12). */
   const cancelar = useCallback(async (): Promise<Resultado> => {
+    const scope = captureAccountScope(useAuthStore.getState);
+    if (!scope.isCurrent()) return { ok: false, mensaje: SESION_CAMBIO };
     const ride = useRideStore.getState().activeRide;
     if (!ride) return { ok: true };
     try {
@@ -171,8 +180,9 @@ export const useViajePasajero = (socket: Pick<ReturnType<typeof useSocket>, 'onE
         method: 'PATCH',
         body: JSON.stringify({ estado: 'cancelado' }),
       });
+      const body = response.ok ? null : await response.json().catch(() => null);
+      if (!scope.isCurrent()) return { ok: false, mensaje: SESION_CAMBIO };
       if (!response.ok) {
-        const body = await response.json().catch(() => null);
         // Puede que justo se cerrara o aceptara: se muestra lo que diga la BD.
         void sincronizar();
         return { ok: false, mensaje: body?.message ?? 'No se pudo cancelar la solicitud.' };

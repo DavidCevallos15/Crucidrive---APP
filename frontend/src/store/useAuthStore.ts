@@ -1,6 +1,13 @@
 import { create } from 'zustand';
 import type { Session, User } from '@supabase/supabase-js';
 import type { EstadoVerificacion } from '../utils/routing';
+import { useRideStore } from './useRideStore';
+import { useLocationStore } from './useLocationStore';
+
+function limpiarDatosDeCuenta() {
+  useRideStore.setState({ activeRide: null, ultimaSolicitud: null, isRequesting: false });
+  useLocationStore.getState().clearNearbyDrivers();
+}
 
 /**
  * Perfil del usuario tal como se almacena en la tabla 'perfiles' de Supabase.
@@ -48,6 +55,10 @@ interface AuthState {
   isLoading: boolean;
   /** Indica si se completó la verificación inicial de sesión */
   isInitialized: boolean;
+  isSigningOut: boolean;
+  logoutError: string | null;
+  beginSignOut: () => boolean;
+  endSignOut: (error: string | null) => void;
 
   // ─── Acciones ──────────────────────────────────────────────
   /** Establece la sesión y el usuario tras el login */
@@ -70,7 +81,7 @@ interface AuthState {
  * Gestiona la sesión de Supabase Auth, el perfil del usuario,
  * la verificación del conductor y el estado de carga inicial.
  */
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   authGeneration: 0,
   session: null,
   user: null,
@@ -80,8 +91,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   verificationChecked: false,
   isLoading: true,
   isInitialized: false,
+  isSigningOut: false,
+  logoutError: null,
 
-  setSession: (session) =>
+  setSession: (session) => {
+    if (get().user?.id !== session?.user?.id) limpiarDatosDeCuenta();
     set((state) => ({
       session,
       user: session?.user ?? null,
@@ -92,8 +106,10 @@ export const useAuthStore = create<AuthState>((set) => ({
         profileChecked: false,
         verification: null,
         verificationChecked: false,
+        logoutError: null,
       } : {}),
-    })),
+    }));
+  },
 
   setProfile: (profile) => set({ profile, profileChecked: true }),
 
@@ -103,7 +119,20 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   setInitialized: (isInitialized) => set({ isInitialized }),
 
-  clearSession: () =>
+  // El guard es global: menú y perfil no pueden lanzar dos salidas simultáneas.
+  beginSignOut: () => {
+    let iniciado = false;
+    set((state) => {
+      if (state.isSigningOut) return state;
+      iniciado = true;
+      return { isSigningOut: true, logoutError: null, isLoading: true };
+    });
+    return iniciado;
+  },
+  endSignOut: (logoutError) => set({ isSigningOut: false, isLoading: false, logoutError }),
+
+  clearSession: () => {
+    limpiarDatosDeCuenta();
     set((state) => ({
       authGeneration: state.authGeneration + 1,
       session: null,
@@ -113,5 +142,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       verification: null,
       verificationChecked: false,
       isLoading: false,
-    })),
+      logoutError: null,
+    }));
+  },
 }));

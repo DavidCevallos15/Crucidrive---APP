@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,7 +29,7 @@ const formatearFecha = (iso: string): string =>
 export const AdminDriversScreen: React.FC = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { profile, signOut } = useSupabaseAuth();
+  const { profile, signOut, isSigningOut, authError } = useSupabaseAuth();
 
   const [solicitudes, setSolicitudes] = useState<SolicitudConductor[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +52,6 @@ export const AdminDriversScreen: React.FC = () => {
 
   // Recarga al volver desde el detalle (así desaparece la solicitud ya revisada).
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
-  useEffect(() => { cargar(); }, [cargar]);
 
   const refrescar = useCallback(async () => {
     setRefrescando(true);
@@ -69,15 +68,19 @@ export const AdminDriversScreen: React.FC = () => {
           </Text>
           <Text style={styles.subtitulo}>{profile ? `Administrador: ${profile.nombre}` : 'Administrador'}</Text>
         </View>
+        <View style={styles.acciones}>
         <GlassButton
           label="Lugares"
           onPress={() => router.push('/(app)/(admin)/lugares' as never)}
           variant="ghost"
+          disabled={isSigningOut}
           size="sm"
           leftIcon={<Ionicons name="location" size={16} color={COLORS.glassTextDark} />}
           style={styles.botonLugares}
         />
-        <GlassButton label="Salir" onPress={signOut} variant="ghost" size="sm" />
+        <GlassButton label={isSigningOut ? 'Cerrando sesión…' : 'Cerrar sesión'} onPress={signOut} loading={isSigningOut} variant="ghost" size="sm" style={styles.botonSalir} />
+        </View>
+        {authError && <Text style={styles.error} accessibilityRole="alert">{authError}</Text>}
       </View>
 
       {solicitudes === null && !error ? (
@@ -135,15 +138,16 @@ export const AdminDriversScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.darkBg },
   cabecera: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    gap: SPACING.md,
     paddingHorizontal: SPACING.md,
     paddingBottom: SPACING.md,
     borderBottomWidth: 0.5,
     borderBottomColor: COLORS.glassBorderDark,
   },
-  cabeceraTexto: { flex: 1, marginRight: SPACING.md },
-  botonLugares: { marginRight: SPACING.sm },
+  cabeceraTexto: { minWidth: 0 },
+  acciones: { flexDirection: 'row', gap: SPACING.sm, width: '100%', maxWidth: 520 },
+  botonLugares: { flex: 1 },
+  botonSalir: { flex: 1 },
   titulo: {
     fontSize: FONTS.sizes.xl,
     fontFamily: FONTS.heading,

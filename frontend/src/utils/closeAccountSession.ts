@@ -6,6 +6,7 @@ import { conLimite } from './conLimite';
  * campo eso dejaba «Cerrando sesión…» para siempre (20 oct 2026).
  */
 export const LIMITE_LIMPIEZA_MS = 4000;
+export const LIMITE_REVOCACION_MS = 20_000;
 
 interface LogoutActions {
   stopTracking(): Promise<unknown>;
@@ -21,8 +22,8 @@ export async function closeAccountSession(actions: LogoutActions): Promise<boole
     conLimite(Promise.resolve().then(() => actions.forgetDevice()), LIMITE_LIMPIEZA_MS, undefined),
   ]);
   try {
-    const { error } = await actions.revoke();
-    if (error) return false;
+    const resultado = await conLimite(actions.revoke(), LIMITE_REVOCACION_MS, null);
+    if (!resultado || resultado.error) return false;
     actions.clearSession();
     return true;
   } catch {
