@@ -7,6 +7,11 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "scheme": "crucidrive",
+    "runtimeVersion": { "policy": "appVersion" },
+    "updates": {
+      "url": "https://u.expo.dev/d3890399-716a-4a8c-847b-e1944c14a8d1",
+      "fallbackToCacheTimeout": 3000
+    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.crucidrive.app",
