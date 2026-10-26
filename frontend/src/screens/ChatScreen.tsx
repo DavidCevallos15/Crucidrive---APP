@@ -24,6 +24,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { alturaBarraPestanas } from '../utils/barraPestanas';
 import { useTecladoVisible } from '../hooks/useTecladoVisible';
 import {
+  runOnJS,
   useSharedValue,
   useAnimatedStyle,
   withSpring,
@@ -168,7 +169,9 @@ export const ChatScreen: React.FC = () => {
       sendScale.value = withSpring(1, ANIMATION.spring);
     })
     .onEnd(() => {
-      handleSend();
+      // El gesto corre en el hilo de UI: `handleSend` es JavaScript normal (campo 26 oct 2026:
+      // llamarlo directo cerraba la app al pulsar «Enviar»).
+      runOnJS(handleSend)();
     });
 
   // ─── Renderizar burbuja de mensaje ────────────────────────

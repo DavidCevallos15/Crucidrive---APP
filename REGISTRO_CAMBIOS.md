@@ -2,6 +2,18 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.77.0] - 2026-10-26 (Hora Local)
+
+### Fix: al pulsar «Enviar» en el chat la app se cerraba
+- **Qué vio David (APK de prueba, 26 oct):** en el chat del pasajero, al enviar un mensaje la app se salía sola; el mensaje nunca llegaba al conductor y la pantalla seguía diciendo «Conectado».
+- **Causa:** el botón Enviar usa un gesto de Gesture Handler (`Gesture.Tap`) y su `onEnd` llamaba directo a `handleSend`. Esos gestos corren en el hilo de UI del teléfono; llamar desde ahí a una función normal de JavaScript cierra la app. En la web no pasa, por eso las pruebas en navegador no lo mostraban. Los demás gestos (SOS, menú) ya usaban `runOnJS`.
+- **Arreglo:** `runOnJS(handleSend)()` en `ChatScreen.tsx`.
+- **Prueba nueva:** `tests/gestosNativos.test.ts` revisa todos los archivos con gestos y falla si alguno llama a un `useCallback` sin `runOnJS`. Se comprobó que falla con el código anterior (detectaba `handleSend`) y pasa con el arreglo.
+- **Lo demás que reportó David** (el pasajero no veía «llegó», «en curso» ni «terminado», y no había botón «Cancelar viaje») **no es un fallo nuevo**: esas pantallas llegaron en el PR #64 y el APK que probó es anterior (build del PR #61). Se confirma con un APK nuevo.
+- Pruebas: frontend 474/474 (4 nuevas); `tsc --noEmit` sin errores. **No se probó en un teléfono.**
+
+---
+
 ## [1.76.0] - 2026-10-26 (Hora Local)
 
 ### 008 · Actualizaciones por aire para las pruebas (EAS Update, D-17)
