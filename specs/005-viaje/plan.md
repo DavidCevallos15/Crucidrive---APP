@@ -74,6 +74,15 @@ Sin coordenadas nuevas: la cancelación queda registrada sin ubicación (criteri
 - Al terminar, una hoja con el resumen, «Llegué» o «No llegué», y las estrellas con comentario opcional. Si la cierra sin calificar, se le ofrece una sola vez más al abrir la app.
 - Junto a nombre y placa, «★ 4,8 · 23 reseñas» o «Nuevo».
 
+Decisiones de P10, tomadas al implementarlo:
+- **Acciones fijas.** Llamar, Chat y Cancelar (aceptado) o Terminar (en curso) quedan en una fila fija abajo, de 56 px; el detalle se desplaza. Con el SOS en la cabecera de la hoja (012), si no, en 360 × 640 los botones quedaban fuera de vista. Alternativa descartada: botones apilados dentro de la hoja desplazable.
+- **Terminar tú mismo.** Una alerta advierte, sin números, que queda registrado, que no podrá calificar y que repetirlo tiene consecuencias. Los números reales (cuántas lleva, tope y bloqueo) llegan en la respuesta de `POST /terminar` y se muestran después (criterio 5c), porque son parámetros del servidor y la app no debe copiarlos.
+- **Cancelar mientras busca** pasa a `POST /:id/cancelar` sin motivo, igual que el aceptado. `PATCH /:id/estado` se queda, porque los APK ya instalados lo usan; se retira cuando no quede ninguno.
+- **Cancelado por el conductor.** El pasajero ve «El conductor canceló el viaje» con «Volver a pedir» si en esta sesión hizo la solicitud. Si abrió la app después (no hay solicitud guardada), ve «Pedir otro viaje».
+- **Confirmar.** «Ahora no» cierra la hoja sin responder y no vuelve hasta reabrir la app. A los 30 minutos sin responder, la hoja pasa sola a calificar.
+- **Calificar «una sola vez más».** La BD no deja al pasajero leer `calificaciones` (criterio 17, LOPDP), así que el teléfono guarda solo el id del viaje y cuántas veces se mostró la hoja (máximo dos). Se ofrece el último viaje terminado por el conductor, hasta tres días después. Si calificó desde otro teléfono, el servidor responde «Ya calificaste este viaje» y la hoja queda para cerrarla con «Omitir». Alternativa descartada: una columna `calificado` en `viajes`, que reabriría la lectura que se cerró a propósito.
+- **Terminado por el pasajero o «No llegué».** No se confirma ni se califica (criterios 5a y 5b): el viaje se cierra sin hoja final.
+
 **P11 · Sin conexión (criterio 20).** Cada botón espera la respuesta del servidor y, si falla, muestra que no se pudo y no avanza el estado en la pantalla.
 
 ## Pruebas

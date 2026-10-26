@@ -10,7 +10,7 @@ Flujo por paso: spec → aprobación → plan → tareas → implementación (co
 | 2 | `002-identidad` | **Completo** (prueba de humo 28/28). Pendiente: texto de consentimiento revisado por un abogado y ver con sesiones reales las vistas del conductor y del administrador |
 | 3 | `003-despacho` | **Completo** (prueba de humo 29/29 el 2026-10-09). Pendiente: probar en un teléfono real que la oferta llegue con la app abierta; con la app cerrada, en el paso 004 |
 | 4 | `004-tracking-push` | **Implementado** (T1 a T16). Falta T17: prueba de campo de David con dos teléfonos |
-| 5 | `005-viaje` | **En curso.** BD, backend y conductor hechos (#54, #55; 0017 en producción). Faltan las pantallas del pasajero (T8 a T11) y la prueba T12 |
+| 5 | `005-viaje` | **En curso.** BD, backend, conductor y pasajero hechos (#54, #55; 0017 en producción; pasajero T8 a T11 en el PR 4). Falta la prueba de campo T12 con dos teléfonos |
 | 6 | `006-sos-admin` | Sin iniciar |
 | 7 | `007-hardening` | Sin iniciar |
 | 8 | `008-piloto` | **En curso**: backend de prueba en una VM de Azure (`backend-de-prueba.md`, D-16). Falta el resto del piloto |

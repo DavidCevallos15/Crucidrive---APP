@@ -32,7 +32,6 @@ import { useViajePasajero } from '../hooks/useViajePasajero';
 import { useConductorDelViaje } from '../hooks/useConductorDelViaje';
 import { puntoDeOrigen } from '../utils/conductorDelViaje';
 import { distanciaMetros } from '../utils/geo';
-import { textoDistancia } from '../utils/oferta';
 import { useLocationStore, type NearbyDriver } from '../store/useLocationStore';
 import { useRideStore, type ActiveRide } from '../store/useRideStore';
 import { SECTORS, MAX_PASSENGERS } from '../constants/sectors';
@@ -44,6 +43,11 @@ import { useAuthStore } from '../store/useAuthStore';
 import { separacionInferior } from '../utils/barraPestanas';
 import { altoMaximoHoja, esCompacta } from '../utils/compacto';
 import { HojaDesplazable } from '../components/HojaDesplazable';
+import { HojaCierreViaje } from '../components/HojaCierreViaje';
+import { TarjetaViajePasajero } from '../components/TarjetaViajePasajero';
+import { MotivoCancelacion } from '../components/MotivoCancelacion';
+import { ADVERTENCIA_TERMINAR, TEXTO_CANCELAR_PASAJERO, textoSancion } from '../utils/viajePasajero';
+import { motivosPara, type MotivoCancelacion as Motivo } from '../utils/viajeConductor';
 import { GlassInput } from '../components/GlassInput';
 import { useBuscarLugares } from '../hooks/useBuscarLugares';
 import { ATRIBUCION_OSM, ICONO_CATEGORIA, type Lugar } from '../utils/lugares';
@@ -115,6 +119,8 @@ export const MapScreen: React.FC = () => {
   const [destinationNote, setDestinationNote] = useState('');
   const [originNote, setOriginNote] = useState('');
   const [cancelando, setCancelando] = useState(false);
+  const [eligiendoMotivo, setEligiendoMotivo] = useState(false);
+  const [terminando, setTerminando] = useState(false);
   const busqueda = useBuscarLugares();
 
   const { formattedPrice, formattedPricePerPerson } = useTariff(passengers);
@@ -244,6 +250,34 @@ export const MapScreen: React.FC = () => {
     setCancelando(true);
     avisarSiFalla(await viaje.cancelar());
     setCancelando(false);
+  }, [viaje]);
+
+  /** Cancelar con el viaje ya aceptado: elegir el motivo es la confirmación (criterio 8). */
+  const handleCancelarConMotivo = useCallback(async (motivo: Motivo) => {
+    setEligiendoMotivo(false);
+    setCancelando(true);
+    avisarSiFalla(await viaje.cancelar(motivo));
+    setCancelando(false);
+  }, [viaje]);
+
+  /** El pasajero termina el viaje él mismo: advertencia antes, y cuántas lleva después (5b y 5c). */
+  const handleTerminar = useCallback(() => {
+    Alert.alert('¿Terminar el viaje tú mismo?', ADVERTENCIA_TERMINAR, [
+      { text: 'Seguir en el viaje', style: 'cancel' },
+      {
+        text: 'Terminar viaje',
+        style: 'destructive',
+        onPress: () => {
+          void (async () => {
+            setTerminando(true);
+            const r = await viaje.terminarComoPasajero();
+            setTerminando(false);
+            if (!r.ok) avisarSiFalla(r);
+            else Alert.alert('Terminaste el viaje', r.sancion ? textoSancion(r.sancion) : 'Queda registrado.');
+          })();
+        },
+      },
+    ]);
   }, [viaje]);
 
   const handleRetry = useCallback(async () => {
@@ -622,26 +656,60 @@ export const MapScreen: React.FC = () => {
         >
           <GlassCard style={styles.rideSheet} noPadding>
             {safetyHeader}
-            <HojaDesplazable maxHeight={sheetMaxHeight} contentContainerStyle={[styles.sheetBody, { paddingBottom: (conBarra ? 0 : insets.bottom) + SPACING.md }]} keyboardShouldPersistTaps="handled">
-              <EstadoViaje
+            {activeRide.status === 'finalizado' ? (
+              <HojaCierreViaje
+                ride={activeRide}
+                conectado={socket.isConnected}
+                onConfirmar={viaje.confirmarLlegada}
+                onCalificar={viaje.calificar}
+                onCerrar={viaje.cerrarSinResponder}
+                onMostrarCalificacion={viaje.alMostrarCalificacion}
+                altoMaximo={sheetMaxHeight}
+                paddingInferior={(conBarra ? 0 : insets.bottom) + SPACING.md}
+              />
+            ) : activeRide.status === 'aceptado' || activeRide.status === 'en_curso' ? (
+              <TarjetaViajePasajero
                 ride={activeRide}
                 distanciaConductor={distanciaConductor}
                 antiguedad={conductorDelViaje.antiguedad}
-                isRequesting={isRequesting}
+                conectado={socket.isConnected}
                 cancelando={cancelando}
-                onCancelar={handleCancelRequest}
-                onVolverAPedir={handleRetry}
-                onCambiar={() => {
-                  viaje.descartar();
-                  abrirPanel(destino ? 'ficha' : 'destino');
-                }}
+                terminando={terminando}
+                onLlamar={() => void Linking.openURL(`tel:${activeRide.driver?.telefono}`)}
                 onChat={() => router.push('/(app)/(passenger)/chat' as never)}
+                onCancelarConMotivo={() => setEligiendoMotivo(true)}
+                onTerminar={handleTerminar}
+                altoMaximo={sheetMaxHeight}
+                paddingInferior={(conBarra ? 0 : insets.bottom) + SPACING.md}
               />
-            </HojaDesplazable>
+            ) : (
+              <HojaDesplazable maxHeight={sheetMaxHeight} contentContainerStyle={[styles.sheetBody, { paddingBottom: (conBarra ? 0 : insets.bottom) + SPACING.md }]} keyboardShouldPersistTaps="handled">
+                <EstadoViaje
+                  ride={activeRide}
+                  isRequesting={isRequesting}
+                  cancelando={cancelando}
+                  conectado={socket.isConnected}
+                  puedeRepetir={ultimaSolicitud !== null}
+                  onCancelar={handleCancelRequest}
+                  onVolverAPedir={handleRetry}
+                  onCambiar={() => {
+                    viaje.descartar();
+                    abrirPanel(destino ? 'ficha' : 'destino');
+                  }}
+                />
+              </HojaDesplazable>
+            )}
           </GlassCard>
         </Animated.View>
       )}
 
+      <MotivoCancelacion
+        visible={eligiendoMotivo}
+        motivos={motivosPara('pasajero')}
+        explicacion={TEXTO_CANCELAR_PASAJERO}
+        onElegir={(motivo) => void handleCancelarConMotivo(motivo)}
+        onCerrar={() => setEligiendoMotivo(false)}
+      />
     </View>
   );
 };
@@ -658,52 +726,55 @@ const Ruta: React.FC<{ ride: ActiveRide }> = ({ ride }) => (
 
 interface EstadoViajeProps {
   ride: ActiveRide;
-  /** Metros en línea recta del conductor al punto de partida; null si aún no hay posición. */
-  distanciaConductor: number | null;
-  /** "Última posición hace X s" si los datos no son frescos (criterio 17). */
-  antiguedad: string;
   isRequesting: boolean;
   cancelando: boolean;
+  /** Sin conexión el botón no avanza y se dice por qué (005, criterio 20). */
+  conectado: boolean;
+  /** Hay una solicitud anterior para repetir con un toque. */
+  puedeRepetir: boolean;
   onCancelar: () => void;
   onVolverAPedir: () => void;
   onCambiar: () => void;
-  onChat: () => void;
 }
 
 /**
- * Lo que ve el pasajero tras pedir (paso 003): buscando con Cancelar (criterios 12 y 16),
- * sin conductor con "Volver a pedir" (11) y aceptado con nombre, placa y teléfono (10).
+ * Lo que ve el pasajero mientras el viaje no tiene conductor o lo perdió: buscando con Cancelar
+ * (003, criterios 12 y 16), y sin conductor o cancelado por el conductor con «Volver a pedir»
+ * (003, criterio 11; 005, criterio 11). Aceptado y en curso: `TarjetaViajePasajero`.
  */
 const EstadoViaje: React.FC<EstadoViajeProps> = ({
-  ride, distanciaConductor, antiguedad, isRequesting, cancelando, onCancelar, onVolverAPedir, onCambiar, onChat,
+  ride, isRequesting, cancelando, conectado, puedeRepetir, onCancelar, onVolverAPedir, onCambiar,
 }) => {
   if (ride.status === 'solicitado') {
     return (
       <>
         <LoadingSpinner message="Buscando tricimoto…" />
         <Ruta ride={ride} />
+        {!conectado && <SinConexion />}
         <GlassButton
           label="Cancelar solicitud"
           onPress={onCancelar}
           variant="danger"
           size="lg"
           loading={cancelando}
+          disabled={!conectado}
           style={styles.stateButton}
         />
       </>
     );
   }
 
-  if (ride.status === 'sin_conductor') {
-    return (
-      <>
-        <View style={styles.stateHeader}>
-          <Ionicons name="alert-circle" size={28} color={COLORS.secondaryLight} />
-          <Text style={styles.stateTitle} accessibilityRole="header">
-            No hay tricimotos disponibles ahora
-          </Text>
-        </View>
-        <Ruta ride={ride} />
+  const cancelado = ride.status === 'cancelado';
+  return (
+    <>
+      <View style={styles.stateHeader}>
+        <Ionicons name="alert-circle" size={28} color={COLORS.secondaryLight} />
+        <Text style={styles.stateTitle} accessibilityRole="header">
+          {cancelado ? 'El conductor canceló el viaje' : 'No hay tricimotos disponibles ahora'}
+        </Text>
+      </View>
+      <Ruta ride={ride} />
+      {puedeRepetir ? (
         <GlassButton
           label="Volver a pedir"
           onPress={onVolverAPedir}
@@ -713,71 +784,23 @@ const EstadoViaje: React.FC<EstadoViajeProps> = ({
           leftIcon={<Ionicons name="refresh" size={20} color={COLORS.ink} />}
           style={styles.stateButton}
         />
-        <GlassButton
-          label="Cambiar el viaje"
-          onPress={onCambiar}
-          variant="ghost"
-          size="sm"
-          style={styles.cancelButton}
-        />
-      </>
-    );
-  }
-
-  // aceptado o en_curso (las pantallas del viaje en curso son del paso 005).
-  const conductor = ride.driver;
-  return (
-    <>
-      <View style={styles.stateHeader}>
-        <Ionicons name="checkmark-circle" size={28} color={COLORS.success} />
-        <Text style={styles.stateTitle} accessibilityRole="header">
-          {ride.status === 'en_curso' ? 'Viaje en curso' : 'Tu tricimoto va en camino'}
-        </Text>
-      </View>
-      <View style={styles.routeRow}>
-        <Ionicons name="person" size={16} color={COLORS.primaryLight} />
-        <Text style={styles.routeText} numberOfLines={1}>{conductor?.nombre ?? 'Conductor asignado'}</Text>
-      </View>
-      {conductor?.placa && (
-        <View style={styles.routeRow}>
-          <Ionicons name="card" size={16} color={COLORS.primaryLight} />
-          <Text style={styles.routeText}>Placa {conductor.placa}</Text>
-        </View>
+      ) : (
+        <GlassButton label="Pedir otro viaje" onPress={onCambiar} variant="secondary" size="lg" style={styles.stateButton} />
       )}
-      {distanciaConductor !== null && ride.status === 'aceptado' && (
-        <View style={styles.routeRow}>
-          <Ionicons name="navigate" size={16} color={COLORS.secondaryLight} />
-          <Text style={styles.routeText}>Tu conductor está {textoDistancia(distanciaConductor)}</Text>
-        </View>
-      )}
-      {antiguedad !== '' && (
-        <Text style={styles.staleText} accessibilityLiveRegion="polite">{antiguedad}</Text>
-      )}
-      <Ruta ride={ride} />
-      {ride.serviceType === 'encomienda' && <Text style={styles.searchHint}>Encomienda · precio a convenir por el chat antes de entregar el paquete.</Text>}
-      {conductor?.telefono && (
-        <GlassButton
-          label={`Llamar ${conductor.telefono}`}
-          onPress={() => void Linking.openURL(`tel:${conductor.telefono}`)}
-          variant="secondary"
-          size="lg"
-          leftIcon={<Ionicons name="call" size={20} color={COLORS.ink} />}
-          style={styles.stateButton}
-        />
-      )}
-      {ride.chatThreadId && (
-        <GlassButton
-          label="Abrir chat"
-          onPress={onChat}
-          variant="ghost"
-          size="md"
-          leftIcon={<Ionicons name="chatbubbles" size={18} color={COLORS.glassTextDark} />}
-          style={styles.cancelButton}
-        />
+      {puedeRepetir && (
+        <GlassButton label="Cambiar el viaje" onPress={onCambiar} variant="ghost" size="sm" style={styles.cancelButton} />
       )}
     </>
   );
 };
+
+/** El estado «sin conexión» se ve siempre en el viaje (regla 6; 005, criterio 20). */
+const SinConexion: React.FC = () => (
+  <View style={styles.sinConexion} accessibilityRole="alert">
+    <Ionicons name="cloud-offline" size={18} color={COLORS.danger} />
+    <Text style={styles.sinConexionTexto}>Sin conexión: los botones del viaje se activan cuando vuelva la señal.</Text>
+  </View>
+);
 
 const styles = StyleSheet.create({
   safetyHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, padding: SPACING.md, borderBottomWidth: 1, borderBottomColor: COLORS.outline },
@@ -1043,6 +1066,16 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: COLORS.white,
   },
+  sinConexion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginVertical: SPACING.sm,
+    padding: SPACING.sm,
+    borderRadius: SHAPES.borderRadiusMd,
+    backgroundColor: COLORS.wineSoft,
+  },
+  sinConexionTexto: { flex: 1, color: COLORS.glassTextDark, fontSize: FONTS.sizes.sm, fontFamily: FONTS.body },
   staleText: {
     color: COLORS.secondaryLight,
     fontSize: FONTS.sizes.sm,

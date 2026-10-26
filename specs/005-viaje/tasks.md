@@ -15,10 +15,10 @@ Cada tarea indica su prueba y se tilda solo al cumplirse.
 - [x] T7 · Reseñas en el perfil del conductor (criterio 17) → prueba: captura y utilidades.
 
 ## Pasajero (PR 4)
-- [ ] T8 · Estados en `EstadoViaje`, cancelar con motivo y volver a pedir (criterios 3 a 5, 8 y 11) → prueba: `tests/` y captura.
-- [ ] T9 · Hoja final: confirmar llegada y calificar, con un solo recordatorio más (criterios 5a, 15 y 16) → prueba: `tests/` y captura.
-- [ ] T10 · «★ promedio · reseñas» o «Nuevo» junto al conductor (criterio 18) → prueba: utilidad del texto.
-- [ ] T11 · Sin conexión: los botones no avanzan el estado si el servidor no respondió (criterio 20) → prueba: `tests/`.
+- [x] T8 · Estados en la hoja del viaje, cancelar con motivo, terminar con sanción y volver a pedir (criterios 3 a 5b, 8 y 11) → prueba: `tests/viajePasajero005.test.ts` y capturas en 360 × 640. *(Capturas en `docs/capturas/005-pasajero/`. Llamar, Chat y Cancelar o Terminar quedan fijos abajo; el detalle se desplaza.)*
+- [x] T9 · Hoja final: confirmar llegada y calificar, con un solo recordatorio más (criterios 5a, 15 y 16) → prueba: `tests/viajePasajero005.test.ts` y capturas. *(Decisiones de la hoja en el plan, P10.)*
+- [x] T10 · «★ promedio · reseñas» o «Nuevo» junto al conductor (criterio 18) → prueba: utilidad del texto en `tests/viajePasajero005.test.ts`.
+- [x] T11 · Sin conexión: los botones no avanzan el estado si el servidor no respondió (criterio 20) → prueba: acciones reales del hook en `tests/viajePasajero005.test.ts`.
 
 ## Cierre
 - [ ] T12 · **David:** prueba con dos teléfonos de un viaje y una encomienda completos: llegada, inicio, final, confirmación y calificación, más una cancelación con motivo de cada lado.

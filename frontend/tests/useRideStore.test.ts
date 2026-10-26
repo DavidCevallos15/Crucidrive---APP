@@ -30,7 +30,7 @@ describe('useRideStore', () => {
     nombre: 'Carlos',
     telefono: '0999999999',
     placa: 'ABC-123',
-    calificacion: 4.8,
+    resenas: { promedio: 4.8, total: 23 },
   };
 
   describe('initial state', () => {
