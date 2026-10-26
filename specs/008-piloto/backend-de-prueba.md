@@ -1,6 +1,6 @@
 # 008 · Backend de prueba en la nube (parte del piloto)
 
-Estado: **Aprobada por David** el 21 oct 2026 («Google Cloud e2-micro gratis», en lugar de pagar un hosting antes de terminar la app). Es solo la parte del 008 que permite probar en campo. El hosting definitivo del piloto se decide después.
+Estado: **Aprobada por David** el 21 oct 2026 (un servidor gratuito en lugar de pagar un hosting antes de terminar la app). El 26 oct David ya tenía una VM `crucidrive-api` en **Azure for Students**, y se usa esa en lugar de la e2-micro de Google Cloud que se había propuesto. Es solo la parte del 008 que permite probar en campo. El hosting definitivo del piloto se decide después.
 
 ## Por qué
 Hoy el backend corre en la PC de David y los teléfonos tienen que estar en su misma Wi-Fi, o pasar por ngrok mientras la PC esté encendida. Una prueba real en Crucita usa datos móviles y no tiene ni esa Wi-Fi ni esa PC. David no quiere pagar un servidor hasta terminar la app.
@@ -17,14 +17,15 @@ Un servidor siempre encendido, sin costo, al que la app llega por HTTPS y WebSoc
 6. **Dado** la prueba de humo, **cuando** se corre contra la URL pública, **entonces** pasa igual que en local.
 
 ## Decisiones
-- **Una VM e2-micro del nivel gratuito de Google Cloud**, en `us-east1`, la región gratuita más cercana a Ecuador, con Debian 12.
+- **Una VM de Azure for Students** (`crucidrive-api`, con IP pública fija), con Ubuntu o Debian. David ya la tenía creada.
+  - Descartada la **e2-micro de Google Cloud**: era la opción propuesta, pero implicaba crear otra cuenta y otra VM.
   - Descartado **Render Free**: se duerme tras 15 min sin tráfico, y el despacho necesita un proceso siempre encendido porque guarda sus temporizadores y conexiones en memoria.
   - Descartado **Cloud Run**: escala a cero, igual que Render Free.
   - Descartado **un hosting de pago**: se deja para el piloto.
 - **Una sola instancia.** El despacho no se puede repartir entre varios procesos sin un servicio nuevo (Redis), y la regla 8 no lo permite sin una spec.
-- **HTTPS con Caddy y un nombre de `sslip.io`.** Es gratis y Caddy renueva el certificado solo. Descartado comprar un dominio: no hace falta para pruebas.
+- **HTTPS con Caddy y un nombre gratuito**: `<IP>.sslip.io` o la etiqueta DNS de Azure (`<nombre>.<región>.cloudapp.azure.com`). Caddy renueva el certificado solo. Descartado comprar un dominio: no hace falta para pruebas.
 - **systemd sin Docker.** Docker es infraestructura nueva (regla 8) y no aporta nada para un solo proceso.
-- **Costo:** 0 USD si la IP externa entra en el nivel gratuito; si no, unos 3 USD al mes, dentro del tope de 25 USD de la regla 5. David lo comprueba en la calculadora.
+- **Costo:** al 26 oct, 0,94 USD en 6 días (IP pública 0,55, disco 0,39 y cómputo 0,00): unos 4 USD al mes, dentro del tope de 25 USD de la regla 5 y del crédito de Azure for Students. David pone una alerta de presupuesto.
 
 ## Fuera de alcance
 - El hosting definitivo del piloto, monitoreo y alertas.
@@ -33,7 +34,7 @@ Un servidor siempre encendido, sin costo, al que la app llega por HTTPS y WebSoc
 
 ## Tareas
 - [x] T1 · `npm start`, `engines` y cierre ordenado con SIGTERM (`backend/src/apagado.js`) → prueba: `tests/apagado.test.js`.
-- [x] T2 · `deploy/gcp/`: servicio systemd, Caddyfile, `api.env.ejemplo`, `instalar.sh` y guía → prueba: `bash -n instalar.sh` y revisión.
-- [ ] T3 · **David:** crear la VM, correr `instalar.sh`, cargar las claves y comprobar el criterio 1.
+- [x] T2 · `deploy/vm/`: servicio systemd, Caddyfile, `api.env.ejemplo`, `instalar.sh` (Ubuntu o Debian) y guía de Azure → prueba: `bash -n instalar.sh` y revisión.
+- [ ] T3 · **David:** abrir los puertos 80 y 443 en Azure, correr `instalar.sh`, cargar las claves y comprobar el criterio 1.
 - [ ] T4 · **David:** variables de EAS `preview`, APK nuevo y prueba de humo contra la URL pública (criterio 6).
 - [ ] T5 · **David:** prueba de campo con datos móviles (criterio 2).

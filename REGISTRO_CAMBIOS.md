@@ -4,23 +4,23 @@
 
 ## [1.74.0] - 2026-10-21 (Hora Local)
 
-### 008 · Backend de prueba en Google Cloud (D-16)
-- **Para qué:** probar en Crucita con datos móviles, sin Wi-Fi ni la PC de David, y sin pagar todavía. Es una VM e2-micro del nivel gratuito de Google Cloud, siempre encendida, con una sola instancia, porque el despacho guarda temporizadores y conexiones en memoria.
+### 008 · Backend de prueba en una VM de Azure (D-16)
+- **Para qué:** probar en Crucita con datos móviles, sin Wi-Fi ni la PC de David, y sin pagar todavía. Una VM siempre encendida y con una sola instancia, porque el despacho guarda temporizadores y conexiones en memoria. Se pensó en una e2-micro de Google Cloud, pero David ya tenía su VM `crucidrive-api` en **Azure for Students**, y se usa esa.
 - **Backend:**
   - `npm start` y `engines` (Node 22).
   - Cierre ordenado con SIGTERM (`src/apagado.js`): detiene el despacho, cierra los sockets y el servidor, y sale igual si algo tarda más de 10 s. Al volver, `recuperar()` retoma los viajes desde la BD.
-- **`deploy/gcp/`:**
+- **`deploy/vm/`:**
   - servicio systemd con reinicio automático y endurecimiento básico;
-  - Caddy con HTTPS automático usando `<IP>.sslip.io`;
+  - Caddy con HTTPS automático, con `<IP>.sslip.io` o con la etiqueta DNS de Azure;
   - `api.env.ejemplo` sin valores;
-  - `instalar.sh`, que se puede volver a correr para actualizar;
-  - guía paso a paso con `gcloud`.
+  - `instalar.sh` para Ubuntu o Debian (rechaza otros sistemas); se puede volver a correr para actualizar;
+  - guía de Azure con `az`: abrir los puertos 80 y 443, etiqueta DNS opcional, alerta de presupuesto y qué no hacer (detener la VM).
+- **Costo:** al 26 oct, 0,94 USD en 6 días (IP pública 0,55, disco 0,39 y cómputo 0,00): unos 4 USD al mes.
 - **Lo que hace David:**
-  - crear la VM (`us-east1`) y cargar las claves en `/etc/crucidrive/api.env`;
+  - abrir los puertos, correr el instalador y cargar las claves en `/etc/crucidrive/api.env`;
   - definir `EXPO_PUBLIC_API_BASE_URL`, `EXPO_PUBLIC_SOCKET_URL` y `EXPO_PUBLIC_ZONA_PRUEBA` en EAS `preview`, y generar el APK.
-  - Si su cuenta cobra la IP externa, son unos 3 USD al mes.
 - **Spec y estado:** spec en `specs/008-piloto/backend-de-prueba.md`, con D-16 en la constitución. En `specs/README.md`, los estados del 004 y del 005 se pusieron al día y el 008 pasa a «en curso».
-- Pruebas: backend 392/392 (4 nuevas del cierre ordenado). `bash -n instalar.sh` sin errores.
+- Pruebas: backend 392/392 (4 nuevas del cierre ordenado). `bash -n instalar.sh` sin errores. **La instalación no se probó en una VM real.**
 
 ---
 

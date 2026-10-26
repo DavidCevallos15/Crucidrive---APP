@@ -1,12 +1,27 @@
 #!/usr/bin/env bash
-# Instala el backend de CruciDrive en una VM Debian 12 (e2-micro de Google Cloud).
-# Uso, desde la carpeta del repo clonado en la VM:  sudo bash deploy/gcp/instalar.sh <IP_EXTERNA>
+# Instala el backend de CruciDrive en una VM Ubuntu o Debian (probada la idea en Azure; sirve en
+# cualquier proveedor). Uso, desde la carpeta del repo clonado en la VM:
+#   sudo bash deploy/vm/instalar.sh <IP_PUBLICA> [DOMINIO]
+# DOMINIO es opcional. Sin él se usa <IP>.sslip.io; con la etiqueta DNS de Azure puedes pasar, por
+# ejemplo, crucidrive-api.eastus.cloudapp.azure.com (debe apuntar a esa IP).
 # Se puede volver a correr: actualiza el código y reinicia el servicio.
 set -euo pipefail
 
 IP="${1:-}"
+DOMINIO_PEDIDO="${2:-}"
 if [[ ! "$IP" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; then
-  echo "Uso: sudo bash deploy/gcp/instalar.sh <IP_EXTERNA>  (por ejemplo 34.75.10.20)" >&2
+  echo "Uso: sudo bash deploy/vm/instalar.sh <IP_PUBLICA> [DOMINIO]  (por ejemplo 20.84.10.20)" >&2
+  exit 1
+fi
+if [[ -n "$DOMINIO_PEDIDO" && ! "$DOMINIO_PEDIDO" =~ ^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?$ ]]; then
+  echo "El dominio no es válido: $DOMINIO_PEDIDO" >&2
+  exit 1
+fi
+# El script usa apt y la repo de Caddy para Debian/Ubuntu.
+# shellcheck disable=SC1091
+. /etc/os-release
+if [[ "${ID:-}" != "ubuntu" && "${ID:-}" != "debian" ]]; then
+  echo "Este instalador es para Ubuntu o Debian (esta VM es: ${ID:-desconocida})." >&2
   exit 1
 fi
 if [[ $EUID -ne 0 ]]; then
@@ -16,9 +31,9 @@ fi
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 DESTINO=/opt/crucidrive
-DOMINIO="${IP//./-}.sslip.io"
+DOMINIO="${DOMINIO_PEDIDO:-${IP//./-}.sslip.io}"
 
-echo "==> Memoria de intercambio (1 GB): la e2-micro tiene 1 GB de RAM y npm la necesita"
+echo "==> Memoria de intercambio (1 GB): con 1 GB de RAM, npm la necesita"
 if ! swapon --show | grep -q /swapfile; then
   fallocate -l 1G /swapfile
   chmod 600 /swapfile
@@ -53,15 +68,15 @@ chown -R crucidrive:crucidrive "$DESTINO"
 echo "==> Claves en /etc/crucidrive/api.env"
 mkdir -p /etc/crucidrive
 if [[ ! -f /etc/crucidrive/api.env ]]; then
-  cp "$REPO/deploy/gcp/api.env.ejemplo" /etc/crucidrive/api.env
+  cp "$REPO/deploy/vm/api.env.ejemplo" /etc/crucidrive/api.env
   NUEVO_ENV=1
 fi
 chown root:crucidrive /etc/crucidrive/api.env
 chmod 640 /etc/crucidrive/api.env
 
 echo "==> Servicio y HTTPS para https://$DOMINIO"
-cp "$REPO/deploy/gcp/crucidrive-api.service" /etc/systemd/system/crucidrive-api.service
-sed "s/^DOMINIO {/$DOMINIO {/" "$REPO/deploy/gcp/Caddyfile" > /etc/caddy/Caddyfile
+cp "$REPO/deploy/vm/crucidrive-api.service" /etc/systemd/system/crucidrive-api.service
+sed "s/^DOMINIO {/$DOMINIO {/" "$REPO/deploy/vm/Caddyfile" > /etc/caddy/Caddyfile
 systemctl daemon-reload
 systemctl enable crucidrive-api caddy
 systemctl reload-or-restart caddy

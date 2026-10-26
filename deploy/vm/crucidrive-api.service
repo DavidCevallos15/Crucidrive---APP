@@ -1,4 +1,4 @@
-# Backend de CruciDrive en la VM de prueba (spec 008, backend de prueba).
+# Backend de CruciDrive en la VM de prueba, en Azure (spec 008, backend de prueba).
 # Una sola instancia: el despacho guarda sus temporizadores y conexiones en memoria.
 [Unit]
 Description=CruciDrive API (REST + Socket.io)
