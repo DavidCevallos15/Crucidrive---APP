@@ -2,6 +2,24 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.76.0] - 2026-10-26 (Hora Local)
+
+### 008 · Actualizaciones por aire para las pruebas (EAS Update, D-17)
+- **Para qué:** que cada ajuste de una prueba de campo llegue al teléfono **sin generar un APK nuevo**. Solo cubre cambios de JavaScript e imágenes; lo nativo sigue necesitando APK.
+- **Configuración:**
+  - `expo-updates` (SDK 57), `runtimeVersion` por `appVersion` y `updates.url` con el identificador público del proyecto en `app.json`.
+  - Canales `preview` y `production` en `eas.json`.
+  - La descarga espera hasta 3 s al arrancar, para que el cambio se vea en la primera apertura con buena señal.
+- **Regla de versión:** un APK solo acepta actualizaciones de su misma `version`. Si se toca código nativo, se sube la versión y se genera APK nuevo. Se descartó `fingerprint` porque se calcula en dos sistemas distintos (Windows y el servidor de EAS) y un desajuste fallaría sin avisar.
+- **Variables:** las `EXPO_PUBLIC_*` se incrustan al publicar con `--environment preview`, así que cambiar la URL del backend o la zona de prueba tampoco exige APK nuevo. Corrige lo que se dijo antes en el chat.
+- **Acerca de:** ahora muestra qué corre («Actualización a1b2c3d4 · fecha · canal preview» o «Código de la instalación»), para comprobar en el teléfono que el cambio llegó.
+- **Guía:** `deploy/actualizaciones.md` (APK de base, publicar, comprobar, deshacer y cuándo sí hace falta un APK nuevo).
+- **Spec y estado:** `specs/008-piloto/actualizaciones-por-aire.md` y D-17 en la constitución.
+- **Lo que hace David:** **un último APK `preview`** con esta configuración (T4) y la prueba de punta a punta (T5).
+- Pruebas: frontend 470/470 (4 nuevas del texto de la actualización); `tsc --noEmit` sin errores; `npx expo config` válido y `npm ci --dry-run` limpio. El lockfile solo suma los paquetes de `expo-updates` (el `npm` local quitaba además campos `libc` ajenos al cambio; se descartaron). **No se probó una actualización real en un teléfono.**
+
+---
+
 ## [1.75.0] - 2026-10-26 (Hora Local)
 
 ### 005 · Pantallas del pasajero del viaje en curso (PR 4: T8 a T11)

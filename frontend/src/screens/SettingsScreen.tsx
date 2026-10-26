@@ -14,6 +14,8 @@ import { CONSENTIMIENTO, CONSENT_VERSION } from '../constants/consentimiento';
 import { useAuthStore } from '../store/useAuthStore';
 import { notificaciones } from '../servicios/notificaciones';
 import { registroAvisos, configurarCanales } from '../servicios/avisos';
+import { leerEstadoActualizacion } from '../servicios/actualizacion';
+import { textoActualizacion } from '../utils/actualizacion';
 import { DeleteAccountPanel } from '../components/DeleteAccountPanel';
 
 export type SettingsPage = 'configuracion' | 'cuenta' | 'privacidad' | 'seguridad' | 'ayuda' | 'acerca';
@@ -22,6 +24,7 @@ const titles: Record<SettingsPage, string> = { configuracion: 'Configuración', 
 export default function SettingsScreen({ page }: { page: SettingsPage }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const actualizacion = textoActualizacion(leerEstadoActualizacion());
   const { profile, user } = useAuthStore();
   const [location, setLocation] = useState('Consultando…');
   const [notifications, setNotifications] = useState('Consultando…');
@@ -139,7 +142,7 @@ export default function SettingsScreen({ page }: { page: SettingsPage }) {
         {paragraph('Hecho para Crucita', 'CruciDrive conecta pasajeros con conductores de tricimoto y permite solicitar encomiendas dentro de su zona de servicio. No ofrece automóviles, viajes interprovinciales ni transporte de carga pesada.')}
         {paragraph('Precio del servicio', 'Los viajes de pasajeros usan la tarifa configurada por persona y muestran el total antes de solicitar. En las encomiendas, el precio se acuerda directamente con el conductor por el chat antes de entregar el paquete. La app no procesa cobros electrónicos.')}
         {paragraph('Antes de enviar', 'La encomienda debe ser adecuada para transportarse en tricimoto. Consulta al conductor el espacio disponible y las condiciones de entrega antes de entregarla. No envíes objetos peligrosos, prohibidos o que no puedas embalar de forma segura.')}
-        {paragraph('Versión', `CruciDrive ${Constants.expoConfig?.version ?? '1.0.0'} · ${Platform.OS === 'web' ? 'Web' : Platform.OS === 'android' ? 'Android' : 'iOS'}\nCrucita, Manabí, Ecuador`)}
+        {paragraph('Versión', `CruciDrive ${Constants.expoConfig?.version ?? '1.0.0'} · ${Platform.OS === 'web' ? 'Web' : Platform.OS === 'android' ? 'Android' : 'iOS'}\nCrucita, Manabí, Ecuador${actualizacion ? `\n${actualizacion}` : ''}`)}
       </>}
       {feedback && <View style={styles.feedback} accessibilityRole="alert"><Text style={styles.body}>{feedback}</Text></View>}
     </ScrollView>
