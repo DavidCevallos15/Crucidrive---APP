@@ -22,9 +22,17 @@ export interface DriverInfo {
   nombre: string | null;
   telefono: string | null;
   placa: string | null;
-  /** Aún no existe (calificaciones: paso 005). */
-  calificacion?: number;
+  /** Promedio y número de reseñas (paso 005, criterio 18); sin dato, no se muestra nada. */
+  resenas?: { promedio: number | null; total: number };
   avatar_url?: string;
+}
+
+/** Cómo cerró un viaje finalizado por el conductor (paso 005, criterios 5a y 15). */
+export interface CierreViaje {
+  /** Hora en que el conductor lo terminó (ISO). */
+  finalizadoEn: string;
+  /** Lo que respondió el pasajero; null mientras no responde. */
+  confirmacion: 'llego' | 'no_llego' | null;
 }
 
 /**
@@ -57,6 +65,10 @@ export interface ActiveRide {
   chatThreadId: string | null;
   /** Timestamp de creación */
   createdAt: string;
+  /** Cuándo marcó «Llegué» el conductor (ISO); null si aún no (paso 005). */
+  llegadoEn?: string | null;
+  /** Solo en `finalizado`: lo que falta para cerrar el viaje (confirmar y calificar). */
+  cierre?: CierreViaje | null;
 }
 
 /**

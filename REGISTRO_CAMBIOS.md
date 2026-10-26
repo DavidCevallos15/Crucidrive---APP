@@ -2,6 +2,21 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.75.0] - 2026-10-26 (Hora Local)
+
+### 005 · Pantallas del pasajero del viaje en curso (PR 4: T8 a T11)
+- **Estados.** El pasajero ve «Tu tricimoto va en camino», «Tu tricimoto llegó», «Viaje en curso» y, en una encomienda, los textos con «paquete». Lo ve sin recargar: el aviso `viaje_estado` del conductor actualiza la hoja, y al reconectar se lee la BD (hora de llegada incluida).
+- **Cancelar con motivo** mientras el viaje está aceptado («Ya no lo necesito», «Tarda demasiado», «Otro»). Si el conductor cancela, el pasajero lo ve y puede **volver a pedir** con un toque. Cancelar mientras busca conductor ahora usa `POST /cancelar`.
+- **Terminar el viaje tú mismo** (en curso): una alerta advierte de la sanción y, al terminar, la app dice cuántas lleva y cuántas faltan para el bloqueo (números del servidor).
+- **Hoja final.** Resumen del cobro (o «Precio acordado con el conductor»), «Llegué» / «No llegué» («Se entregó» / «No se entregó»), y estrellas con comentario opcional de hasta 280 caracteres. A los 30 minutos sin responder pasa a calificar. «Ahora no» y «Omitir» cierran sin responder; la hoja se ofrece **una sola vez más** al abrir la app (el teléfono guarda solo el id del viaje y un contador, nunca nombres ni ubicaciones).
+- **Reseñas** («★ 4,8 · 23 reseñas» o «Nuevo») junto al nombre y la placa del conductor.
+- **Sin conexión.** Cada botón espera la respuesta del servidor; si no responde, avisa y no avanza la pantalla. El estado «sin conexión» se ve siempre en el viaje.
+- **Diseño.** Llamar, Chat y Cancelar o Terminar quedan en una fila fija de 56 px; el detalle se desplaza. Capturas en 360 × 640 en `docs/capturas/005-pasajero/`. El selector de motivo reutiliza la tarjeta oscura del conductor.
+- **Pendiente:** retirar `PATCH /:id/estado` cuando no queden APK que lo usen; la prueba de campo T12 con dos teléfonos.
+- Pruebas: frontend 466/466 (39 nuevas, con las acciones reales del hook); `tsc --noEmit` sin errores. No se tocó el backend ni la BD.
+
+---
+
 ## [1.74.0] - 2026-10-21 (Hora Local)
 
 ### 008 · Backend de prueba en una VM de Azure (D-16)
