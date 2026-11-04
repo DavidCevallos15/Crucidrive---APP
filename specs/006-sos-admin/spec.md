@@ -1,6 +1,6 @@
 # 006 · SOS con registro de alertas y panel del administrador
 
-Estado: **Borrador. Pendiente de aprobación de David.** Las decisiones A a D del final traen una propuesta; hasta que las confirme no se escribe plan ni código.
+Estado: **Aprobada por David el 4 nov 2026**, con las propuestas de A a D (aviso al admin, coordenadas 90 días, «No llegué» en este paso y la otra parte no se entera) y las decisiones del mismo día: SOS en la pantalla Seguridad (criterios 1a a 1c) y el panel en un despliegue aparte, limitado a su IP (criterio 0, decisión E). Siguiente paso: `plan.md`.
 
 ## Por qué
 La decisión D-05 dice que el SOS abre el marcador del 911 y **además registra la alerta con ubicación para el panel del administrador**. Hoy solo hace lo primero: el botón se mantiene pulsado dos segundos y abre el marcador, y no queda ningún registro. La spec 012 (criterio 4) dejó claro que esto no se presenta como implementado.
@@ -30,7 +30,13 @@ Regla que no cambia: **CruciDrive no sustituye al 911.** La llamada es lo import
 8. **Dado** una alerta, **cuando** alguien que no es administrador intenta leerla o cambiarla (incluida la otra parte del viaje), **entonces** no puede. El usuario solo puede crear la suya; no ve las de otros ni edita la que envió.
 9. **Dado** una alerta cerrada hace más de **90 días**, **entonces** sus coordenadas se borran y queda el registro sin ubicación (hora, rol, estado y nota). *(Propuesta B.)*
 
+### Dónde está el SOS (David, 4 nov 2026)
+1a. **Dado** el mapa del pasajero o la consola del conductor, **cuando** se abren, **entonces** **no hay botón SOS** en la pantalla principal ni en la hoja inferior. Esto reemplaza el criterio 4 del 012. En la cabecera queda un ícono pequeño de escudo, «Seguridad», a un toque, en todos los estados (pidiendo, buscando, aceptado y en curso).
+1b. **Dado** la pantalla **Seguridad**, a la que se llega por el escudo o desde el menú lateral, como en InDrive, **cuando** se abre, **entonces** el botón «Llamar al 911» es el elemento más grande y se ve sin desplazarse en 360 × 640. Mantenerlo pulsado 2 s abre el marcador con el 911 y registra la alerta (criterios 1 a 6). Debajo van las tarjetas informativas del `016`.
+1c. **Dado** un viaje en curso, **cuando** el usuario necesita el SOS, **entonces** llega en dos gestos como máximo (escudo y mantener pulsado), sin abrir el menú.
+
 ### Panel del administrador
+0. **Dado** el panel del administrador, **cuando** se publica, **entonces** es un **despliegue web aparte**, fuera del APK, y solo responde desde la IP de David, filtrada en el servidor. Las pantallas `(admin)` salen de la app móvil. Además de la IP, sigue haciendo falta iniciar sesión con la cuenta de rol `admin`. Las rutas `/api/admin/*` del backend también se filtran por IP. *(Decisión E.)*
 10. **Dado** el administrador, **cuando** abre el panel, **entonces** ve la lista de alertas con las **abiertas primero** y, dentro de cada grupo, las más recientes arriba. Cada fila muestra hora, rol, si va en viaje y su estado.
 11. **Dado** una alerta, **cuando** el administrador la abre, **entonces** ve la hora, el rol, el nombre y el teléfono de quien la envió, el viaje si lo hay, y la ubicación con un botón «Ver en el mapa» que abre la app de mapas del teléfono (como «Cómo llegar» del 005, sin rutas propias) y un botón «Llamar». Si la alerta llegó con retraso o sin ubicación, lo dice.
 12. **Dado** una alerta abierta, **cuando** el administrador la cierra, **entonces** elige cómo terminó (**atendida**, **falsa alarma** o **prueba**) y puede dejar una nota corta. Queda quién la cerró y cuándo. Una alerta cerrada no se vuelve a abrir; si hay una nueva, es otra alerta.
@@ -56,6 +62,13 @@ Regla que no cambia: **CruciDrive no sustituye al 911.** La llamada es lo import
 - **Ubicación sensible.** Es el dato más delicado de la app. El texto de consentimiento debe cubrir expresamente el SOS, y **sigue pendiente la revisión de un abogado** (LOPDP; paso 002).
 - **Falsas alertas.** El mantener dos segundos ya evita las accidentales; la nota y el cierre «falsa alarma» dejan constancia para ver patrones.
 - **Pasajero sin GPS.** Con el permiso negado, la alerta va sin ubicación; la app lo avisa antes de que haga falta.
+
+## Decisiones de David (4 nov 2026)
+- **SOS fuera de la pantalla principal**, en una pantalla Seguridad como la de InDrive. El SOS llama al 911. Criterios 1a a 1c; reemplaza el criterio 4 del 012.
+- **E. Panel del administrador en un despliegue aparte, limitado a la IP de David** (criterio 0).
+  - Propuesta para el plan: la misma VM de Azure (D-16) con Caddy, un sitio aparte y `remote_ip` con la IP de David. Así no se suma un proveedor ni un costo.
+  - Riesgo: la IP de casa suele cambiar. Si cambia, David la actualiza con un comando que trae el plan.
+  - Descartado: una VPN como Tailscale, porque es un servicio nuevo que pide su propia justificación (regla 8).
 
 ## Decisiones para David
 Propuestas por defecto; cada una se puede cambiar antes de escribir el plan.

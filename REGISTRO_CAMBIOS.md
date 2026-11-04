@@ -2,6 +2,25 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.80.0] - 2026-11-04 (Hora Local)
+
+### Specs 006, 015 y 016 aprobadas; plantilla del correo de confirmación
+- **006 · SOS y panel del administrador:** aprobada con A a D:
+  - aviso al admin;
+  - coordenadas guardadas 90 días;
+  - «No llegué» dentro de este paso;
+  - la otra parte del viaje no se entera.
+- **006, decisiones nuevas de David:**
+  - el SOS sale de la pantalla principal y pasa a una pantalla **Seguridad** como la de InDrive, con un escudo en la cabecera (criterios 1a a 1c, que reemplazan el criterio 4 del 012);
+  - el panel del administrador pasa a un **despliegue web aparte, limitado a la IP de David**, sin dejar de pedir el rol admin (criterio 0, decisión E).
+- **015 · Google y correo verificado:** aprobada con P1 a P5. El correo sale por SMTP propio (Resend) con un dominio propio que compra David.
+- **016 · Estructura de referencia:** aprobada con Q1 a Q7. Falta el número de Soporte (Q6).
+- **Plantilla:** `supabase/templates/confirmar-registro.html`. En español, con la paleta del 011, sin imágenes externas y con el enlace de respaldo. Se pega en Supabase cuando haya SMTP propio.
+- Despliegue: `MARCADOR_SECRETO` quedó en la VM (64 caracteres) y el #69 llevó la brecha 1 a `main`. El #68 se había fusionado contra `spec/007-hardening` en lugar de `main`.
+- Sin cambios de código.
+
+---
+
 ## [1.79.0] - 2026-11-04 (Hora Local)
 
 ### 007 · PR 1: el mapa del sector ya no expone a los conductores (brecha 1, T1 a T7)
