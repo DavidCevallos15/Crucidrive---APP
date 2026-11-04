@@ -12,7 +12,7 @@ Flujo por paso: spec → aprobación → plan → tareas → implementación (co
 | 4 | `004-tracking-push` | **Implementado** (T1 a T16). Falta T17: prueba de campo de David con dos teléfonos |
 | 5 | `005-viaje` | **En curso.** BD, backend, conductor y pasajero hechos (#54, #55; 0017 en producción; pasajero T8 a T11 en el PR 4). Falta la prueba de campo T12 con dos teléfonos |
 | 6 | `006-sos-admin` | **Spec en borrador**, a la espera de la aprobación de David (decisiones A a D) |
-| 7 | `007-hardening` | Sin iniciar |
+| 7 | `007-hardening` | **Spec en borrador** (4 nov 2026, D-18 y D-20), a la espera de la aprobación de David (decisiones E1 a E6). La brecha 1 bloquea las pruebas de campo |
 | 8 | `008-piloto` | **En curso**: backend de prueba en una VM de Azure (`backend-de-prueba.md`, D-16) y actualizaciones por aire (`actualizaciones-por-aire.md`, D-17). Falta el resto del piloto |
 
 Plan maestro: documento "Plan CruciDrive: viabilidad, MVP y escalado" (claude.ai).

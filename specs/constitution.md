@@ -31,11 +31,37 @@ Reglas no negociables. Cambiarlas requiere editar este archivo y registrarlo en 
 
 ## Ampliación solicitada (20 oct 2026)
 
-- D-14: **Encomiendas en tricimoto, con precio acordado con el conductor**, según instrucciones directas de David. D-08 conserva su vigencia para pasajeros; una encomienda no tiene tarifa por persona ni se representa como gratuita. La app no fija ni registra el importe negociado. Se formaliza en `009-experiencia-encomiendas`, con revisión documental y validaciones pendientes descritas allí; no cambia los vehículos admitidos por D-03.
+- D-14: **Encomiendas en tricimoto, con precio acordado con el conductor**, según instrucciones directas de David. D-08 conserva su vigencia para pasajeros; una encomienda no tiene tarifa por persona ni se representa como gratuita. La app no fija ni registra el importe negociado. Se formaliza en `009-experiencia-encomiendas`, con revisión documental y validaciones pendientes descritas allí; no cambia los vehículos admitidos por D-03. **Modificada por D-19 (4 nov 2026):** cuando se implemente `013-encomiendas-contraoferta`, el precio se acuerda dentro de la app y queda registrado. Hasta entonces rige este texto.
 
 - D-15 (20 oct 2026): **Lista de ofertas para el conductor, sin quitar D-11.** Un conductor puede tener hasta 3 ofertas abiertas a la vez (parámetro del servidor) y las ve en una lista para aceptar o rechazar cada una. El orden por cercanía, los 3 candidatos de uno en uno, los 15 s y el aviso abierto de D-11 no cambian. Reemplaza el criterio 7 del 003. Se especifica en `010-ajustes-de-campo`.
 - D-16 (21 oct 2026, ajustada el 26 oct): **Backend de prueba en una VM de Azure for Students** (una sola instancia, systemd y HTTPS con Caddy y `sslip.io` o la etiqueta DNS de Azure), para las pruebas de campo sin la PC de David. Primero se pensó en una e2-micro de Google Cloud; David ya tenía su VM `crucidrive-api` en Azure y la usó. No es el hosting del piloto. Se especifica en `008-piloto/backend-de-prueba.md`.
 - D-17 (26 oct 2026): **Actualizaciones por aire con EAS Update en las pruebas.** El APK `preview` recibe cambios de JavaScript e imágenes sin reinstalar, con un canal por entorno (`preview` y `production`) y versión de ejecución por `appVersion`: si se toca código nativo, se sube la versión y se genera APK nuevo. Las variables `EXPO_PUBLIC_*` se incrustan al publicar con `--environment`. Descartados: depender solo de la Play Store y un servidor propio de actualizaciones. Se especifica en `008-piloto/actualizaciones-por-aire.md`.
+
+## Decisiones del 4 nov 2026 (auditoría contra el handbook de inDrive)
+
+Salen de revisar el handbook público de inDrive (github.com/inDriver/handbook, licencia MIT) y la herramienta REA (github.com/morluto/rea). **No se hizo ingeniería inversa del APK ni del tráfico de inDrive**: viola sus términos y el propio aviso de REA lo excluye. Se adoptan principios documentados, no su infraestructura. Las tres decisiones están aprobadas por David; cada spec que salga de ellas sigue necesitando su aprobación (regla 1).
+
+- D-18: **Principios del handbook de inDrive como norma de seguridad y arquitectura, a la escala del piloto.**
+  - Los datos creados por usuarios no usan IDs incrementales. Los catálogos sí pueden.
+  - El mapa en vivo y los eventos de socket llevan el mínimo de datos personales.
+  - El teléfono y los datos de la otra parte solo los ven las partes del viaje, y solo mientras hacen falta.
+  - Pedir, cancelar y aceptar tienen límite por usuario (`user_id`), además del límite por IP.
+  - Los errores no muestran detalles internos.
+  - Las respuestas 429 llevan `Retry-After`.
+  - Hay un registro de acceso con `user_id`, ruta, IP y user-agent para detectar abuso, sin datos personales.
+  - La app no revela si un correo o teléfono ya está registrado.
+  - **Límite:** nada de Kafka, Kubernetes, Redis, geo-distribución ni outbox (regla 8). Se especifica en `007-hardening`.
+- D-19: **Encomiendas con contraoferta. Modifica D-14.**
+  - En una encomienda, el pasajero propone un precio, los conductores lo aceptan o contraofertan, y el pasajero elige.
+  - La app registra el precio acordado. Solo lo ven las dos partes y el administrador.
+  - Los viajes de pasajeros siguen con D-08 (0,50 USD × persona, fijado por la BD).
+  - No hay pagos dentro de la app: el cobro sigue en efectivo.
+  - Se especifica en `013-encomiendas-contraoferta`.
+- D-20: **REA solo sobre el APK propio.**
+  - Se usa REA (`npx rea-agents setup`, Node ≥ 22.23.4, JDK + JADX) únicamente sobre el APK `preview` de CruciDrive, para auditar el manifest, los permisos, los componentes exportados, la firma y la restricción de la key de Maps.
+  - **Nunca sobre apps de terceros.**
+  - El bundle JS de Expo va en bytecode Hermes, que REA no lista: no se promete decompilar el JS.
+  - Se especifica en `007-hardening`.
 
 ## Decisiones abiertas
 - D-10: **Protección contra contraseñas filtradas** de Supabase Auth (aviso del linter). Hoy requiere un plan de pago; se pospone para no gastar. Mitigación mientras tanto: revisar la longitud mínima de contraseña en Supabase Auth. Reevaluar antes del piloto.
