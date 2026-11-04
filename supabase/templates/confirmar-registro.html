@@ -1,0 +1,62 @@
+<!-- Asunto: Confirma tu correo para usar CruciDrive -->
+<!-- Supabase › Authentication › Emails › Confirm sign up. Requiere SMTP propio. -->
+<!-- Variables de Supabase: {{ .ConfirmationURL }}. Sin imágenes externas: muchos correos las bloquean. -->
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Confirma tu correo</title>
+</head>
+<body style="margin:0;padding:0;background:#FFFCF7;">
+  <!-- Texto de vista previa en la bandeja -->
+  <div style="display:none;max-height:0;overflow:hidden;">Un toque y tu cuenta de CruciDrive queda lista.</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FFFCF7;">
+    <tr>
+      <td align="center" style="padding:24px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#FFFFFF;border:1px solid #E3D8D4;border-radius:16px;">
+          <tr>
+            <td style="background:#7F1139;border-radius:16px 16px 0 0;padding:20px 24px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:bold;color:#FEE8C1;">
+              CruciDrive
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px;font-family:Arial,Helvetica,sans-serif;color:#291B25;">
+              <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;">Confirma tu correo</h1>
+              <p style="margin:0 0 20px;font-size:16px;line-height:1.5;">
+                Toca el botón para confirmar tu correo y terminar de crear tu cuenta en CruciDrive.
+              </p>
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="background:#7F1139;border-radius:12px;">
+                    <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:14px 28px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#FFFFFF;text-decoration:none;">
+                      Confirmar mi correo
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:20px 0 8px;font-size:14px;line-height:1.5;color:#74636D;">
+                Ábrelo en el mismo teléfono donde tienes la app. El enlace sirve una sola vez y vence en 1 hora.
+              </p>
+              <p style="margin:0 0 8px;font-size:14px;line-height:1.5;color:#74636D;">
+                Si el botón no funciona, copia este enlace en el navegador:<br>
+                <a href="{{ .ConfirmationURL }}" style="color:#7F1139;word-break:break-all;">{{ .ConfirmationURL }}</a>
+              </p>
+              <p style="margin:16px 0 0;font-size:14px;line-height:1.5;color:#74636D;">
+                Si no creaste una cuenta, ignora este correo: sin confirmarlo no se activa nada.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 24px;border-top:1px solid #E3D8D4;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#74636D;">
+              CruciDrive · Tricimotos en Crucita, Manabí.<br>
+              Nunca te pediremos tu contraseña por correo. En una emergencia, llama al 911.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -11,7 +11,7 @@ Flujo por paso: spec → aprobación → plan → tareas → implementación (co
 | 3 | `003-despacho` | **Completo** (prueba de humo 29/29 el 2026-10-09). Pendiente: probar en un teléfono real que la oferta llegue con la app abierta; con la app cerrada, en el paso 004 |
 | 4 | `004-tracking-push` | **Implementado** (T1 a T16). Falta T17: prueba de campo de David con dos teléfonos |
 | 5 | `005-viaje` | **En curso.** BD, backend, conductor y pasajero hechos (#54, #55; 0017 en producción; pasajero T8 a T11 en el PR 4). Falta la prueba de campo T12 con dos teléfonos |
-| 6 | `006-sos-admin` | **Spec en borrador**, a la espera de la aprobación de David (decisiones A a D) |
+| 6 | `006-sos-admin` | **Spec aprobada** (4 nov 2026: A a D con las propuestas; SOS en la pantalla Seguridad; panel en un despliegue aparte, limitado a la IP de David). Falta `plan.md` |
 | 7 | `007-hardening` | **Spec aprobada** (4 nov 2026, D-18 y D-20; E1 a E6 con las propuestas). Plan y tareas listos; se entrega en 4 PR, primero la brecha 1, que bloquea las pruebas de campo |
 | 8 | `008-piloto` | **En curso**: backend de prueba en una VM de Azure (`backend-de-prueba.md`, D-16) y actualizaciones por aire (`actualizaciones-por-aire.md`, D-17). Falta el resto del piloto |
 
@@ -26,3 +26,6 @@ Cada carpeta contiene `spec.md` (qué y por qué), `plan.md` (cómo) y `tasks.md
 | `010-ajustes-de-campo` | **Implementado** (A: #51, B: #52; 0016 en producción). Falta la revisión en el APK (T7 y T12). Spec aprobada en el PR #49, 20 oct 2026: interfaz compacta para 360 × 640 y lista de ofertas del conductor sin quitar D-11 (D-15 propuesta). |
 | `011-diseno-motion` | Paleta y motion premium solicitados por David; bienvenida una sola vez, tricimoto propia, componentes y guía de sistema. Spec/plan antes de código. Validación web y empaquetado; teléfono pendiente. |
 | `012-ajustes-de-campo-2` | **Aprobada por David e implementada en PR**, 20 oct 2026. Menú izquierdo, cuenta dentro, cabecera fija con SOS/sector y aviso fuera de Crucita sin bloquear disponibilidad del conductor durante el piloto. Lugares admin por nombre + sector, visibles por defecto y ocultos mediante filtro. Pruebas y revisión web completas; Android y viaje/chat reales pendientes. |
+| `015-acceso-google-y-correo` | **Spec aprobada** (4 nov 2026, P1 a P5 con las propuestas). Entrada con «Continuar con Google» y «Continuar con correo», correo verificado y recuperación de contraseña. Correo con SMTP propio (Resend) y dominio propio. La plantilla está en `supabase/templates/`. Falta `plan.md` |
+| `016-estructura-de-referencia` | **Spec aprobada** (4 nov 2026, Q1 a Q7 con las propuestas; Q6 sin número de soporte). Estructura de pantallas tomada de InDrive con la paleta del 011: inicio, ruta, menú, historial, Seguridad, configuración y registro del conductor en 3 pasos. Depende del 013 y del 014 para el precio de las encomiendas y el pin. Falta `plan.md` |
+| `013-encomiendas-contraoferta` y `014-mapa-y-recogida` | Por redactar (D-19 e ideas del 4 nov). El 013 va después de cerrar el 009 |
