@@ -13,9 +13,8 @@ describe('useLocationStore', () => {
   });
 
   const mockDriver: NearbyDriver = {
-    conductorId: 'driver-1',
-    nombre: 'Carlos',
-    coords: { lat: -1.0448, lng: -80.5432 },
+    marcador: 'driver-1',
+    coords: { lat: -1.045, lng: -80.543 },
     estado: 'disponible',
     lastUpdate: Date.now(),
   };
@@ -64,7 +63,7 @@ describe('useLocationStore', () => {
       const drivers = useLocationStore.getState().nearbyDrivers;
       expect(drivers.size).toBe(1);
       expect(drivers.get('driver-1')).toBeDefined();
-      expect(drivers.get('driver-1')!.nombre).toBe('Carlos');
+      expect(drivers.get('driver-1')!.coords).toEqual({ lat: -1.045, lng: -80.543 });
     });
 
     it('should update an existing driver', () => {
@@ -84,8 +83,7 @@ describe('useLocationStore', () => {
     it('should add multiple drivers', () => {
       useLocationStore.getState().updateNearbyDriver(mockDriver);
       useLocationStore.getState().updateNearbyDriver({
-        conductorId: 'driver-2',
-        nombre: 'Pedro',
+        marcador: 'driver-2',
         coords: { lat: -1.05, lng: -80.54 },
         estado: 'disponible',
         lastUpdate: Date.now(),
@@ -123,8 +121,7 @@ describe('useLocationStore', () => {
     it('should clear all nearby drivers', () => {
       useLocationStore.getState().updateNearbyDriver(mockDriver);
       useLocationStore.getState().updateNearbyDriver({
-        conductorId: 'driver-2',
-        nombre: 'Pedro',
+        marcador: 'driver-2',
         coords: { lat: -1.05, lng: -80.54 },
         estado: 'disponible',
         lastUpdate: Date.now(),

@@ -7,17 +7,23 @@ const { leerConfigDespacho } = require('./despacho/config');
 const { leerConfigUbicacion, validarConDespacho } = require('./ubicacion/config');
 const { iniciarDespacho, detenerDespacho } = require('./despacho');
 const { crearApagado } = require('./apagado');
+const { leerConfigSockets } = require('./sockets/config');
+const { leerSecretoMarcador } = require('./ubicacion/marcador');
 
 dotenv.config();
 
-// Parámetros del despacho inválidos: mejor no arrancar (plan R21).
+// Parámetros inválidos: mejor no arrancar (plan R21 del 003; plan P1 y P2 del 007).
 let configDespacho;
+let configSockets;
 try {
   configDespacho = leerConfigDespacho();
   // Frecuencia de ubicación (paso 004, D-13): debe caber en la ventana de frescura del despacho.
   validarConDespacho(leerConfigUbicacion(), configDespacho);
+  configSockets = leerConfigSockets();
+  // Sin secreto, el mapa del sector no puede ocultar quién es cada conductor (007, criterio 3).
+  leerSecretoMarcador();
 } catch (err) {
-  console.error(`[CruciDrive] Configuración del despacho inválida: ${err.message}`);
+  console.error(`[CruciDrive] Configuración inválida: ${err.message}`);
   process.exit(1);
 }
 
@@ -33,7 +39,7 @@ const io = new Server(server, {
   maxHttpBufferSize: 1e5
 });
 
-initSocketHandler(io);
+initSocketHandler(io, { config: configSockets });
 // Para que los controladores REST reenvíen por socket (paso 004: ubicación por REST, P11).
 app.set('io', io);
 

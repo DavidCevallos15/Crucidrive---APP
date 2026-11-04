@@ -2,6 +2,35 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.79.0] - 2026-11-04 (Hora Local)
+
+### 007 · PR 1: el mapa del sector ya no expone a los conductores (brecha 1, T1 a T7)
+- **Qué pasaba:** cualquier cuenta con sesión podía unirse a todas las salas `sector:*` a la vez. Cada 5 s recibía, de cada conductor disponible, su UUID, su nombre real y sus coordenadas exactas.
+- **Backend:**
+  - `join_sector` deja una sola sala de sector por conexión: al cambiar, sale de la anterior.
+  - Solo acepta sectores activos del catálogo (`sockets/sectores.js`, en memoria 10 min).
+  - Tope de 6 cambios por minuto (`SOCKET_CAMBIOS_SECTOR_MIN`). Los intentos con sectores inexistentes también cuentan.
+  - `location_updated` lleva `{ marcador, coords, estado }`. El marcador es HMAC del id con una clave que cambia cada día (`ubicacion/marcador.js`, `MARCADOR_SECRETO`, obligatorio). Las coordenadas van a 3 decimales (~110 m).
+  - Sin UUID ni nombre. `conductor_ubicacion` al pasajero del viaje sigue exacta.
+  - Los logs del socket registran el `usuario=<uuid>` y no el nombre. El socket ya no carga el nombre.
+- **App:**
+  - Las tricimotos se guardan por marcador.
+  - La que pasa 60 s sin actualizarse sale del mapa (`podarConductores`, cada 10 s). Antes nunca se quitaban.
+  - La lista se vacía al cambiar de sector.
+  - El marcador del mapa dice «Tricimoto disponible», sin nombre.
+- **Configuración:**
+  - `MARCADOR_SECRETO` y `SOCKET_CAMBIOS_SECTOR_MIN` en `backend/.env.example`; `MARCADOR_SECRETO` en `deploy/vm/api.env.ejemplo`.
+  - Sin el secreto, el servidor no arranca.
+  - Se agregó un secreto aleatorio solo al `.env` local de David, que no está en git.
+- **Pruebas:**
+  - Backend 418/418 (26 nuevas en `marcador.test.js` y `socketSector.test.js`; ajustes en `spec004` y `despachador`).
+  - Frontend 480/480 (6 nuevas en `conductoresCercanos.test.ts`).
+  - `tsc --noEmit` sin errores nuevos (el único error local sigue siendo `expo-updates` sin instalar).
+  - **No se probó en un teléfono.**
+- **Antes de desplegar (David):** agregar `MARCADOR_SECRETO` en `/etc/crucidrive/api.env` de la VM y publicar la app por EAS Update. Compatibilidad: un APK viejo con el backend nuevo no se cierra, pero junta todas las tricimotos en una sola, porque ya no llega `conductorId`. La app nueva con un backend viejo no dibuja ninguna, porque descarta los eventos sin marcador.
+
+---
+
 ## [1.78.0] - 2026-11-04 (Hora Local)
 
 ### Constitución: D-18 a D-20 y spec 007 en borrador

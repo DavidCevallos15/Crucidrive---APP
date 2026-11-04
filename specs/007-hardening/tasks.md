@@ -3,13 +3,13 @@
 Cada tarea se tilda cuando su prueba pasa, nunca antes. «C» es el criterio de la spec.
 
 ## PR 1 · Sockets de sector
-- [ ] **T1 · Config.** `SOCKET_CAMBIOS_SECTOR_MIN` y `MARCADOR_SECRETO`, validados al arrancar. *Prueba:* un valor inválido o un secreto de menos de 32 caracteres detiene el arranque.
-- [ ] **T2 · Marcador efímero** (`ubicacion/marcador.js`). *Prueba (C3):* el marcador es el mismo en un día, cambia al día siguiente, no contiene el UUID y es distinto para cada conductor.
-- [ ] **T3 · Catálogo de sectores en memoria** (`sockets/sectores.js`). *Prueba (C2):* un sector inexistente o inactivo se rechaza; la lectura se repite pasados 10 min.
-- [ ] **T4 · `join_sector` con una sola sala y tope por minuto.** *Prueba (C1):* unirse a B saca de A, y con el cambio 7 en un minuto el sector no cambia.
-- [ ] **T5 · `location_updated` sin datos personales.** *Prueba (C3 y C5):* el evento lleva marcador y coordenadas a 3 decimales, sin `conductorId` ni `nombre`, y `conductor_ubicacion` sigue exacta para el pasajero. Se ajustan `spec004` y `despachador`.
-- [ ] **T6 · Logs del socket sin nombre.** *Prueba (C6):* en conexión, unión y salida, la salida de `console.log` no contiene el nombre.
-- [ ] **T7 · App: tricimotos por marcador y caducidad a 60 s.** *Prueba (C4):* no hay duplicados por marcador, se poda a los 60 s y se vacía al cambiar de sector. `tsc` sin errores.
+- [x] **T1 · Config.** `SOCKET_CAMBIOS_SECTOR_MIN` y `MARCADOR_SECRETO`, validados al arrancar. *Prueba:* un valor inválido o un secreto de menos de 32 caracteres detiene el arranque.
+- [x] **T2 · Marcador efímero** (`ubicacion/marcador.js`). *Prueba (C3):* el marcador es el mismo en un día, cambia al día siguiente, no contiene el UUID y es distinto para cada conductor.
+- [x] **T3 · Catálogo de sectores en memoria** (`sockets/sectores.js`). *Prueba (C2):* un sector inexistente o inactivo se rechaza; la lectura se repite pasados 10 min.
+- [x] **T4 · `join_sector` con una sola sala y tope por minuto.** *Prueba (C1):* unirse a B saca de A, y con el cambio 7 en un minuto el sector no cambia.
+- [x] **T5 · `location_updated` sin datos personales.** *Prueba (C3 y C5):* el evento lleva marcador y coordenadas a 3 decimales, sin `conductorId` ni `nombre`, y `conductor_ubicacion` sigue exacta para el pasajero. Se ajustan `spec004` y `despachador`.
+- [x] **T6 · Logs del socket sin nombre.** *Prueba (C6):* en conexión, unión y salida, la salida de `console.log` no contiene el nombre.
+- [x] **T7 · App: tricimotos por marcador y caducidad a 60 s.** *Prueba (C4):* no hay duplicados por marcador, se poda a los 60 s y se vacía al cambiar de sector. `tsc` sin errores.
 
 ## PR 2 · Datos de la otra parte, cancelaciones, límites y cuentas
 - [ ] **T8 · Migración 0018: teléfono por función y consentimientos por columnas.** *Prueba (C7 a C10, C15):* `rls_008.sql` cubre el teléfono por estado, el propio, el admin y un tercero; el nombre se sigue viendo tras el viaje; leer `id` de consentimientos se rechaza.

@@ -7,6 +7,7 @@
 const { toWKT, isValidCoordinate } = require('../utils/geo');
 const { isSectorId } = require('../utils/validation');
 const { salaUsuario } = require('../despacho/salas');
+const { crearMarcador, redondear3 } = require('./marcador');
 
 /**
  * Viaje aceptado o en curso del conductor (la RLS de viajes le deja ver los suyos). Solo hay uno:
@@ -30,7 +31,7 @@ const viajeActivo = async (db, conductorId) => {
 /**
  * @param {object} p
  * @param {import('@supabase/supabase-js').SupabaseClient} p.db - Cliente con el JWT del conductor.
- * @param {{ id: string, rol: string, nombre?: string }} p.usuario
+ * @param {{ id: string, rol: string }} p.usuario
  * @param {string} p.sectorId
  * @param {{ lat: number, lng: number }} p.coords
  * @param {(sala: string, evento: string, datos: object) => void} p.emitir - Reenvío por socket.
@@ -67,12 +68,12 @@ const guardarUbicacion = async ({ db, usuario, sectorId, coords, emitir }) => {
 
   const { estado } = actualizadas[0];
 
-  // Disponible: el sector lo ve en el mapa, como en el 001.
+  // Disponible: el sector lo ve en el mapa, pero sin saber quién es (007, criterio 3; D-18):
+  // marcador que cambia cada día y coordenadas a ~110 m. Ni UUID ni nombre.
   if (estado === 'disponible') {
     emitir(`sector:${sectorId}`, 'location_updated', {
-      conductorId: usuario.id,
-      nombre: usuario.nombre || '',
-      coords: { lat, lng },
+      marcador: crearMarcador(usuario.id),
+      coords: { lat: redondear3(lat), lng: redondear3(lng) },
       estado,
     });
   } else if (estado === 'ocupado') {
