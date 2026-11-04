@@ -105,6 +105,8 @@ export const MapScreen: React.FC = () => {
   const viaje = useViajePasajero(socket);
   const nearbyDrivers = useLocationStore((s) => s.nearbyDrivers);
   const updateNearbyDriver = useLocationStore((s) => s.updateNearbyDriver);
+  const podarConductores = useLocationStore((s) => s.podarConductores);
+  const clearNearbyDrivers = useLocationStore((s) => s.clearNearbyDrivers);
   const activeRide = useRideStore((s) => s.activeRide);
   const isRequesting = useRideStore((s) => s.isRequesting);
   const ultimaSolicitud = useRideStore((s) => s.ultimaSolicitud);
@@ -152,16 +154,18 @@ export const MapScreen: React.FC = () => {
   // ─── Suscribirse al sector cuando se determina ────────────
   useEffect(() => {
     if (currentSectorId && !fueraDeZona) {
+      // El servidor deja una sola sala de sector (007, criterio 1): las tricimotos del sector
+      // anterior ya no se actualizarán, así que salen del mapa ahora y no a los 60 s.
+      clearNearbyDrivers();
       joinSector(currentSectorId);
     }
-  }, [currentSectorId, fueraDeZona, joinSector]);
+  }, [currentSectorId, fueraDeZona, joinSector, clearNearbyDrivers]);
 
   // ─── Escuchar actualizaciones de ubicación de conductores ──
   useEffect(() => {
     const unsubscribe = onEvent('location_updated', (data) => {
       updateNearbyDriver({
-        conductorId: data.conductorId,
-        nombre: data.nombre,
+        marcador: data.marcador,
         coords: data.coords,
         estado: data.estado as NearbyDriver['estado'],
         lastUpdate: Date.now(),
@@ -170,6 +174,12 @@ export const MapScreen: React.FC = () => {
 
     return unsubscribe;
   }, [onEvent, updateNearbyDriver]);
+
+  // ─── Quitar tricimotos que dejaron de actualizarse (007, criterio 4) ──
+  useEffect(() => {
+    const id = setInterval(() => podarConductores(Date.now()), 10_000);
+    return () => clearInterval(id);
+  }, [podarConductores]);
 
   // ─── Elegir destino u origen ──────────────────────────────
   const abrirPanel = useCallback((siguiente: Panel) => {
@@ -361,12 +371,12 @@ export const MapScreen: React.FC = () => {
         {/* Marcadores de conductores cercanos */}
         {driversArray.map((driver) => (
           <Marker
-            key={driver.conductorId}
+            key={driver.marcador}
             coordinate={{
               latitude: driver.coords.lat,
               longitude: driver.coords.lng,
             }}
-            title={driver.nombre}
+            title="Tricimoto disponible"
             description={
               driver.estado === 'disponible' ? 'Disponible' : 'Ocupado'
             }

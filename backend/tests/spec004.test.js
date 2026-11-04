@@ -7,6 +7,7 @@
  */
 process.env.SUPABASE_URL = process.env.SUPABASE_URL || 'http://localhost:54321';
 process.env.SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'anon-de-prueba';
+process.env.MARCADOR_SECRETO = process.env.MARCADOR_SECRETO || 'secreto-de-prueba-del-marcador-007-xx';
 
 jest.mock('../src/utils/asyncHandler', () => (fn) => fn);
 jest.mock('../src/config/supabase', () => ({ supabase: {}, createUserClient: jest.fn(), getAdminClient: jest.fn() }));
@@ -14,6 +15,7 @@ jest.mock('../src/despacho', () => ({ obtenerDespachador: jest.fn(() => null) })
 
 const { leerConfigUbicacion, validarConDespacho } = require('../src/ubicacion/config');
 const { guardarUbicacion } = require('../src/ubicacion/servicio');
+const { crearMarcador } = require('../src/ubicacion/marcador');
 const { actualizarUbicacion } = require('../src/controllers/conductorController');
 const initSocketHandler = require('../src/sockets/socketHandler');
 
@@ -99,9 +101,11 @@ describe('T3 · servicio de ubicación (plan P14)', () => {
     expect(llamadas.eq[0]).toEqual(['conductor_id', CONDUCTOR]);
     // Columnas explícitas: desde la 0014 nadie puede leer ubicacion_actual.
     expect(llamadas.select[0]).not.toMatch(/\*|ubicacion_actual/);
+    // 007, criterio 3: marcador efímero y ~110 m; ni UUID ni nombre en el mapa del sector.
     expect(emitir).toHaveBeenCalledWith('sector:malecon', 'location_updated', {
-      conductorId: CONDUCTOR, nombre: 'Carla', coords: MALECON, estado: 'disponible',
+      marcador: crearMarcador(CONDUCTOR), coords: { lat: -0.87, lng: -80.54 }, estado: 'disponible',
     });
+    expect(JSON.stringify(emitir.mock.calls[0][2])).not.toMatch(new RegExp(`${CONDUCTOR}|Carla`));
   });
 
   test('un pasajero no puede enviar ubicación de conductor (403 sin tocar la BD)', async () => {
