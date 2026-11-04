@@ -63,7 +63,8 @@ Salen de revisar el handbook público de inDrive (github.com/inDriver/handbook, 
   - El bundle JS de Expo va en bytecode Hermes, que REA no lista: no se promete decompilar el JS.
   - Se especifica en `007-hardening`.
 
+- D-10 (cerrada el 4 nov 2026, E4 del 007): **sin la protección de contraseñas filtradas**, que pide un plan de pago de unos 25 USD/mes, igual a todo el presupuesto del piloto. En su lugar: contraseña de mínimo 10 caracteres, con letras y números, en la app y en Supabase Auth. Se reevalúa si el piloto crece.
+- D-01 (cerrada el 4 nov 2026, E5 del 007): **el backend sigue en JavaScript (CommonJS)**, con JSDoc y `// @ts-check` por archivo, revisado en el CI. Se descartó migrar a TypeScript antes del piloto (4 a 6 días, cambia la compilación y el despliegue). Se puede reconsiderar después del piloto.
+
 ## Decisiones abiertas
-- D-10: **Protección contra contraseñas filtradas** de Supabase Auth (aviso del linter). Hoy requiere un plan de pago; se pospone para no gastar. Mitigación mientras tanto: revisar la longitud mínima de contraseña en Supabase Auth. Reevaluar antes del piloto.
-- D-01: el backend es JavaScript (CommonJS). ¿Migrar a TypeScript o mantener JS con JSDoc? Se decide en `007-hardening`.
 - D-07: aliado institucional (cooperativa de tricimotos o GAD de Crucita). Pendiente del paso 0.

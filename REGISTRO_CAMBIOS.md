@@ -19,7 +19,9 @@
   - las tricimotos que se desconectan nunca se quitan del mapa del pasajero;
   - el servidor registra el nombre del usuario en los logs de socket.
 - **Estado medido:** backend 392/392. `tsc --noEmit` del frontend da 0 errores con las dependencias instaladas (el único error local era `expo-updates` sin instalar). T18 queda en «que el CI revise tipos».
-- **Pendiente de David:** aprobar la spec 007 y responder E1 a E6. No se tocó código, BD ni tests.
+- **Aprobación:** David aprobó la spec el mismo día, con las propuestas de E1 a E6. Con eso quedan cerradas D-10 (contraseña de 10 caracteres con letras y números, sin plan de pago) y D-01 (JS con JSDoc y revisión de tipos en el CI).
+- **Plan y tareas:** `plan.md` (4 PR, P1 a P15) y `tasks.md` (T1 a T19, más D1 a D3 de David).
+- No se tocó código, BD ni tests.
 
 ---
 

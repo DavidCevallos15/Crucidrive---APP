@@ -1,6 +1,6 @@
 # 007 · Endurecimiento antes del piloto
 
-Estado: **Borrador (4 nov 2026).** David tiene que aprobarla y responder E1 a E6. Sin eso no se escribe `plan.md` ni código.
+Estado: **Aprobada por David el 4 nov 2026**, con las propuestas de E1 a E6: solo el nombre tras el viaje; 5 cancelaciones en 60 min dejan 30 min sin pedir; registro de 14 días; contraseña de mínimo 10 con letras y números; JS con JSDoc; y 10, 10 y 30 por usuario cada 15 min. Ver `plan.md` y `tasks.md`.
 
 ## Por qué
 El 4 nov 2026 se revisó CruciDrive contra los principios del handbook de inDrive (D-18). Muchas prácticas ya se cumplen: IDs no secuenciales en los datos de usuario, tarifa fijada por el servidor, aceptación sin carrera, ofertas visibles solo para sus candidatos, ubicación del viaje solo para su pasajero, nadie se asigna admin, avisos sin datos personales y errores sin detalles internos. Eso no se rehace, y al cambiar algo cerca no se rompe (la suite del backend pasaba 392/392 el 4 nov).
