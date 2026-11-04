@@ -5,6 +5,7 @@
  */
 process.env.SUPABASE_URL = process.env.SUPABASE_URL || 'http://localhost:54321';
 process.env.SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'anon-de-prueba';
+process.env.MARCADOR_SECRETO = process.env.MARCADOR_SECRETO || 'secreto-de-prueba-del-marcador-007-xx';
 
 jest.mock('../src/config/supabase', () => ({
   supabase: { auth: { getUser: jest.fn() } },
@@ -15,6 +16,7 @@ jest.mock('../src/config/supabase', () => ({
 const { leerConfigDespacho } = require('../src/despacho/config');
 const { RegistroConexiones } = require('../src/despacho/conexiones');
 const initSocketHandler = require('../src/sockets/socketHandler');
+const { crearMarcador } = require('../src/ubicacion/marcador');
 
 /** Servidor y socket falsos: guardan los manejadores y lo que se emite. */
 const crearIoFalso = () => {
@@ -140,7 +142,8 @@ describe('T7 · update_location solo cambia ubicación y sector (R10)', () => {
     expect(socket.alSector).toEqual([{
       sala: 'sector:malecon',
       evento: 'location_updated',
-      datos: { conductorId: CONDUCTOR.id, nombre: 'Carla', coords: { lat: -0.87, lng: -80.54 }, estado: 'disponible' },
+      // 007, criterio 3: sin UUID ni nombre.
+      datos: { marcador: crearMarcador(CONDUCTOR.id), coords: { lat: -0.87, lng: -80.54 }, estado: 'disponible' },
     }]);
   });
 

@@ -9,14 +9,19 @@ export interface Coordinates {
 }
 
 /**
- * Información de un conductor cercano visible en el mapa.
+ * Una tricimoto que deja de actualizarse durante este tiempo sale del mapa (007, criterio 4).
+ * Es la ventana de frescura del despacho (D-13): pasado ese tiempo ya no recibiría ofertas.
+ */
+export const CADUCIDAD_CONDUCTOR_MS = 60_000;
+
+/**
+ * Tricimoto disponible en el mapa del sector. No trae quién es (007, criterio 3; D-18):
+ * solo un marcador que cambia cada día y coordenadas redondeadas a ~110 m.
  */
 export interface NearbyDriver {
-  /** ID del conductor */
-  conductorId: string;
-  /** Nombre del conductor */
-  nombre: string;
-  /** Coordenadas actuales */
+  /** Marcador efímero del día: identifica el punto en el mapa, no a la persona */
+  marcador: string;
+  /** Coordenadas aproximadas (3 decimales) */
   coords: Coordinates;
   /** Estado operativo */
   estado: 'disponible' | 'ocupado' | 'inactivo';
@@ -32,7 +37,7 @@ interface LocationState {
   userCoords: Coordinates | null;
   /** ID del sector actual del usuario */
   currentSectorId: string | null;
-  /** Mapa de conductores cercanos por ID */
+  /** Tricimotos cercanas por marcador */
   nearbyDrivers: Map<string, NearbyDriver>;
   /** Indica si los permisos de ubicación están concedidos */
   hasPermission: boolean;
@@ -46,8 +51,10 @@ interface LocationState {
   setCurrentSector: (sectorId: string) => void;
   /** Actualiza o agrega un conductor cercano */
   updateNearbyDriver: (driver: NearbyDriver) => void;
-  /** Elimina un conductor del mapa de cercanos */
-  removeNearbyDriver: (conductorId: string) => void;
+  /** Elimina una tricimoto del mapa por su marcador */
+  removeNearbyDriver: (marcador: string) => void;
+  /** Quita las tricimotos sin actualizar en `maxEdadMs` (007, criterio 4) */
+  podarConductores: (ahora: number, maxEdadMs?: number) => void;
   /** Limpia todos los conductores cercanos */
   clearNearbyDrivers: () => void;
   /** Establece el estado del permiso GPS */
@@ -75,19 +82,30 @@ export const useLocationStore = create<LocationState>((set) => ({
 
   updateNearbyDriver: (driver) =>
     set((state) => {
+      // Sin marcador (un backend viejo) no se dibuja: evita una tricimoto fantasma sin clave.
+      if (!driver.marcador) return {};
       const updatedMap = new Map(state.nearbyDrivers);
-      updatedMap.set(driver.conductorId, {
+      updatedMap.set(driver.marcador, {
         ...driver,
         lastUpdate: Date.now(),
       });
       return { nearbyDrivers: updatedMap };
     }),
 
-  removeNearbyDriver: (conductorId) =>
+  removeNearbyDriver: (marcador) =>
     set((state) => {
       const updatedMap = new Map(state.nearbyDrivers);
-      updatedMap.delete(conductorId);
+      updatedMap.delete(marcador);
       return { nearbyDrivers: updatedMap };
+    }),
+
+  podarConductores: (ahora, maxEdadMs = CADUCIDAD_CONDUCTOR_MS) =>
+    set((state) => {
+      const vigentes = new Map(
+        [...state.nearbyDrivers].filter(([, d]) => ahora - d.lastUpdate < maxEdadMs)
+      );
+      // Sin cambios no se crea un Map nuevo: el mapa no se vuelve a dibujar cada 10 s.
+      return vigentes.size === state.nearbyDrivers.size ? {} : { nearbyDrivers: vigentes };
     }),
 
   clearNearbyDrivers: () =>

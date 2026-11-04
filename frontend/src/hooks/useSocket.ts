@@ -26,9 +26,9 @@ interface ClientEvents {
  * Tipo para los eventos que el servidor puede emitir.
  */
 interface ServerEvents {
+  // 007, criterio 3: sin UUID ni nombre; marcador del día y coordenadas a 3 decimales.
   location_updated: (data: {
-    conductorId: string;
-    nombre: string;
+    marcador: string;
     coords: { lat: number; lng: number };
     estado: string;
   }) => void;

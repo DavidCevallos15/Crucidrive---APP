@@ -5,15 +5,28 @@ const { isUuid, isSectorId, MAX_MENSAJE } = require('../utils/validation');
 const { conexiones: conexionesProceso } = require('../despacho/conexiones');
 const { salaUsuario } = require('../despacho/salas');
 const { obtenerDespachador } = require('../despacho');
+const { leerConfigSockets } = require('./config');
+const { crearCatalogoSectores } = require('./sectores');
+
+const VENTANA_CAMBIOS_MS = 60 * 1000;
+const MENSAJE_SECTOR_INVALIDO = 'El identificador del sector (sectorId) no es válido.';
 
 /**
  * Registra y maneja los eventos de Socket.io para geolocalización y chat en tiempo real.
  * Todo acceso a datos usa socket.supabase (JWT del usuario), así RLS aplica.
  *
  * @param {import('socket.io').Server} io - Instancia del servidor de Socket.io.
- * @param {{ conexiones?: import('../despacho/conexiones').RegistroConexiones }} [opciones]
+ * @param {{
+ *   conexiones?: import('../despacho/conexiones').RegistroConexiones,
+ *   config?: ReturnType<typeof leerConfigSockets>,
+ *   sectores?: ReturnType<typeof crearCatalogoSectores>,
+ * }} [opciones]
  */
-const initSocketHandler = (io, { conexiones = conexionesProceso } = {}) => {
+const initSocketHandler = (io, {
+  conexiones = conexionesProceso,
+  config = leerConfigSockets(),
+  sectores = crearCatalogoSectores(),
+} = {}) => {
   io.use(async (socket, next) => {
     try {
       const token = socket.handshake.auth?.token ||
@@ -33,7 +46,7 @@ const initSocketHandler = (io, { conexiones = conexionesProceso } = {}) => {
 
       const { data: perfil, error: perfilError } = await db
         .from('perfiles')
-        .select('rol, nombre')
+        .select('rol')
         .eq('id', user.id)
         .single();
 
@@ -48,11 +61,11 @@ const initSocketHandler = (io, { conexiones = conexionesProceso } = {}) => {
       }
 
       socket.supabase = db;
+      // Sin nombre: ningún evento del socket lo necesita y no debe acabar en los logs (007, criterio 6).
       socket.user = {
         id: user.id,
         email: user.email,
         rol: perfil.rol,
-        nombre: perfil.nombre || ''
       };
 
       next();
@@ -63,7 +76,7 @@ const initSocketHandler = (io, { conexiones = conexionesProceso } = {}) => {
   });
 
   io.on('connection', (socket) => {
-    console.log(`[Socket.io] Cliente conectado: ${socket.user.nombre} (${socket.user.rol}) - ID: ${socket.id}`);
+    console.log(`[Socket.io] Conexión: usuario=${socket.user.id} rol=${socket.user.rol} socket=${socket.id}`);
 
     socket.join(salaUsuario(socket.user.id));
     conexiones.agregar(socket.user.id, socket.id);
@@ -72,13 +85,43 @@ const initSocketHandler = (io, { conexiones = conexionesProceso } = {}) => {
 
     // --- MÓDULO 1: GEOLOCALIZACIÓN Y GEOCERCAS ---
 
-    socket.on('join_sector', ({ sectorId } = {}) => {
+    // Una sola sala de sector por conexión, solo sectores del catálogo y un tope de cambios por
+    // minuto: así nadie escucha todos los sectores a la vez ni los recorre en bucle (007, C1 y C2).
+    let sectorActual = null;
+    let turnoSector = 0;
+    const cambiosSector = [];
+
+    socket.on('join_sector', async ({ sectorId } = {}) => {
+      // El formato se revisa antes de cualquier espera: la respuesta es inmediata.
       if (!isSectorId(sectorId)) {
-        return socket.emit('error_message', 'El identificador del sector (sectorId) no es válido.');
+        return socket.emit('error_message', MENSAJE_SECTOR_INVALIDO);
       }
-      const room = `sector:${sectorId}`;
-      socket.join(room);
-      console.log(`[Socket.io] ${socket.user.nombre} se unió a ${room}`);
+      if (sectorId === sectorActual) return;
+
+      const ahora = Date.now();
+      while (cambiosSector.length && ahora - cambiosSector[0] >= VENTANA_CAMBIOS_MS) cambiosSector.shift();
+      if (cambiosSector.length >= config.cambiosSectorPorMin) {
+        return socket.emit('error_message', 'Cambias de sector demasiado seguido. Espera un momento.');
+      }
+      // Cuenta el intento, exista o no el sector: probar sectores al azar también consume el tope.
+      cambiosSector.push(ahora);
+      const turno = ++turnoSector;
+
+      try {
+        if (!(await sectores.existe(socket.supabase, sectorId, ahora))) {
+          return socket.emit('error_message', MENSAJE_SECTOR_INVALIDO);
+        }
+      } catch (err) {
+        console.error(`[Socket.io] Error en join_sector: ${err.message}`);
+        return socket.emit('error_message', 'No se pudo entrar al sector. Intenta de nuevo.');
+      }
+      // Si llegó otro join_sector mientras se esperaba el catálogo, gana el más reciente.
+      if (turno !== turnoSector) return;
+
+      if (sectorActual) socket.leave(`sector:${sectorActual}`);
+      socket.join(`sector:${sectorId}`);
+      sectorActual = sectorId;
+      console.log(`[Socket.io] usuario=${socket.user.id} sector=${sectorId}`);
     });
 
     // Solo ubicación y sector. La disponibilidad se cambia con PATCH /api/conductores/disponibilidad
@@ -201,7 +244,7 @@ const initSocketHandler = (io, { conexiones = conexionesProceso } = {}) => {
 
     socket.on('disconnect', () => {
       conexiones.quitar(socket.user.id, socket.id);
-      console.log(`[Socket.io] Cliente desconectado: ${socket.user.nombre} - ID: ${socket.id}`);
+      console.log(`[Socket.io] Desconexión: usuario=${socket.user.id} socket=${socket.id}`);
     });
   });
 };

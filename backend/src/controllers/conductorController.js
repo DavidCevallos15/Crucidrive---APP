@@ -178,7 +178,7 @@ const actualizarUbicacion = asyncHandler(async (req, res) => {
   const io = req.app.get('io');
   const resultado = await guardarUbicacion({
     db: req.supabase,
-    usuario: { id: req.user.id, rol: req.user.rol, nombre: req.user.nombre },
+    usuario: { id: req.user.id, rol: req.user.rol },
     sectorId: req.body?.sectorId,
     coords: req.body?.coords,
     emitir: (sala, evento, datos) => io?.to(sala).emit(evento, datos),
