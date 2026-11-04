@@ -2,6 +2,29 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.78.0] - 2026-11-04 (Hora Local)
+
+### Constitución: D-18 a D-20 y spec 007 en borrador
+- **De dónde sale:** auditoría del 4 nov 2026 contra el handbook público de inDrive (licencia MIT) y la herramienta REA. No se hizo ingeniería inversa de la app ni del tráfico de inDrive.
+- **D-18:** se adoptan los principios del handbook como norma de seguridad y arquitectura, a la escala del piloto. Sin Kafka, Kubernetes, Redis ni outbox.
+- **D-19:** encomiendas con contraoferta. Modifica D-14: el precio acordado se registra en la app. Rige cuando se implemente `013-encomiendas-contraoferta`. Los viajes de pasajeros siguen con D-08.
+- **D-20:** REA solo sobre el APK `preview` propio, nunca sobre apps de terceros.
+- **`specs/007-hardening/spec.md` en borrador**, con 27 criterios:
+  - las 5 brechas de la auditoría;
+  - no revelar si un correo ya tiene cuenta;
+  - el registro de acceso;
+  - D-10, T18, D-01 y la auditoría del APK.
+- **Hallazgos nuevos frente a la auditoría** (comprobados en el código de `main`):
+  - la app responde «Ese correo ya tiene una cuenta» (`mensajesAuth.ts` L13);
+  - las tricimotos que se desconectan nunca se quitan del mapa del pasajero;
+  - el servidor registra el nombre del usuario en los logs de socket.
+- **Estado medido:** backend 392/392. `tsc --noEmit` del frontend da 0 errores con las dependencias instaladas (el único error local era `expo-updates` sin instalar). T18 queda en «que el CI revise tipos».
+- **Aprobación:** David aprobó la spec el mismo día, con las propuestas de E1 a E6. Con eso quedan cerradas D-10 (contraseña de 10 caracteres con letras y números, sin plan de pago) y D-01 (JS con JSDoc y revisión de tipos en el CI).
+- **Plan y tareas:** `plan.md` (4 PR, P1 a P15) y `tasks.md` (T1 a T19, más D1 a D3 de David).
+- No se tocó código, BD ni tests.
+
+---
+
 ## [1.77.0] - 2026-10-26 (Hora Local)
 
 ### Fix: al pulsar «Enviar» en el chat la app se cerraba
