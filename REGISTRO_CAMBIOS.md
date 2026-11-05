@@ -2,6 +2,24 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.81.0] - 2026-11-04 (Hora Local)
+
+### 007 · T15: contraseña de 10 con letras y números en la app; correo con Brevo listo (D1)
+- **Por qué ahora:** David dejó Supabase Auth exigiendo 10 caracteres con letras y números (E4). La app todavía validaba 8: una contraseña de 8 o 9 pasaba en la app, Supabase la rechazaba y el mensaje decía «al menos 8».
+- **App:**
+  - `PASSWORD_MIN = 10` y la regla de letras y números en `validarPassword`, con el mensaje «Usa al menos 10 caracteres, con letras y números.».
+  - `mensajesAuth` traduce los tres rechazos de Supabase (corta, sin letras y números, débil) a ese mismo mensaje.
+  - Se exige solo **al crear la cuenta**: las cuentas antiguas con 8 o 9 caracteres siguen entrando.
+- **D1 hecho por David:**
+  - el dominio `tricimoto.app` está autenticado en Brevo (brevo-code, 2 DKIM y DMARC, comprobados en el DNS público);
+  - el remitente es `CruciDrive <no-reply@tricimoto.app>`;
+  - el SMTP de Brevo está en Supabase, con la plantilla de confirmación;
+  - «Confirm email» activo, contraseña de 10 con letras y números, límite de 60 correos por hora y `crucidrive://**` en las URL de redirección.
+- **APK `preview` nuevo** (build `efa4b568`, desde #70): canal `preview` y versión de ejecución 1.0.0. Recibe actualizaciones por aire.
+- Pruebas: frontend 483/483 (3 nuevas en `mensajesAuth`; `identidad` ajustado). `tsc` sin errores nuevos. Falta la prueba real de David: crear una cuenta y ver si el correo llega a la bandeja principal.
+
+---
+
 ## [1.80.0] - 2026-11-04 (Hora Local)
 
 ### Specs 006, 015 y 016 aprobadas; plantilla del correo de confirmación
