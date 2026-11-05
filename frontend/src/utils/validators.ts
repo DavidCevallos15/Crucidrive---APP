@@ -4,8 +4,13 @@
  * y de la BD, que siguen siendo la última barrera.
  */
 
-/** Longitud mínima de contraseña (spec 002, criterio 7). Supabase Auth también la exige. */
-export const PASSWORD_MIN = 8;
+/**
+ * Longitud mínima de contraseña (007, criterio 23; E4 y D-10). Supabase Auth exige lo mismo:
+ * 10 caracteres con letras y números. Solo se aplica al crear la cuenta; las cuentas antiguas
+ * con 8 o 9 caracteres siguen entrando.
+ */
+export const PASSWORD_MIN = 10;
+export const MENSAJE_PASSWORD = `Usa al menos ${PASSWORD_MIN} caracteres, con letras y números.`;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const NOMBRE_RE = /^[\p{L}\s.'-]{2,100}$/u;
@@ -26,7 +31,8 @@ export const validarEmail = (v: string): string | null => {
 
 export const validarPassword = (v: string): string | null => {
   if (!v) return 'Escribe tu contraseña.';
-  return v.length >= PASSWORD_MIN ? null : `La contraseña debe tener al menos ${PASSWORD_MIN} caracteres.`;
+  const valida = v.length >= PASSWORD_MIN && /\p{L}/u.test(v) && /\d/.test(v);
+  return valida ? null : MENSAJE_PASSWORD;
 };
 
 export const validarNombre = (v: string): string | null => {

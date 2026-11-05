@@ -21,7 +21,7 @@ Cada tarea se tilda cuando su prueba pasa, nunca antes. «C» es el criterio de 
 
 ## PR 3 · Registro, contraseñas, tipos y D-01
 - [ ] **T14 · Registro de acceso.** *Prueba (C19 y C20):* una petición con cuerpo `{ nombre, telefono }` y consulta `?lat=` deja una línea sin esos datos y con uid, ruta, estado, IP y user-agent. Se documenta journald a 14 días.
-- [ ] **T15 · Contraseñas de 10 con letras y números.** *Prueba (C23):* `validarPassword` rechaza `abcdefghij` y `1234567890` y acepta `abcde12345`. David aplica el cambio en el panel.
+- [x] **T15 · Contraseñas de 10 con letras y números.** *Prueba (C23):* `validarPassword` rechaza `abcdefghij` y `1234567890` y acepta `abcde12345`. David aplica el cambio en el panel.
 - [ ] **T16 · `tsc` en el CI del frontend (T18).** *Prueba (C24):* el CI corre `tsc --noEmit` y pasa.
 - [ ] **T17 · `typecheck` del backend con JSDoc (D-01).** *Prueba (C27):* `npm run typecheck` pasa en el CI y la suite tiene 392 tests o más.
 
@@ -30,6 +30,6 @@ Cada tarea se tilda cuando su prueba pasa, nunca antes. «C» es el criterio de 
 - [ ] **T19 · Hallazgos altos corregidos o justificados.** *Prueba (C26):* ninguno queda abierto sin justificación escrita.
 
 ## David
-- [ ] **D1 ·** Supabase Auth: «Confirm email» activo; longitud mínima 10 con letras y dígitos.
+- [x] **D1 ·** Supabase Auth: «Confirm email» activo; longitud mínima 10 con letras y dígitos.
 - [ ] **D2 ·** Google Cloud: key de Maps restringida a `com.crucidrive.app` y al SHA-1 de EAS.
 - [ ] **D3 ·** Prueba de campo del 004 T17 después del PR 1.

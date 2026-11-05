@@ -19,6 +19,15 @@ describe('mensajes de Supabase Auth', () => {
     expect(mensajeDeAuth('Email not confirmed')).toMatch(/Falta confirmar tu correo/);
   });
 
+  // 007, criterio 23: Supabase exige 10 con letras y números; el mensaje ya no dice "8".
+  test.each([
+    ['Password should be at least 10 characters.'],
+    ['Password should contain at least one character of each: abcdefghijklmnopqrstuvwxyz, 0123456789'],
+    ['Password is known to be weak and easy to guess, please choose a different one.'],
+  ])('una contraseña rechazada (%s) explica la regla de 10 con letras y números', (mensaje) => {
+    expect(mensajeDeAuth(mensaje)).toBe('Usa al menos 10 caracteres, con letras y números.');
+  });
+
   test('lo desconocido mantiene el mensaje genérico', () => {
     expect(mensajeDeAuth('algo raro')).toBe('No se pudo completar la acción. Inténtalo de nuevo.');
   });

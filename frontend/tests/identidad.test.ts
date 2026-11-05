@@ -36,9 +36,14 @@ import {
 } from '../src/utils/imagen';
 
 describe('contraseña (criterio 7)', () => {
-  it(`exige al menos ${PASSWORD_MIN} caracteres`, () => {
-    expect(validarPassword('1234567')).toMatch(/al menos 8/);
-    expect(validarPassword('12345678')).toBeNull();
+  // 007, criterio 23 (E4): 10 caracteres con letras y números, igual que Supabase Auth.
+  it(`exige al menos ${PASSWORD_MIN} caracteres con letras y números`, () => {
+    expect(PASSWORD_MIN).toBe(10);
+    expect(validarPassword('abcde1234')).toMatch(/al menos 10/);
+    expect(validarPassword('abcdefghij')).toMatch(/letras y números/);
+    expect(validarPassword('1234567890')).toMatch(/letras y números/);
+    expect(validarPassword('abcde12345')).toBeNull();
+    expect(validarPassword('ñandú12345')).toBeNull();
   });
 
   it('pide la contraseña si está vacía', () => {

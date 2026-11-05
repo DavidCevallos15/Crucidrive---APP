@@ -92,7 +92,7 @@ export const LoginScreen: React.FC = () => {
         {(!compacta || modo === 'crear') && <Text style={[styles.subtitulo, compacta && styles.subtituloCompact]}>
           {modo === 'entrar'
             ? 'Entra a tu cuenta y nos ponemos en marcha.'
-            : `Usa un correo que puedas abrir y una contraseña de al menos ${PASSWORD_MIN} caracteres.`}
+            : `Usa un correo que puedas abrir y una contraseña de al menos ${PASSWORD_MIN} caracteres, con letras y números.`}
         </Text>}
 
         {aviso ? (
@@ -120,7 +120,7 @@ export const LoginScreen: React.FC = () => {
         <GlassInput
           label="Contraseña"
           leadingIcon="lock-closed-outline"
-          placeholder={modo === 'crear' ? `Mínimo ${PASSWORD_MIN} caracteres` : 'Tu contraseña'}
+          placeholder={modo === 'crear' ? `Mínimo ${PASSWORD_MIN}, con letras y números` : 'Tu contraseña'}
           secureTextEntry
           autoCapitalize="none"
           autoCorrect={false}
