@@ -6,7 +6,13 @@ Estado: **Aprobada por David el 4 nov 2026**, con las propuestas:
 - **P3:** no se verifica el teléfono (D-04).
 - **P4:** si alguien entra con Google con el correo de una cuenta sin confirmar, Google toma esa cuenta.
 - **P5:** la recuperación de contraseña por correo entra en este paso.
-- **Envío de correos:** SMTP propio con Resend (gratis hasta 100 correos al día) y un **dominio propio verificado**, para que los correos no caigan en spam. El correo de Supabase solo envía unos pocos por hora. Comprar el dominio es tarea de David; mientras tanto se puede probar con el correo de Supabase.
+- **Envío de correos (actualizado por David el 4 nov 2026):**
+  - SMTP propio con **Brevo**, gratis hasta 300 correos al día; se descartó Resend, que da 100.
+  - El dominio es **`tricimoto.app`** (Name.com, GitHub Student Pack, gratis el primer año) y se autentica con DKIM y DMARC.
+  - El remitente es `no-reply@tricimoto.app`.
+  - Supabase Auth envía los correos por el relé SMTP de Brevo: el backend no envía correos ni guarda la clave SMTP.
+  - Solo van por correo la verificación de cuenta y la recuperación de contraseña. Lo de tiempo real sigue por avisos push (D-12).
+  - Un resumen del viaje por correo necesitaría su propia spec.
 
 Se redactó como 013 y se renumeró porque el 013 quedó para las encomiendas con contraoferta (D-19). Que la app no revele si un correo existe ya lo exige D-18 (criterios 21 y 22 del 007); aquí se aplica a las pantallas nuevas. La plantilla del correo de confirmación está en `supabase/templates/confirmar-registro.html`.
 
