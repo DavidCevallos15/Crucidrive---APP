@@ -2,6 +2,40 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.86.0] - 2026-11-19 (Hora Local)
+
+### 018 · Enmienda 1: Google Maps también en la web
+- **Pedido de David:** que el mapa se vea como en Google Maps en todos los teléfonos.
+- **Documentos:**
+  - Spec: W3 pasa a «Google Maps en la web» y se agregan los criterios 14 y 15.
+  - Constitución: se amplía D-02.
+  - Plan: P6. Tareas: T10 y T11.
+- **App web:**
+  - `Map.web.tsx` carga Maps JavaScript una sola vez, sin dependencias nuevas. Usa el mismo estilo claro que Android y dibuja los marcadores: la tricimoto como círculo vino, el pin del administrador y el punto azul «Tú».
+  - Si falta la clave, si Google no carga o si la rechaza, vuelve a OpenStreetMap.
+  - Los cálculos están en `utils/mapaWeb.ts`.
+- **Pruebas:**
+  - 6 nuevas en `mapaWeb018.test.ts`.
+  - `tsc` sin errores.
+  - En WebKit con un iPhone emulado y una clave falsa, Google la rechaza y el mapa vuelve solo a OpenStreetMap, sin errores.
+- **Pendiente de David (T11):** crear la clave web en Google Cloud, restringida a `https://app.tricimoto.app/*` y a Maps JavaScript API, con un tope de 300 cargas por día.
+
+---
+
+## [1.85.1] - 2026-11-19 (Hora Local)
+
+### 018 · App web publicada en `app.tricimoto.app`
+- **Configuración de David:** carpeta raíz `frontend` en Vercel, CNAME de `app` en Name.com y el origen en `ALLOWED_ORIGINS` de la VM (T6 a T8).
+- **Comprobado:**
+  - La dirección responde 200 con HTTPS. `manifest.json` y `sw.js` se sirven, con las cabeceras de caché y seguridad.
+  - El backend acepta el origen.
+  - En WebKit con un iPhone emulado, contra la dirección real, no hay errores y la guía de instalación se comporta como debe.
+- **Pendientes:**
+  - La prueba en un iPhone real (T9).
+  - Quitar del proyecto de Vercel la integración de Stripe, que CruciDrive no usa.
+
+---
+
 ## [1.85.0] - 2026-11-19 (Hora Local)
 
 ### 018 · CruciDrive en iPhone como app web instalable
@@ -23,6 +57,23 @@
   - T6: carpeta raíz `frontend` en Vercel.
   - T7: CNAME de `app` en Name.com.
   - T8: `https://app.tricimoto.app` en `ALLOWED_ORIGINS` de la VM.
+
+---
+
+## [1.84.1] - 2026-11-19 (Hora Local)
+
+### 007 · T13: PR 2 en producción
+- **Orden seguido:**
+  1. 0018 aplicada (solo funciones).
+  2. App publicada por aire en `preview` (grupo `5fe5ccb3`).
+  3. Backend actualizado por David en la VM (`fb8838f`, servicio reiniciado a las 18:06 UTC).
+  4. 0019 aplicada (quita la lectura directa de `perfiles.telefono` y `consentimientos.id`).
+- **Advisors de seguridad:** solo «Leaked Password Protection», apagada a propósito (D-10, plan de pago).
+- **Comprobado en producción** con el rol `authenticated`, como administrador y sin modificar datos:
+  - `mi_perfil` y `telefonos_admin` devuelven el teléfono;
+  - los perfiles se siguen viendo;
+  - `select telefono from perfiles` responde `permission denied`.
+- **Prueba a mano de David en el teléfono (19 nov 2026):** perfil nuevo y panel del administrador sin errores.
 
 ---
 

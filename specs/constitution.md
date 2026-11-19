@@ -14,7 +14,7 @@ Reglas no negociables. Cambiarlas requiere editar este archivo y registrarlo en 
 10. **Trazabilidad.** Cada tarea terminada deja una entrada en `REGISTRO_CAMBIOS.md` con commit y evidencia.
 
 ## Decisiones tomadas (8 oct 2026)
-- D-02: **Mapa en Android con Google Maps** vía `react-native-maps` (ya integrado). Google indica que el uso móvil del Maps SDK for Android no tiene límite, pero exige API key restringida al paquete `com.crucidrive.app` y cuenta de facturación activa.
+- D-02: **Mapa en Android con Google Maps** vía `react-native-maps` (ya integrado). Google indica que el uso móvil del Maps SDK for Android no tiene límite, pero exige API key restringida al paquete `com.crucidrive.app` y cuenta de facturación activa. **Ampliada el 19 nov 2026 (018, Enmienda 1):** la app web también usa Google Maps, con otra clave restringida a `app.tricimoto.app` y un tope diario de cargas para quedar dentro del cupo gratuito. OpenStreetMap queda como respaldo.
 - D-03: **Solo tricimotos en el MVP.** Cobro por persona y en efectivo (precisado en D-08). Las motos y el cobro por viaje quedan fuera hasta después del piloto.
 - D-04: **Conductores aprobados por un administrador** (cédula, placa, foto). Sin auto-registro por SMS.
 - D-05: **El SOS abre una llamada al 911 (ECU 911)** y además registra la alerta con ubicación para el panel admin. La app no sustituye al 911.

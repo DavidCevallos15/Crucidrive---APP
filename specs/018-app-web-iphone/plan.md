@@ -40,3 +40,19 @@ Spec aprobada por David el 19 nov 2026, con las propuestas de W1 a W4. Para W5, 
 - `frontend/tests/appWeb018.test.ts`: guía, almacenamiento, montaje, `index.html` y `manifest`, conductor en la web, `vercel.json`, `sw.js` y que la app solo lea variables `EXPO_PUBLIC_*`.
 - Revisión con WebKit 18.2 (Playwright) y un iPhone 13 emulado sobre `dist`. Es una herramienta temporal, fuera del repositorio: la guía sale en Safari, no vuelve tras «Entendido», no sale con la app instalada y no hay errores de JavaScript.
 - Prueba en un iPhone real (T9): pendiente de W5.
+
+## P6 · Google Maps en la web (Enmienda 1; criterios 14 y 15)
+- `src/components/Map.web.tsx` carga la API de Maps JavaScript de Google una sola vez, con un `<script>` que la app inserta, sin dependencias nuevas. Expone la misma interfaz que `react-native-maps` usa en las pantallas:
+  - `MapView` acepta `initialRegion`, `region`, `onPress` y `showsUserLocation`;
+  - `Marker` acepta `coordinate` y `title`.
+- Usa el mismo estilo claro de Android (`ESTILO_MAPA`) y no muestra los controles de Google, porque la pantalla tiene sus propios botones. El gesto con un dedo mueve el mapa.
+- Marcadores: un `Marker` con contenido propio (la tricimoto) se dibuja como un círculo blanco con borde vino; uno sin contenido, como el pin de Google. El punto azul de «Tú» usa la ubicación del navegador.
+- Los cálculos van aparte, en `src/utils/mapaWeb.ts`, para probarlos: la URL del script, el zoom a partir del `latitudeDelta`, cuándo usar Google y el evento de toque.
+- Clave: `EXPO_PUBLIC_GOOGLE_MAPS_WEB_KEY` en Vercel. **La crea David** en Google Cloud, en el proyecto `crucidrive`:
+  - activar **Maps JavaScript API**;
+  - crear una clave restringida a **sitios web** `https://app.tricimoto.app/*` y a la API **Maps JavaScript API**;
+  - en Cuotas, poner un tope de **300 cargas del mapa por día**, unas 9 000 al mes, que queda dentro del cupo gratuito.
+- Sin clave o si el script falla (sin red, clave rechazada), se usa el mapa de OpenStreetMap de antes (criterio 15).
+- **Descartados:**
+  - una librería de React para Google Maps, porque es una dependencia más para una sola pantalla;
+  - usar la clave del APK, que está restringida al paquete de Android y no sirve en un navegador.
