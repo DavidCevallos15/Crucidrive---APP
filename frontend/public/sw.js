@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'crucidrive-pwa-v2';
+const CACHE_VERSION = 'crucidrive-pwa-v3';
 const STATIC_CACHE = `crucidrive-static-${CACHE_VERSION}`;
 
 self.addEventListener('install', (event) => {

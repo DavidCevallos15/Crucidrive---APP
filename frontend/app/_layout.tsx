@@ -21,6 +21,7 @@ import { destinoGuardia, mostrarCargaInicial } from '../src/utils/routing';
 import { useRespuestaAvisos } from '../src/hooks/useRespuestaAvisos';
 import { variablesFaltantes } from '../src/constants/config';
 import { AppMenuProvider } from '../src/components/AppMenuButton';
+import { AvisoInstalarIphone } from '../src/components/AvisoInstalarIphone';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -122,6 +123,7 @@ function AppRaiz() {
     <GestureHandlerRootView style={styles.root}>
       <StatusBar style="dark" />
       <AppMenuProvider><Slot /></AppMenuProvider>
+      <AvisoInstalarIphone />
     </GestureHandlerRootView>
   );
 }
