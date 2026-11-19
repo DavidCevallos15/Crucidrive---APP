@@ -2,6 +2,20 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.85.1] - 2026-11-19 (Hora Local)
+
+### 018 · App web publicada en `app.tricimoto.app`
+- **Configuración de David:** carpeta raíz `frontend` en Vercel, CNAME de `app` en Name.com y el origen en `ALLOWED_ORIGINS` de la VM (T6 a T8).
+- **Comprobado:**
+  - La dirección responde 200 con HTTPS. `manifest.json` y `sw.js` se sirven, con las cabeceras de caché y seguridad.
+  - El backend acepta el origen.
+  - En WebKit con un iPhone emulado, contra la dirección real, no hay errores y la guía de instalación se comporta como debe.
+- **Pendientes:**
+  - La prueba en un iPhone real (T9).
+  - Quitar del proyecto de Vercel la integración de Stripe, que CruciDrive no usa.
+
+---
+
 ## [1.85.0] - 2026-11-19 (Hora Local)
 
 ### 018 · CruciDrive en iPhone como app web instalable
