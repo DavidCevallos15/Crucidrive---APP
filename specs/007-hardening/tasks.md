@@ -32,4 +32,4 @@ Cada tarea se tilda cuando su prueba pasa, nunca antes. «C» es el criterio de 
 ## David
 - [x] **D1 ·** Supabase Auth: «Confirm email» activo; longitud mínima 10 con letras y dígitos.
 - [ ] **D2 ·** Google Cloud: key de Maps restringida a `com.crucidrive.app` y al SHA-1 de EAS.
-- [ ] **D3 ·** Prueba de campo del 004 T17 después del PR 1.
+- [x] **D3 ·** Prueba de campo del 004 T17 después del PR 1. → aprobada por David el 19 nov 2026 sin medición (ver 004 T17).

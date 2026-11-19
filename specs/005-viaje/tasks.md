@@ -21,4 +21,4 @@ Cada tarea indica su prueba y se tilda solo al cumplirse.
 - [x] T11 · Sin conexión: los botones no avanzan el estado si el servidor no respondió (criterio 20) → prueba: acciones reales del hook en `tests/viajePasajero005.test.ts`.
 
 ## Cierre
-- [ ] T12 · **David:** prueba con dos teléfonos de un viaje y una encomienda completos: llegada, inicio, final, confirmación y calificación, más una cancelación con motivo de cada lado.
+- [x] T12 · **David:** prueba con dos teléfonos de un viaje y una encomienda completos: llegada, inicio, final, confirmación y calificación, más una cancelación con motivo de cada lado. → **aprobada por David el 19 nov 2026 sin medición**: en Crucita el teléfono de prueba no tenía internet y no cargó ni el mapa; David da la app por funcional y pide seguir. No quedó registro de cada paso. Se repite en el piloto (008), en Crucita con datos.

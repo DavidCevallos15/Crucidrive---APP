@@ -9,8 +9,8 @@ Flujo por paso: spec → aprobación → plan → tareas → implementación (co
 | 1 | `001-cimientos` | **Completo** (T18, deuda de tipos del frontend, pasa a 007) |
 | 2 | `002-identidad` | **Completo** (prueba de humo 28/28). Pendiente: texto de consentimiento revisado por un abogado y ver con sesiones reales las vistas del conductor y del administrador |
 | 3 | `003-despacho` | **Completo** (prueba de humo 29/29 el 2026-10-09). Pendiente: probar en un teléfono real que la oferta llegue con la app abierta; con la app cerrada, en el paso 004 |
-| 4 | `004-tracking-push` | **Implementado** (T1 a T16). Falta T17: prueba de campo de David con dos teléfonos |
-| 5 | `005-viaje` | **En curso.** BD, backend, conductor y pasajero hechos (#54, #55; 0017 en producción; pasajero T8 a T11 en el PR 4). Falta la prueba de campo T12 con dos teléfonos |
+| 4 | `004-tracking-push` | **Completo.** T17 aprobada por David el 19 nov 2026 sin medición: en Crucita no había internet. Los tiempos se miden en el piloto |
+| 5 | `005-viaje` | **Completo** (#54, #55, #64; 0017 en producción). T12 aprobada por David el 19 nov 2026 sin medición; se repite en el piloto |
 | 6 | `006-sos-admin` | **Spec aprobada** (4 nov 2026: A a D con las propuestas; SOS en la pantalla Seguridad; panel en un despliegue aparte, limitado a la IP de David). Falta `plan.md` |
 | 7 | `007-hardening` | **Spec aprobada** (4 nov 2026, D-18 y D-20; E1 a E6 con las propuestas). Plan y tareas listos; se entrega en 4 PR, primero la brecha 1, que bloquea las pruebas de campo |
 | 8 | `008-piloto` | **En curso**: backend de prueba en una VM de Azure (`backend-de-prueba.md`, D-16) y actualizaciones por aire (`actualizaciones-por-aire.md`, D-17). Falta el resto del piloto |
@@ -29,3 +29,4 @@ Cada carpeta contiene `spec.md` (qué y por qué), `plan.md` (cómo) y `tasks.md
 | `015-acceso-google-y-correo` | **Spec aprobada** (4 nov 2026, P1 a P5 con las propuestas). Entrada con «Continuar con Google» y «Continuar con correo», correo verificado y recuperación de contraseña. Correo con SMTP propio (Resend) y dominio propio. La plantilla está en `supabase/templates/`. Falta `plan.md` |
 | `016-estructura-de-referencia` | **Spec aprobada** (4 nov 2026, Q1 a Q7 con las propuestas; Q6 sin número de soporte). Estructura de pantallas tomada de InDrive con la paleta del 011: inicio, ruta, menú, historial, Seguridad, configuración y registro del conductor en 3 pasos. Depende del 013 y del 014 para el precio de las encomiendas y el pin. Falta `plan.md` |
 | `013-encomiendas-contraoferta` y `014-mapa-y-recogida` | Por redactar (D-19 e ideas del 4 nov). El 013 va después de cerrar el 009 |
+| `017-pedido-sin-internet` | **Borrador** (19 nov 2026), tras la prueba en Crucita sin internet. Pedir sin depender del mapa y, si el pasajero lo activa, pedir por SMS con su saldo. Faltan R1 a R8 de David |
