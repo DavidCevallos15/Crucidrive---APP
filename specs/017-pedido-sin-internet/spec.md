@@ -1,8 +1,10 @@
 # 017 · Pedir una tricimoto sin internet
 
-Estado: **Borrador** (19 nov 2026). Falta la aprobación de David: R1 a R8.
+Estado: **Aprobada por David el 19 nov 2026**, con las propuestas de R1 a R8. Respuesta a R7: en Crucita **no tenía megas**; no faltó la señal. La medición por sector queda para el piloto (008).
 
-Si se aprueba, se agrega **D-21** a la constitución: el SMS como canal de respaldo y un número receptor propio. Es un servicio nuevo y la regla 8 pide justificarlo en una spec.
+La aprobación agrega **D-21** a la constitución: el SMS como canal de respaldo y un número receptor propio. Es un servicio nuevo y la regla 8 pide justificarlo en una spec.
+
+Por R1, la parte A se implementa ya y las partes B a G después del PR 2 del 007.
 
 ## Por qué
 En la prueba de campo del 19 nov 2026 en Crucita, el teléfono de prueba no tenía internet. No cargó ni el mapa y no se pudo pedir. Hoy todo el flujo depende de los datos móviles: pedir, recibir la oferta, ver al conductor y el chat.
@@ -88,7 +90,7 @@ David pide usar un SMS pagado con el saldo del pasajero como respaldo, **solo si
 - **R4 · Teléfono del conductor en la respuesta.** Propuesta: sí, con la misma regla del 007 (solo a la parte del viaje aceptado). Sin internet no hay chat y llamar es la única forma de coordinar.
 - **R5 · Conductores sin internet.** Propuesta: fuera del 017. Mandar las ofertas por SMS multiplica los mensajes (3 candidatos por pedido más el aviso abierto) y complica aceptar. Primero se mide en campo si los conductores tienen datos.
 - **R6 · El número receptor.** Propuesta: un chip prepago de David con paquete de SMS, en un teléfono Android con wifi y cargador. No tiene que estar en Crucita: el SMS le llega igual.
-- **R7 · Medir la cobertura.** Propuesta: antes del `plan.md`, anotar en Crucita la operadora del teléfono de prueba y, por sector, si hay datos, solo llamadas o nada. Si una operadora sí tiene datos, cambia la prioridad.
+- **R7 · Medir la cobertura.** *Respondida: no tenía megas, con señal.* Propuesta original: antes del `plan.md`, anotar en Crucita la operadora del teléfono de prueba y, por sector, si hay datos, solo llamadas o nada. Si una operadora sí tiene datos, cambia la prioridad.
 - **R8 · Encomiendas por SMS.** Propuesta: no. La descripción, el destinatario y la autorización no caben en un SMS. Sin internet, la app dice que las encomiendas necesitan conexión.
 
 ## Fuera de alcance

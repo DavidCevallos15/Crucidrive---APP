@@ -66,5 +66,15 @@ Salen de revisar el handbook público de inDrive (github.com/inDriver/handbook, 
 - D-10 (cerrada el 4 nov 2026, E4 del 007): **sin la protección de contraseñas filtradas**, que pide un plan de pago de unos 25 USD/mes, igual a todo el presupuesto del piloto. En su lugar: contraseña de mínimo 10 caracteres, con letras y números, en la app y en Supabase Auth. Se reevalúa si el piloto crece.
 - D-01 (cerrada el 4 nov 2026, E5 del 007): **el backend sigue en JavaScript (CommonJS)**, con JSDoc y `// @ts-check` por archivo, revisado en el CI. Se descartó migrar a TypeScript antes del piloto (4 a 6 días, cambia la compilación y el despliegue). Se puede reconsiderar después del piloto.
 
+## Decisiones del 19 nov 2026
+
+- D-21: **Pedir por SMS cuando no hay internet**, solo si el pasajero lo activa.
+  - La app abre la aplicación de mensajes con el texto listo y la persona lo envía. La app no pide el permiso de enviar SMS.
+  - El SMS lo paga el pasajero con su saldo, como un SMS nacional.
+  - Un número celular propio en Ecuador recibe los SMS y los pasa al servidor. Se acepta como servicio nuevo (regla 8) dentro del presupuesto del piloto (regla 5).
+  - El servidor aplica las mismas reglas que en la app: tarifa (D-08), despacho (D-11 y D-15), sanción y topes por usuario.
+  - Los conductores siguen recibiendo las ofertas por la app; no hay despacho por SMS.
+  - Se especifica en `017-pedido-sin-internet`.
+
 ## Decisiones abiertas
 - D-07: aliado institucional (cooperativa de tricimotos o GAD de Crucita). Pendiente del paso 0.
