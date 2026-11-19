@@ -35,6 +35,7 @@ import {
   type Gps,
   type Solicitud,
 } from '../utils/solicitud';
+import { textoONulo } from '../utils/telefono';
 import type { useSocket } from './useSocket';
 
 /** Respaldo por si se pierde un aviso del socket mientras se busca conductor. */
@@ -44,7 +45,7 @@ const RESPALDO_MS = 30_000;
  * Lecturas con el JWT del pasajero: RLS le deja ver su viaje, el conductor asignado y el chat.
  * `descartados` son los viajes que cerró en esta sesión: no vuelven a ofrecerse hasta reabrir la app.
  */
-const crearLector = (descartados: Set<string>): LectorViaje => ({
+export const crearLector = (descartados: Set<string>): LectorViaje => ({
   async viaje(id) {
     const { data, error } = await supabase.from('viajes').select(COLUMNAS_VIAJE).eq('id', id).maybeSingle();
     if (error) throw new Error(error.message);
@@ -63,8 +64,10 @@ const crearLector = (descartados: Set<string>): LectorViaje => ({
     return data as FilaViaje | null;
   },
   async conductor(viajeId, conductorId) {
-    const [perfil, tricimoto, hilo, resumen] = await Promise.all([
-      supabase.from('perfiles').select('nombre, telefono').eq('id', conductorId).maybeSingle(),
+    const [perfil, telefono, tricimoto, hilo, resumen] = await Promise.all([
+      supabase.from('perfiles').select('nombre').eq('id', conductorId).maybeSingle(),
+      // Desde la 0018 (007) el teléfono no se lee con select: la BD lo da solo con el viaje aceptado o en curso.
+      supabase.rpc('telefono_contraparte', { p_viaje: viajeId }),
       supabase.from('tricimotos').select('placa').eq('conductor_id', conductorId).maybeSingle(),
       supabase.from('threads').select('id').eq('viaje_id', viajeId).maybeSingle(),
       supabase.rpc('resumen_conductor', { p_conductor: conductorId }),
@@ -78,7 +81,7 @@ const crearLector = (descartados: Set<string>): LectorViaje => ({
       driver: {
         id: conductorId,
         nombre: perfil.data?.nombre ?? null,
-        telefono: perfil.data?.telefono ?? null,
+        telefono: textoONulo(telefono.data),
         placa: tricimoto.data?.placa ?? null,
         ...(resenas ? { resenas } : {}),
       },

@@ -52,16 +52,12 @@ export const useSupabaseAuth = ({ bootstrap = false }: { bootstrap?: boolean } =
 
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // ─── Perfil: tabla 'perfiles' (columnas reales) ───────────
+  // ─── Perfil propio: mi_perfil (desde la 0018 el teléfono no se lee con select) ───
   const fetchProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
     const scope = captureAccountScope(useAuthStore.getState);
     if (scope.userId !== userId || !scope.isCurrent()) return null;
     try {
-      const { data, error } = await supabase
-        .from('perfiles')
-        .select('id, nombre, telefono, rol, activo')
-        .eq('id', userId)
-        .maybeSingle();
+      const { data, error } = await supabase.rpc('mi_perfil').maybeSingle();
 
       if (!scope.isCurrent()) return null;
 

@@ -59,7 +59,8 @@ const registerProfile = asyncHandler(async (req, res) => {
   const { data: perfilData, error: perfilError } = await db
     .from('perfiles')
     .insert([{ id: userId, rol, nombre, telefono, activo: true }])
-    .select()
+    // Columnas explícitas: desde la 0018 (007) el teléfono no se lee con select, ni en el RETURNING.
+    .select('id, rol, nombre, activo')
     .single();
 
   if (perfilError) {

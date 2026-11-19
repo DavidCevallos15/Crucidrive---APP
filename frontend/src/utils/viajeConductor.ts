@@ -138,7 +138,7 @@ export const avisoParaConductor = (ev: EventoViajeEstado): { titulo: string; tex
 /** Lecturas con el JWT del conductor; en las pruebas se reemplazan. */
 export interface LectorViajeConductor {
   viajeAbierto: (conductorId: string) => Promise<FilaViajeConductor | null>;
-  pasajero: (pasajeroId: string) => Promise<ViajeConductor['pasajero']>;
+  pasajero: (viajeId: string, pasajeroId: string) => Promise<ViajeConductor['pasajero']>;
   hilo: (viajeId: string) => Promise<string | null>;
   paquete: (viajeId: string) => Promise<ViajeConductor['paquete']>;
   recogida: (viajeId: string) => Promise<Punto | null>;
@@ -154,7 +154,7 @@ export const leerViajeConductor = async (lector: LectorViajeConductor, conductor
   if (!fila || !esEstadoAbierto(fila.estado)) return null;
   const opcional = <T,>(p: Promise<T>, defecto: T) => p.catch(() => defecto);
   const [pasajero, threadId, paquete, recogida] = await Promise.all([
-    opcional(lector.pasajero(fila.pasajero_id), { nombre: null, telefono: null }),
+    opcional(lector.pasajero(fila.id, fila.pasajero_id), { nombre: null, telefono: null }),
     opcional(lector.hilo(fila.id), null),
     fila.tipo_servicio === 'encomienda' ? opcional(lector.paquete(fila.id), null) : Promise.resolve(null),
     opcional(lector.recogida(fila.id), null),

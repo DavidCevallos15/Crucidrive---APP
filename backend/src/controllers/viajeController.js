@@ -120,15 +120,20 @@ const ERRORES_ACEPTAR = {
   conductor_no_aprobado: [403, 'Tu cuenta de conductor aún no está aprobada.'],
 };
 
-/** Lo que el pasajero ve del conductor que aceptó (criterio 10; criterio 9 del 002). */
+/**
+ * Lo que el pasajero ve del conductor que aceptó (criterio 10; criterio 9 del 002).
+ * `db` lleva el JWT del propio conductor: su teléfono sale de `mi_perfil`, porque desde la 0018
+ * (007, criterio 11) la columna no se lee con select.
+ */
 const datosDelConductor = async (db, conductorId) => {
   const [{ data: perfil }, { data: tricimoto }] = await Promise.all([
-    db.from('perfiles').select('nombre, telefono').eq('id', conductorId).single(),
+    db.rpc('mi_perfil'),
     db.from('tricimotos').select('placa').eq('conductor_id', conductorId).single(),
   ]);
+  const yo = Array.isArray(perfil) ? perfil[0] : perfil;
   // Estrellas y reseñas junto al nombre y la placa (005, criterio 18).
   const resenas = await viajeEnCurso.resumenDelConductor(db, conductorId);
-  return { id: conductorId, nombre: perfil?.nombre ?? null, telefono: perfil?.telefono ?? null, placa: tricimoto?.placa ?? null, resenas };
+  return { id: conductorId, nombre: yo?.nombre ?? null, telefono: yo?.telefono ?? null, placa: tricimoto?.placa ?? null, resenas };
 };
 
 /**

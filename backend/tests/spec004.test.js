@@ -320,8 +320,9 @@ describe('T7 · consentimiento 0.3 para estar disponible (criterio 5; plan P18)'
     const cola = [...respuestas];
     const filtros = [];
     const updates = [];
+    const columnas = [];
     const q = {
-      select: () => q,
+      select: (c) => { columnas.push(c); return q; },
       eq: (k, v) => { filtros.push([k, v]); return q; },
       limit: () => q,
       update: (v) => { updates.push(v); return q; },
@@ -330,7 +331,7 @@ describe('T7 · consentimiento 0.3 para estar disponible (criterio 5; plan P18)'
     };
     const r = { status: jest.fn().mockReturnThis(), json: jest.fn().mockReturnThis() };
     await cambiarDisponibilidad({ body, user: { id: CONDUCTOR }, supabase: { from: () => q } }, r);
-    return { r, filtros, updates };
+    return { r, filtros, updates, columnas };
   };
 
   test('la versión vigente es la 0.3', () => {
@@ -348,14 +349,17 @@ describe('T7 · consentimiento 0.3 para estar disponible (criterio 5; plan P18)'
     expect(updates).toEqual([]);
   });
 
-  test('con la 0.3 aceptada se pone disponible', async () => {
-    const { r, updates } = await pedir({ disponible: true }, [
+  test('con la 0.3 aceptada se pone disponible (007, criterio 16: sin leer el número interno)', async () => {
+    const { r, updates, columnas } = await pedir({ disponible: true }, [
       { data: { estado: 'inactivo' }, error: null },
-      { data: { id: 7 }, error: null },
+      { data: { version: '0.3' }, error: null },
       { data: [{ estado: 'disponible', disponible_desde: null }], error: null },
     ]);
     expect(r.status).toHaveBeenCalledWith(200);
     expect(updates).toEqual([{ estado: 'disponible' }]);
+    // Desde la 0018 leer consentimientos.id da permiso denegado.
+    expect(columnas).toContain('version');
+    expect(columnas.join(' ')).not.toMatch(/\bid\b|\*/);
   });
 
   test('dejar de estar disponible no exige el consentimiento nuevo', async () => {

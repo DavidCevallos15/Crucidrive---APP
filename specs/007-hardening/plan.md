@@ -59,7 +59,8 @@ Spec aprobada por David el 4 nov 2026, con las propuestas de E1 a E6. Se entrega
 - `public.mi_perfil()`: devuelve id, nombre, teléfono, rol y activo del propio usuario.
 - `public.telefonos_admin(p_ids uuid[])`: devuelve id y teléfono solo si `private.rol_actual() = 'admin'`.
 - Lugares que cambian:
-  - `useViajePasajero.ts` L67, `useViajeConductor.ts` L48 y `viajeController.js` L126: el nombre con `select` y el teléfono con `telefono_contraparte`;
+  - `useViajePasajero.ts` L67 y `useViajeConductor.ts` L48: el nombre con `select` y el teléfono con `telefono_contraparte`;
+  - `viajeController.js` L126: pasa a `mi_perfil`. Ahí el cliente lleva el JWT del conductor que acepta y lee su **propio** teléfono para el aviso al pasajero; `telefono_contraparte` le daría el del pasajero (ajuste del 19 nov 2026, al implementar);
   - `useSupabaseAuth.ts` L61: pasa a `mi_perfil`;
   - `authController.js` L60: `.select('id, rol, nombre, activo')`, porque `.select()` sin columnas pediría el teléfono;
   - `adminController.js` L24 y L61: el nombre y después `telefonos_admin`;

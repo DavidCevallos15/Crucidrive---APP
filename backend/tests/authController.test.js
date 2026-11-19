@@ -132,7 +132,10 @@ describe('authController - registerProfile', () => {
 
   it('should register a conductor profile with tricimoto', async () => {
     req.body = { consentimiento: true, rol: 'conductor', nombre: 'Carlos', telefono: '0977777777', placa: 'ABC-123' };
-    const mockPerfil = { id: 'user-123', rol: 'conductor', nombre: 'Carlos', telefono: '0977777777', activo: true };
+    const mockPerfil = { id: 'user-123', rol: 'conductor', nombre: 'Carlos', activo: true };
+    const selectPerfil = jest.fn(() => ({
+      single: jest.fn().mockResolvedValue({ data: mockPerfil, error: null }),
+    }));
     const mockTricimoto = { conductor_id: 'user-123', placa: 'ABC-123', estado: 'inactivo' };
     const selectTricimoto = jest.fn(() => ({
       single: jest.fn().mockResolvedValue({ data: mockTricimoto, error: null }),
@@ -144,11 +147,7 @@ describe('authController - registerProfile', () => {
       }
       if (table === 'perfiles') {
         return {
-          insert: jest.fn(() => ({
-            select: jest.fn(() => ({
-              single: jest.fn().mockResolvedValue({ data: mockPerfil, error: null }),
-            })),
-          })),
+          insert: jest.fn(() => ({ select: selectPerfil })),
           delete: __mockDelete,
         };
       }
@@ -160,6 +159,8 @@ describe('authController - registerProfile', () => {
     await registerProfile(req, res);
 
     expect(res.status).toHaveBeenCalledWith(201);
+    // 007 (0018): el RETURNING no puede pedir el teléfono; select() sin columnas lo pediría.
+    expect(selectPerfil.mock.calls[0][0]).toBe('id, rol, nombre, activo');
     // Paso 004 (0014): select * fallaría porque nadie puede leer ubicacion_actual.
     const columnas = selectTricimoto.mock.calls[0][0];
     expect(columnas).toEqual(expect.stringContaining('placa'));

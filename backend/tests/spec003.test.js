@@ -134,12 +134,13 @@ describe('T9 · aceptar viaje (criterios 8, 9 y 10)', () => {
   test('acepta con la RPC, responde con el chat y avisa al pasajero con nombre, placa, teléfono y reseñas', async () => {
     const viaje = { id: VIAJE, estado: 'aceptado', pasajero_id: PASAJERO, conductor_id: CONDUCTOR };
     const { db, llamadas } = crearDb({
-      rpc: (funcion) => Promise.resolve(funcion === 'resumen_conductor'
-        ? { data: [{ promedio: '4.80', total: 23 }], error: null }
-        : { data: [{ viaje_id: VIAJE, thread_id: 'hilo-1' }], error: null }),
+      rpc: (funcion) => Promise.resolve({
+        resumen_conductor: { data: [{ promedio: '4.80', total: 23 }], error: null },
+        // 007, criterio 11: el conductor lee su propio teléfono con mi_perfil, no con select.
+        mi_perfil: { data: [{ id: CONDUCTOR, nombre: 'Carla', telefono: '0992222222', rol: 'conductor', activo: true }], error: null },
+      }[funcion] ?? { data: [{ viaje_id: VIAJE, thread_id: 'hilo-1' }], error: null }),
       respuestas: {
         viajes: [{ data: viaje, error: null }],
-        perfiles: [{ data: { nombre: 'Carla', telefono: '0992222222' }, error: null }],
         tricimotos: [{ data: { placa: 'ABC-123' }, error: null }],
       },
     });
@@ -155,6 +156,8 @@ describe('T9 · aceptar viaje (criterios 8, 9 y 10)', () => {
       chat: { threadId: 'hilo-1' },
     });
     expect(db.rpc).toHaveBeenCalledWith('resumen_conductor', { p_conductor: CONDUCTOR });
+    expect(db.rpc).toHaveBeenCalledWith('mi_perfil');
+    expect(db.from).not.toHaveBeenCalledWith('perfiles');
   });
 });
 

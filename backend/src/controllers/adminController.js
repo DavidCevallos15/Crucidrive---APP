@@ -4,6 +4,26 @@ const { isUuid, isMotivoValido, MOTIVO_MIN, MOTIVO_MAX } = require('../utils/val
 const { BUCKET, TIPOS_FOTO, rutaFoto } = require('./conductorController');
 
 const ESTADOS = ['pendiente', 'aprobado', 'rechazado'];
+
+/**
+ * Agrega el teléfono de cada conductor con `telefonos_admin`: desde la 0018 (007, criterio 10) la
+ * columna no se lee con select. Mantiene la forma `perfiles: { nombre, telefono }` de las pantallas.
+ * @param {any} db cliente con el JWT del administrador
+ * @param {Array<{ conductor_id: string, perfiles?: { nombre?: string } | null }>} filas
+ */
+const agregarTelefonos = async (db, filas) => {
+  const ids = filas.map((f) => f.conductor_id);
+  if (ids.length === 0) return { filas };
+  const { data, error } = await db.rpc('telefonos_admin', { p_ids: ids });
+  if (error) return { error };
+  const telefonos = Object.fromEntries((data || []).map((t) => [t.id, t.telefono]));
+  return {
+    filas: filas.map((f) => ({
+      ...f,
+      perfiles: f.perfiles ? { ...f.perfiles, telefono: telefonos[f.conductor_id] ?? null } : f.perfiles,
+    })),
+  };
+};
 /** Las fotos de la cédula son sensibles: el enlace caduca a los 5 minutos. */
 const SEGUNDOS_URL_FIRMADA = 300;
 
@@ -21,7 +41,7 @@ const listarConductores = asyncHandler(async (req, res) => {
 
   const { data: solicitudes, error } = await db
     .from('conductores_verificacion')
-    .select('conductor_id, cedula, estado, motivo_rechazo, creado_en, revisado_en, perfiles!conductor_id(nombre, telefono)')
+    .select('conductor_id, cedula, estado, motivo_rechazo, creado_en, revisado_en, perfiles!conductor_id(nombre)')
     .eq('estado', estado)
     .order('creado_en', { ascending: true });
 
@@ -29,7 +49,12 @@ const listarConductores = asyncHandler(async (req, res) => {
     return errorResponse(res, 500, 'No se pudo listar las solicitudes.', error.message);
   }
 
-  const ids = (solicitudes || []).map((s) => s.conductor_id);
+  const conTelefono = await agregarTelefonos(db, solicitudes || []);
+  if (conTelefono.error) {
+    return errorResponse(res, 500, 'No se pudo consultar los teléfonos.', conTelefono.error.message);
+  }
+
+  const ids = conTelefono.filas.map((s) => s.conductor_id);
   let placas = {};
   if (ids.length > 0) {
     const { data: motos, error: motosError } = await db
@@ -42,7 +67,7 @@ const listarConductores = asyncHandler(async (req, res) => {
     placas = Object.fromEntries((motos || []).map((m) => [m.conductor_id, m.placa]));
   }
 
-  successResponse(res, (solicitudes || []).map((s) => ({ ...s, placa: placas[s.conductor_id] || null })));
+  successResponse(res, conTelefono.filas.map((s) => ({ ...s, placa: placas[s.conductor_id] || null })));
 });
 
 /**
@@ -58,7 +83,7 @@ const verConductor = asyncHandler(async (req, res) => {
 
   const { data: solicitud, error } = await db
     .from('conductores_verificacion')
-    .select('conductor_id, cedula, estado, motivo_rechazo, creado_en, revisado_en, perfiles!conductor_id(nombre, telefono)')
+    .select('conductor_id, cedula, estado, motivo_rechazo, creado_en, revisado_en, perfiles!conductor_id(nombre)')
     .eq('conductor_id', id)
     .maybeSingle();
 
@@ -67,6 +92,10 @@ const verConductor = asyncHandler(async (req, res) => {
   }
   if (!solicitud) {
     return errorResponse(res, 404, 'No se encontró la solicitud del conductor.');
+  }
+  const conTelefono = await agregarTelefonos(db, [solicitud]);
+  if (conTelefono.error) {
+    return errorResponse(res, 500, 'No se pudo consultar el teléfono.', conTelefono.error.message);
   }
 
   const rutas = TIPOS_FOTO.map((tipo) => rutaFoto(id, tipo));
@@ -83,7 +112,7 @@ const verConductor = asyncHandler(async (req, res) => {
     fotos[tipo] = (firmadas && firmadas[i] && firmadas[i].signedUrl) || null;
   });
 
-  successResponse(res, { ...solicitud, fotos });
+  successResponse(res, { ...conTelefono.filas[0], fotos });
 });
 
 /**
