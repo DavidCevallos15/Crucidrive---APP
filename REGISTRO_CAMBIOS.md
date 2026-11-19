@@ -15,7 +15,7 @@
   - `mi_perfil` y `telefonos_admin` devuelven el teléfono;
   - los perfiles se siguen viendo;
   - `select telefono from perfiles` responde `permission denied`.
-- **Falta probar a mano:** crear un perfil nuevo y abrir el panel del administrador en la app.
+- **Prueba a mano de David en el teléfono (19 nov 2026):** perfil nuevo y panel del administrador sin errores.
 
 ---
 
