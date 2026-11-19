@@ -66,7 +66,7 @@ export const crearLector = (descartados: Set<string>): LectorViaje => ({
   async conductor(viajeId, conductorId) {
     const [perfil, telefono, tricimoto, hilo, resumen] = await Promise.all([
       supabase.from('perfiles').select('nombre').eq('id', conductorId).maybeSingle(),
-      // Desde la 0018 (007) el teléfono no se lee con select: la BD lo da solo con el viaje aceptado o en curso.
+      // Desde la 0019 (007) el teléfono no se lee con select: la BD lo da solo con el viaje aceptado o en curso.
       supabase.rpc('telefono_contraparte', { p_viaje: viajeId }),
       supabase.from('tricimotos').select('placa').eq('conductor_id', conductorId).maybeSingle(),
       supabase.from('threads').select('id').eq('viaje_id', viajeId).maybeSingle(),

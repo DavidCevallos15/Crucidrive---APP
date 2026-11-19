@@ -328,7 +328,7 @@ const SOLICITUD = {
   paso('El pasajero recibe nombre, placa y teléfono sin recargar (criterios 10 y 16)',
     !!aceptado?.conductor?.nombre && !!aceptado?.conductor?.placa && !!aceptado?.conductor?.telefono && aceptado?.chat?.threadId === threadId,
     aceptado ? `placa=${aceptado.conductor?.placa}` : 'no llegó viaje_aceptado');
-  // 007 (0018): el teléfono ya no se lee con select; solo con telefono_contraparte y el viaje activo.
+  // 007 (0019): el teléfono ya no se lee con select; solo con telefono_contraparte y el viaje activo.
   const telDirecto = await pas.sb.from('perfiles').select('telefono').eq('id', con.id).maybeSingle();
   const telRpc = await pas.sb.rpc('telefono_contraparte', { p_viaje: viaje.id });
   paso('El teléfono del conductor no se lee con select y sí con telefono_contraparte (007, criterios 7 y 8)',

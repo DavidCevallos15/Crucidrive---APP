@@ -49,7 +49,7 @@ export const lector: LectorViajeConductor = {
     return data as FilaViajeConductor | null;
   },
   async pasajero(viajeId, pasajeroId) {
-    // Desde la 0018 (007) el teléfono no se lee con select: la BD lo da solo con el viaje aceptado o en curso.
+    // Desde la 0019 (007) el teléfono no se lee con select: la BD lo da solo con el viaje aceptado o en curso.
     const [perfil, telefono] = await Promise.all([
       supabase.from('perfiles').select('nombre').eq('id', pasajeroId).maybeSingle(),
       supabase.rpc('telefono_contraparte', { p_viaje: viajeId }),

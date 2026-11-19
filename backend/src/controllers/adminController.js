@@ -6,7 +6,7 @@ const { BUCKET, TIPOS_FOTO, rutaFoto } = require('./conductorController');
 const ESTADOS = ['pendiente', 'aprobado', 'rechazado'];
 
 /**
- * Agrega el teléfono de cada conductor con `telefonos_admin`: desde la 0018 (007, criterio 10) la
+ * Agrega el teléfono de cada conductor con `telefonos_admin`: desde la 0019 (007, criterio 10) la
  * columna no se lee con select. Mantiene la forma `perfiles: { nombre, telefono }` de las pantallas.
  * @param {any} db cliente con el JWT del administrador
  * @param {Array<{ conductor_id: string, perfiles?: { nombre?: string } | null }>} filas

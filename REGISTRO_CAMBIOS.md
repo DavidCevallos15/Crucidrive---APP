@@ -2,6 +2,27 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.84.0] - 2026-11-19 (Hora Local)
+
+### 007 · PR 2: datos de la otra parte, cancelaciones, límites y cuentas (T8 a T12)
+- **017 T7 aprobada:** David probó en el APK, con la actualización por aire, el aviso «Sin internet», el plano y el reintento sin duplicar.
+- **Teléfono solo con un viaje activo (T8 y T9; criterios 7 a 11, 15 y 16):**
+  - `0018_telefono_por_funcion.sql` crea `telefono_contraparte` (la otra parte, solo con el viaje aceptado o en curso), `mi_perfil` (el propio) y `telefonos_admin` (solo admin). Son `security definer` en `private`, con envolturas `security invoker` en `public`.
+  - `0019_cerrar_telefono_y_consentimientos.sql` quita el `select` de `perfiles` y lo da por columna sin `telefono`. El nombre se sigue viendo después del viaje (E1). `consentimientos.id` deja de leerse.
+  - Se partió en dos para desplegar sin cortar el servicio. **Orden:** 0018 → backend y app → 0019.
+  - App: el viaje del pasajero y el del conductor piden el teléfono a `telefono_contraparte`, y el perfil propio sale de `mi_perfil`. Backend: al aceptar, el conductor lee su propio teléfono con `mi_perfil`. El panel del admin lo agrega con `telefonos_admin` y mantiene la misma forma de respuesta. El registro pide columnas explícitas y el consentimiento se revisa por `version`.
+- **Tope de cancelaciones (T10; criterios 12 a 14; E2):** 5 cancelaciones propias en 60 min dejan 30 min sin pedir. Responde 429 con `Retry-After` y la hora, sin crear el viaje ni ofertas. Variables `CANCELACIONES_*`; un valor inválido impide arrancar. La sanción del 005 también manda `Retry-After`.
+- **Límites por usuario (T11; criterios 17 y 18; E6):** pedir 10, cancelar 10 y aceptar 30 cada 15 min, con la clave `req.user.id`. Variables `RATE_LIMIT_USUARIO_*`. Todo 429 lleva `Retry-After`.
+- **No revelar cuentas (T12; criterios 21 y 22):** un correo ya registrado recibe lo mismo que uno nuevo («Si el correo … es válido, te enviamos un enlace…»).
+- **Pruebas:**
+  - BD: las 8 suites RLS en Docker, `rls_008.sql` con 26 nuevas.
+  - Backend 451/451.
+  - Frontend 512/512.
+  - `tsc --noEmit` sin errores.
+- **Pendiente (T13):** aplicar 0018 y 0019 en producción en ese orden, con el backend y la app desplegados entre las dos, y dejar los advisors sin hallazgos.
+
+---
+
 ## [1.83.0] - 2026-11-19 (Hora Local)
 
 ### 017 · Parte A: pedir sin depender del mapa (spec aprobada, D-21)

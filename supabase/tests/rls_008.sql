@@ -1,4 +1,4 @@
--- Pruebas de BD del 007, PR 2 (0018): el teléfono solo con un viaje activo y consentimientos sin número interno.
+-- Pruebas de BD del 007, PR 2 (0018 y 0019): el teléfono solo con un viaje activo y consentimientos sin número interno.
 -- Debe terminar con 'RLS 008: TODAS LAS PRUEBAS TERMINARON' y todas las filas en t.
 \set ON_ERROR_STOP 1
 \set QUIET 1

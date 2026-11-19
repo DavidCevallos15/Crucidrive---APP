@@ -135,7 +135,7 @@ const ERRORES_ACEPTAR = {
 
 /**
  * Lo que el pasajero ve del conductor que aceptó (criterio 10; criterio 9 del 002).
- * `db` lleva el JWT del propio conductor: su teléfono sale de `mi_perfil`, porque desde la 0018
+ * `db` lleva el JWT del propio conductor: su teléfono sale de `mi_perfil`, porque desde la 0019
  * (007, criterio 11) la columna no se lee con select.
  */
 const datosDelConductor = async (db, conductorId) => {

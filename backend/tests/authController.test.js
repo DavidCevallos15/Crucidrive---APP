@@ -159,7 +159,7 @@ describe('authController - registerProfile', () => {
     await registerProfile(req, res);
 
     expect(res.status).toHaveBeenCalledWith(201);
-    // 007 (0018): el RETURNING no puede pedir el teléfono; select() sin columnas lo pediría.
+    // 007 (0019): el RETURNING no puede pedir el teléfono; select() sin columnas lo pediría.
     expect(selectPerfil.mock.calls[0][0]).toBe('id, rol, nombre, activo');
     // Paso 004 (0014): select * fallaría porque nadie puede leer ubicacion_actual.
     const columnas = selectTricimoto.mock.calls[0][0];

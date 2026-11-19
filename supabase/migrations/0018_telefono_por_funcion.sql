@@ -1,16 +1,9 @@
--- Paso 007, PR 2 (plan P6 y P7): el teléfono solo con un viaje activo y consentimientos sin su número interno.
--- 1. perfiles.telefono deja de leerse directo. El nombre se sigue viendo como hoy (E1): perfiles_select no cambia.
--- 2. telefono_contraparte: la otra parte del viaje, solo mientras está aceptado o en curso (criterios 7 y 8).
--- 3. mi_perfil: el propio usuario sigue viendo su teléfono (criterio 10).
--- 4. telefonos_admin: el administrador sigue viendo el de los conductores que revisa (criterio 10).
--- 5. consentimientos.id deja de leerse (criterio 15).
--- Los clientes que leían el teléfono con select pasan a estas funciones en el mismo PR. Un APK viejo
--- recibe un error al pedir la columna y muestra el viaje sin el botón «Llamar» hasta la actualización.
-
--- PERFILES (P6) --------------------------------------------------------------
--- RLS no limita columnas: se quita el select de la tabla y se da por columna (como en 0005 con update).
-revoke select on public.perfiles from anon, authenticated;
-grant select (id, rol, nombre, activo, creado_en) on public.perfiles to authenticated;
+-- Paso 007, PR 2 (plan P6), primera mitad: las funciones que dan el teléfono. Solo agrega; no
+-- quita ningún permiso, así que la app y el backend de antes siguen funcionando igual.
+-- 1. telefono_contraparte: la otra parte del viaje, solo mientras está aceptado o en curso (criterios 7 y 8).
+-- 2. mi_perfil: el propio usuario sigue viendo su teléfono (criterio 10).
+-- 3. telefonos_admin: el administrador sigue viendo el de los conductores que revisa (criterio 10).
+-- La 0019 cierra la lectura directa. Orden de despliegue: 0018 → backend y app nuevos → 0019.
 
 create or replace function private.telefono_contraparte(p_viaje uuid)
 returns text
@@ -66,11 +59,6 @@ revoke all on function public.telefonos_admin(uuid[]) from public, anon;
 grant execute on function public.telefono_contraparte(uuid) to authenticated;
 grant execute on function public.mi_perfil() to authenticated;
 grant execute on function public.telefonos_admin(uuid[]) to authenticated;
-
--- CONSENTIMIENTOS (P7) -------------------------------------------------------
--- El número interno (identity) dejaba contar cuántas personas se registraron.
-revoke select on public.consentimientos from anon, authenticated;
-grant select (user_id, version, aceptado_en) on public.consentimientos to authenticated;
 
 -- Funciones nuevas de private: como en 0005, 0010, 0012 y 0014.
 revoke all on all functions in schema private from public, anon;

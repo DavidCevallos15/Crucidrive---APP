@@ -125,7 +125,7 @@ const cambiarDisponibilidad = asyncHandler(async (req, res) => {
   if (disponible) {
     const { data: aceptado, error: consentError } = await db
       .from('consentimientos')
-      // Desde la 0018 (007, criterio 15) el número interno no se lee.
+      // Desde la 0019 (007, criterio 15) el número interno no se lee.
       .select('version')
       .eq('user_id', conductorId)
       .eq('version', CONSENT_VERSION)

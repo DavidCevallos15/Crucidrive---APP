@@ -52,7 +52,7 @@ export const useSupabaseAuth = ({ bootstrap = false }: { bootstrap?: boolean } =
 
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // ─── Perfil propio: mi_perfil (desde la 0018 el teléfono no se lee con select) ───
+  // ─── Perfil propio: mi_perfil (desde la 0019 el teléfono no se lee con select) ───
   const fetchProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
     const scope = captureAccountScope(useAuthStore.getState);
     if (scope.userId !== userId || !scope.isCurrent()) return null;

@@ -357,7 +357,7 @@ describe('T7 · consentimiento 0.3 para estar disponible (criterio 5; plan P18)'
     ]);
     expect(r.status).toHaveBeenCalledWith(200);
     expect(updates).toEqual([{ estado: 'disponible' }]);
-    // Desde la 0018 leer consentimientos.id da permiso denegado.
+    // Desde la 0019 leer consentimientos.id da permiso denegado.
     expect(columnas).toContain('version');
     expect(columnas.join(' ')).not.toMatch(/\bid\b|\*/);
   });

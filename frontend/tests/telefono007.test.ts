@@ -1,4 +1,4 @@
-// Paso 007, criterio 11: desde la 0018 el teléfono no se lee con select sobre perfiles.
+// Paso 007, criterio 11: desde la 0019 el teléfono no se lee con select sobre perfiles.
 // Las pantallas del viaje (pasajero y conductor) lo piden a telefono_contraparte y el perfil
 // propio sale de mi_perfil. Se ejercitan los lectores reales con un cliente de Supabase falso.
 import * as fs from 'fs';

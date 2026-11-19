@@ -122,7 +122,7 @@ select pg_temp.debe_fallar($q$update tricimotos set estado='disponible' where co
 select pg_temp.como('11111111-1111-1111-1111-111111111111');
 select count(*) = 0 as pasajero_no_ve_verificaciones from conductores_verificacion;
 select count(*) = 0 as pasajero_no_ve_consentimientos_ajenos from consentimientos where user_id <> '11111111-1111-1111-1111-111111111111';
--- Desde la 0018 (007) el teléfono sale de telefono_contraparte, y solo con el viaje aceptado o en curso.
+-- Desde la 0018 y la 0019 (007) el teléfono sale de telefono_contraparte, y solo con el viaje aceptado o en curso.
 select nombre = 'Carla' and telefono_contraparte('aaaaaaaa-0000-0000-0000-000000000001') = '0992222222' as pasajero_ve_nombre_y_telefono_del_conductor from perfiles where id='22222222-2222-2222-2222-222222222222';
 select pg_temp.como('44444444-4444-4444-4444-444444444444');
 select count(*) = 1 as conductor_solo_ve_la_suya from conductores_verificacion;

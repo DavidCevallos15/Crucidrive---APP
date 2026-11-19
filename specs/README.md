@@ -12,7 +12,7 @@ Flujo por paso: spec → aprobación → plan → tareas → implementación (co
 | 4 | `004-tracking-push` | **Completo.** T17 aprobada por David el 19 nov 2026 sin medición: en Crucita no había internet. Los tiempos se miden en el piloto |
 | 5 | `005-viaje` | **Completo** (#54, #55, #64; 0017 en producción). T12 aprobada por David el 19 nov 2026 sin medición; se repite en el piloto |
 | 6 | `006-sos-admin` | **Spec aprobada** (4 nov 2026: A a D con las propuestas; SOS en la pantalla Seguridad; panel en un despliegue aparte, limitado a la IP de David). Falta `plan.md` |
-| 7 | `007-hardening` | **Spec aprobada** (4 nov 2026, D-18 y D-20; E1 a E6 con las propuestas). Plan y tareas listos; se entrega en 4 PR, primero la brecha 1, que bloquea las pruebas de campo |
+| 7 | `007-hardening` | **En curso** (spec aprobada el 4 nov 2026, D-18 y D-20; E1 a E6 con las propuestas). PR 1 (sockets de sector) hecho. PR 2 implementado el 19 nov 2026 (teléfono por función, tope de cancelaciones, límites por usuario y cuentas sin revelar); falta aplicar 0018 y 0019 en producción y revisar los advisors (T13). Siguen el PR 3 (registro de acceso, tipos y D-01) y el PR 4 (auditoría del APK) |
 | 8 | `008-piloto` | **En curso**: backend de prueba en una VM de Azure (`backend-de-prueba.md`, D-16) y actualizaciones por aire (`actualizaciones-por-aire.md`, D-17). Falta el resto del piloto |
 
 Plan maestro: documento "Plan CruciDrive: viabilidad, MVP y escalado" (claude.ai).
