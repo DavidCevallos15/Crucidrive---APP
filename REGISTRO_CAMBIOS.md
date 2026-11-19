@@ -18,7 +18,7 @@
   - 6 nuevas en `mapaWeb018.test.ts`.
   - `tsc` sin errores.
   - En WebKit con un iPhone emulado y una clave falsa, Google la rechaza y el mapa vuelve solo a OpenStreetMap, sin errores.
-- **Pendiente de David (T11):** crear la clave web en Google Cloud, restringida a `https://app.tricimoto.app/*` y a Maps JavaScript API, con un tope de 300 cargas por día.
+- **Clave web (T11):** David creó «Crucidrive Web Maps», restringida a `https://app.tricimoto.app/*` y a Maps JavaScript API, con un tope de 300 cargas por día. Está cargada en Vercel. Con la clave real, Google Maps carga en WebKit con el estilo claro y sin error de clave. También restringió a `app.tricimoto.app` la «Browser key» de Firebase, que la web no usa.
 
 ---
 
