@@ -1,6 +1,6 @@
 # 018 · CruciDrive en iPhone como app web instalable
 
-Estado: **Borrador** (19 nov 2026). Faltan las decisiones W1 a W5 de David.
+Estado: **Aprobada por David el 19 nov 2026**, con las propuestas de W1 a W4. W5: David no tiene un iPhone ahora; la prueba en un iPhone real queda pendiente (T9). Ver `plan.md` y `tasks.md`.
 
 ## Por qué
 David quiere usar CruciDrive en un iPhone. Un APK solo se instala en Android, y una app nativa para iPhone exige la cuenta de desarrollador de Apple (99 USD al año), que sale del presupuesto del piloto (regla 5). Además, D-02 deja el piloto en Android.
