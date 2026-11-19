@@ -219,6 +219,14 @@ describe('017 · solicitar sin respuesta del servidor', () => {
     expect(r).toEqual({ ok: false, mensaje: 'Ya tienes un viaje activo. Termínalo o cancélalo antes de pedir otro.' });
   });
 
+  test('007, criterio 14: bloqueado por cancelaciones, ve la hora que da el servidor y no se ofrece reintentar', async () => {
+    const mensaje = 'Cancelaste varios pedidos seguidos. Podrás pedir de nuevo a las 15:30.';
+    responder(429, { message: mensaje });
+    const r = await useViajePasajero(socket).solicitar(solicitud);
+    expect(r).toEqual({ ok: false, mensaje });
+    expect(sincronizarViaje).not.toHaveBeenCalled();
+  });
+
   test('otros rechazos del servidor no ofrecen reintentar', async () => {
     responder(400, { message: 'Datos inválidos.' });
     const r = await useViajePasajero(socket).solicitar(solicitud);

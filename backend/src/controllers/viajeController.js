@@ -6,8 +6,12 @@ const {
 } = require('../utils/validation');
 const { findViajeById } = require('../utils/supabaseHelpers');
 const { obtenerDespachador } = require('../despacho');
-const { revisarSancion, horaLocal } = require('../viaje/sancion');
+const { revisarSancion, horaLocal, segundosHasta } = require('../viaje/sancion');
+const { leerConfigCancelaciones, revisarCancelaciones } = require('../viaje/limiteCancelaciones');
 const viajeEnCurso = require('./viajeEnCursoController');
+
+// Al cargar el módulo: un valor inválido en el entorno detiene el arranque (007, criterio 13).
+const CONFIG_CANCELACIONES = leerConfigCancelaciones();
 
 const tieneCoordenadas = (p) => p != null && p.lat != null && p.lng != null;
 
@@ -71,10 +75,19 @@ const solicitarViaje = asyncHandler(async (req, res) => {
     return errorResponse(res, 400, `La descripción no puede superar ${MAX_DESCRIPCION} caracteres.`);
   }
 
-  // Sanción por finalizar él mismo varios viajes (005, criterio 5c).
-  const { bloqueadoHasta } = await revisarSancion(db, pasajeroId, viajeEnCurso.CONFIG_SANCION);
-  if (bloqueadoHasta) {
-    return errorResponse(res, 429, `Terminaste tú mismo varios viajes seguidos. Podrás pedir de nuevo a las ${horaLocal(bloqueadoHasta)}.`);
+  // Sanción por finalizar él mismo varios viajes (005, criterio 5c) y tope de cancelaciones
+  // (007, criterio 12). Se revisan antes de crear el viaje: así no hay ofertas ni avisos.
+  const [sancion, cancelaciones] = await Promise.all([
+    revisarSancion(db, pasajeroId, viajeEnCurso.CONFIG_SANCION),
+    revisarCancelaciones(db, pasajeroId, CONFIG_CANCELACIONES),
+  ]);
+  if (sancion.bloqueadoHasta) {
+    res.set('Retry-After', String(segundosHasta(sancion.bloqueadoHasta)));
+    return errorResponse(res, 429, `Terminaste tú mismo varios viajes seguidos. Podrás pedir de nuevo a las ${horaLocal(sancion.bloqueadoHasta)}.`);
+  }
+  if (cancelaciones.bloqueadoHasta) {
+    res.set('Retry-After', String(segundosHasta(cancelaciones.bloqueadoHasta)));
+    return errorResponse(res, 429, `Cancelaste varios pedidos seguidos. Podrás pedir de nuevo a las ${horaLocal(cancelaciones.bloqueadoHasta)}.`);
   }
 
   const registro = {
@@ -120,15 +133,20 @@ const ERRORES_ACEPTAR = {
   conductor_no_aprobado: [403, 'Tu cuenta de conductor aún no está aprobada.'],
 };
 
-/** Lo que el pasajero ve del conductor que aceptó (criterio 10; criterio 9 del 002). */
+/**
+ * Lo que el pasajero ve del conductor que aceptó (criterio 10; criterio 9 del 002).
+ * `db` lleva el JWT del propio conductor: su teléfono sale de `mi_perfil`, porque desde la 0019
+ * (007, criterio 11) la columna no se lee con select.
+ */
 const datosDelConductor = async (db, conductorId) => {
   const [{ data: perfil }, { data: tricimoto }] = await Promise.all([
-    db.from('perfiles').select('nombre, telefono').eq('id', conductorId).single(),
+    db.rpc('mi_perfil'),
     db.from('tricimotos').select('placa').eq('conductor_id', conductorId).single(),
   ]);
+  const yo = Array.isArray(perfil) ? perfil[0] : perfil;
   // Estrellas y reseñas junto al nombre y la placa (005, criterio 18).
   const resenas = await viajeEnCurso.resumenDelConductor(db, conductorId);
-  return { id: conductorId, nombre: perfil?.nombre ?? null, telefono: perfil?.telefono ?? null, placa: tricimoto?.placa ?? null, resenas };
+  return { id: conductorId, nombre: yo?.nombre ?? null, telefono: yo?.telefono ?? null, placa: tricimoto?.placa ?? null, resenas };
 };
 
 /**

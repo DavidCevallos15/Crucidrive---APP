@@ -29,7 +29,7 @@ const HORA = 60 * 60 * 1000;
 const DIA = 24 * HORA;
 const CONFIG = { max: 3, ventanaDias: 30, bloqueoHoras: 24 };
 
-const res = () => ({ status: jest.fn().mockReturnThis(), json: jest.fn().mockReturnThis() });
+const res = () => ({ status: jest.fn().mockReturnThis(), json: jest.fn().mockReturnThis(), set: jest.fn().mockReturnThis() });
 const cuerpo = (r) => r.json.mock.calls[0][0];
 
 /**
@@ -181,6 +181,8 @@ describe('T4b · solicitarViaje con sanción', () => {
     await solicitarViaje({ body, user: { id: PASAJERO }, supabase: db }, r);
     expect(r.status).toHaveBeenCalledWith(429);
     expect(cuerpo(r).message).toMatch(/Podrás pedir de nuevo a las \d{2}:\d{2}\./);
+    // 007, criterio 18: todo 429 lleva Retry-After (aquí, unas 23 h).
+    expect(r.set).toHaveBeenCalledWith('Retry-After', expect.stringMatching(/^\d+$/));
     expect(db.from.mock.results.some((x) => x.value.insert.mock.calls.length > 0)).toBe(false);
     expect(mockDespachador.iniciar).not.toHaveBeenCalled();
   });

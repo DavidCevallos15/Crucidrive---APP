@@ -12,8 +12,9 @@ const LIMITES = {
   SANCION_BLOQUEO_HORAS: [1, 168, 24],
 };
 
-const leerEntero = (env, nombre) => {
-  const [min, max, defecto] = LIMITES[nombre];
+/** Lee un entero del entorno dentro de su rango; `limites` es { NOMBRE: [mín, máx, defecto] }. */
+const leerEntero = (env, nombre, limites = LIMITES) => {
+  const [min, max, defecto] = limites[nombre];
   const crudo = env[nombre];
   if (crudo === undefined || String(crudo).trim() === '') return defecto;
   const valor = Number(crudo);
@@ -74,4 +75,7 @@ const horaLocal = (ms) => new Date(ms).toLocaleTimeString('es-EC', {
   timeZone: 'America/Guayaquil', hour: '2-digit', minute: '2-digit', hour12: false,
 });
 
-module.exports = { LIMITES, leerConfigSancion, evaluarSancion, revisarSancion, horaLocal };
+/** Segundos enteros hasta `hasta`, para la cabecera Retry-After (007, criterio 18). */
+const segundosHasta = (hasta, ahora = Date.now()) => Math.max(1, Math.ceil((hasta - ahora) / 1000));
+
+module.exports = { LIMITES, leerEntero, leerConfigSancion, evaluarSancion, revisarSancion, horaLocal, segundosHasta };

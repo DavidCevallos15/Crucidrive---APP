@@ -17,6 +17,7 @@ import {
   type ViajeConductor,
   trasPaso,
 } from '../utils/viajeConductor';
+import { textoONulo } from '../utils/telefono';
 import type { useSocket } from './useSocket';
 
 type Resultado = { ok: true; terminado?: boolean } | { ok: false; mensaje: string };
@@ -30,8 +31,11 @@ const ENDPOINT_DEL_PASO: Record<PasoConductor, (id: string) => string> = {
   terminar: API_CONFIG.endpoints.rides.terminar,
 };
 
-/** Lecturas con el JWT del conductor: RLS le deja ver su viaje, su pasajero y su chat. */
-const lector: LectorViajeConductor = {
+/**
+ * Lecturas con el JWT del conductor: RLS le deja ver su viaje, su pasajero y su chat.
+ * Exportado para las pruebas (007, criterio 11).
+ */
+export const lector: LectorViajeConductor = {
   async viajeAbierto(conductorId) {
     const { data, error } = await supabase
       .from('viajes')
@@ -44,9 +48,13 @@ const lector: LectorViajeConductor = {
     if (error) throw new Error(error.message);
     return data as FilaViajeConductor | null;
   },
-  async pasajero(pasajeroId) {
-    const { data } = await supabase.from('perfiles').select('nombre, telefono').eq('id', pasajeroId).maybeSingle();
-    return { nombre: data?.nombre ?? null, telefono: data?.telefono ?? null };
+  async pasajero(viajeId, pasajeroId) {
+    // Desde la 0019 (007) el teléfono no se lee con select: la BD lo da solo con el viaje aceptado o en curso.
+    const [perfil, telefono] = await Promise.all([
+      supabase.from('perfiles').select('nombre').eq('id', pasajeroId).maybeSingle(),
+      supabase.rpc('telefono_contraparte', { p_viaje: viajeId }),
+    ]);
+    return { nombre: perfil.data?.nombre ?? null, telefono: textoONulo(telefono.data) };
   },
   async hilo(viajeId) {
     const { data } = await supabase.from('threads').select('id').eq('viaje_id', viajeId).maybeSingle();

@@ -207,14 +207,40 @@ describe('conductorController · verificación del conductor', () => {
 describe('adminController · revisión de conductores (criterio 3)', () => {
   const ctl = require('../src/controllers/adminController');
 
-  it('lista pendientes por defecto y añade la placa', async () => {
+  /** RPC telefonos_admin falsa (0018): el teléfono ya no viene en el select de perfiles. */
+  const rpcTelefonos = (resultado = { data: [{ id: COND, telefono: '0992222222' }], error: null }) =>
+    jest.fn().mockResolvedValue(resultado);
+
+  it('lista pendientes por defecto y añade la placa y el teléfono (007, criterio 11)', async () => {
     const solicitudes = consulta({ data: [{ conductor_id: COND, estado: 'pendiente', perfiles: { nombre: 'Carla' } }], error: null });
     const motos = consulta({ data: [{ conductor_id: COND, placa: 'ABC-123' }], error: null });
-    const db = { from: jest.fn().mockReturnValueOnce(solicitudes).mockReturnValueOnce(motos) };
+    const db = { from: jest.fn().mockReturnValueOnce(solicitudes).mockReturnValueOnce(motos), rpc: rpcTelefonos() };
     const r = res();
     await ctl.listarConductores({ query: {}, supabase: db }, r);
     expect(solicitudes.eq).toHaveBeenCalledWith('estado', 'pendiente');
-    expect(r.json).toHaveBeenCalledWith({ status: 'success', data: [expect.objectContaining({ conductor_id: COND, placa: 'ABC-123' })] });
+    expect(solicitudes.select.mock.calls[0][0]).not.toContain('telefono');
+    expect(db.rpc).toHaveBeenCalledWith('telefonos_admin', { p_ids: [COND] });
+    expect(r.json).toHaveBeenCalledWith({
+      status: 'success',
+      data: [expect.objectContaining({ conductor_id: COND, placa: 'ABC-123', perfiles: { nombre: 'Carla', telefono: '0992222222' } })],
+    });
+  });
+
+  it('sin solicitudes no pide teléfonos', async () => {
+    const db = { from: jest.fn(() => consulta({ data: [], error: null })), rpc: rpcTelefonos() };
+    const r = res();
+    await ctl.listarConductores({ query: {}, supabase: db }, r);
+    expect(db.rpc).not.toHaveBeenCalled();
+    expect(r.json).toHaveBeenCalledWith({ status: 'success', data: [] });
+  });
+
+  it('si telefonos_admin falla, responde 500 sin detalles internos', async () => {
+    const solicitudes = consulta({ data: [{ conductor_id: COND, perfiles: { nombre: 'Carla' } }], error: null });
+    const db = { from: jest.fn(() => solicitudes), rpc: rpcTelefonos({ data: null, error: { message: 'permission denied' } }) };
+    const r = res();
+    await ctl.listarConductores({ query: {}, supabase: db }, r);
+    expect(r.status).toHaveBeenCalledWith(500);
+    expect(JSON.stringify(r.json.mock.calls[0][0])).not.toContain('permission denied');
   });
 
   it('rechaza un estado desconocido', async () => {
@@ -229,15 +255,19 @@ describe('adminController · revisión de conductores (criterio 3)', () => {
       error: null,
     });
     const db = {
-      from: jest.fn(() => consulta({ data: { conductor_id: COND, cedula: '1710034065', estado: 'pendiente' }, error: null })),
+      from: jest.fn(() => consulta({ data: { conductor_id: COND, cedula: '1710034065', estado: 'pendiente', perfiles: { nombre: 'Carla' } }, error: null })),
       storage: { from: jest.fn(() => ({ createSignedUrls })) },
+      rpc: rpcTelefonos(),
     };
     const r = res();
     await ctl.verConductor({ params: { id: COND }, supabase: db }, r);
     expect(createSignedUrls).toHaveBeenCalledWith([`${COND}/conductor.jpg`, `${COND}/cedula.jpg`, `${COND}/vehiculo.jpg`], 300);
     expect(r.json).toHaveBeenCalledWith({
       status: 'success',
-      data: expect.objectContaining({ fotos: { conductor: 'https://x/a', cedula: 'https://x/b', vehiculo: 'https://x/c' } }),
+      data: expect.objectContaining({
+        perfiles: { nombre: 'Carla', telefono: '0992222222' },
+        fotos: { conductor: 'https://x/a', cedula: 'https://x/b', vehiculo: 'https://x/c' },
+      }),
     });
   });
 

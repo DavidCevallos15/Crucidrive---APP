@@ -110,7 +110,8 @@ select updated_at > creado_en as trigger_updated_at_ok from viajes where id='aaa
 \echo '--- anon ---'
 reset role; set role anon;
 select count(*) = 5 as anon_lee_sectores from sectores;
-select count(*) = 0 as anon_no_lee_perfiles from perfiles;
+-- Desde la 0019 (007) anon ni siquiera tiene permiso de lectura sobre perfiles.
+select pg_temp.debe_fallar($q$select count(*) from perfiles$q$, 'anon lee perfiles');
 select count(*) = 0 as anon_no_lee_viajes from viajes;
 reset role;
 \echo 'RLS: TODAS LAS PRUEBAS TERMINARON'

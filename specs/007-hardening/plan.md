@@ -53,13 +53,14 @@ Spec aprobada por David el 4 nov 2026, con las propuestas de E1 a E6. Se entrega
 
 ## PR 2 · Brechas 2 a 5 y criterios 21 y 22
 
-**P6 · El teléfono solo con un viaje activo (brecha 2, E1).** Migración `0018_endurecimiento.sql`:
+**P6 · El teléfono solo con un viaje activo (brecha 2, E1).** Dos migraciones (ajuste del 19 nov 2026, al implementar): `0018_telefono_por_funcion.sql` solo crea las funciones y `0019_cerrar_telefono_y_consentimientos.sql` quita los permisos. Con una sola migración, aplicarla antes del código nuevo rompía el registro y el panel del admin, y aplicarla después dejaba el código nuevo sin las funciones. **Orden de despliegue:** 0018 → backend y app nuevos → 0019.
 - `revoke select on public.perfiles from authenticated`, y después `grant select (id, rol, nombre, activo, creado_en)`. El teléfono deja de leerse directo. `perfiles_select` no cambia, así que el nombre sigue visible para quien compartió un viaje (E1).
 - `private.telefono_contraparte(p_viaje uuid) returns text`: security definer y `search_path = ''`. Devuelve el teléfono de la otra parte solo si `auth.uid()` es el pasajero o el conductor y el viaje está `aceptado` o `en_curso`. Si no, devuelve null. Su envoltura `public.telefono_contraparte` es security invoker, como `ubicacion_conductor_viaje` en la 0014.
 - `public.mi_perfil()`: devuelve id, nombre, teléfono, rol y activo del propio usuario.
 - `public.telefonos_admin(p_ids uuid[])`: devuelve id y teléfono solo si `private.rol_actual() = 'admin'`.
 - Lugares que cambian:
-  - `useViajePasajero.ts` L67, `useViajeConductor.ts` L48 y `viajeController.js` L126: el nombre con `select` y el teléfono con `telefono_contraparte`;
+  - `useViajePasajero.ts` L67 y `useViajeConductor.ts` L48: el nombre con `select` y el teléfono con `telefono_contraparte`;
+  - `viajeController.js` L126: pasa a `mi_perfil`. Ahí el cliente lleva el JWT del conductor que acepta y lee su **propio** teléfono para el aviso al pasajero; `telefono_contraparte` le daría el del pasajero (ajuste del 19 nov 2026, al implementar);
   - `useSupabaseAuth.ts` L61: pasa a `mi_perfil`;
   - `authController.js` L60: `.select('id, rol, nombre, activo')`, porque `.select()` sin columnas pediría el teléfono;
   - `adminController.js` L24 y L61: el nombre y después `telefonos_admin`;
@@ -68,13 +69,13 @@ Spec aprobada por David el 4 nov 2026, con las propuestas de E1 a E6. Se entrega
   - una tabla aparte de contacto, porque obliga a migrar datos y a escribir en dos tablas al registrarse;
   - limitar las filas de `perfiles` a los viajes activos, porque esconde también el nombre y contradice E1.
 
-**P7 · Consentimientos (brecha 4).** En la misma migración: `revoke select on public.consentimientos from authenticated` y `grant select (user_id, version, aceptado_en)`. `conductorController.js` L128 pasa a `.select('version')`.
+**P7 · Consentimientos (brecha 4).** En la 0019: `revoke select on public.consentimientos from authenticated` y `grant select (user_id, version, aceptado_en)`. `conductorController.js` L128 pasa a `.select('version')`.
 
 **P8 · Tope de cancelaciones (brecha 3, E2).**
 - `backend/src/viaje/limiteCancelaciones.js`, con la misma forma que `sancion.js`. Variables: `CANCELACIONES_MAX` (1 a 50, por defecto 5), `CANCELACIONES_VENTANA_MIN` (5 a 1440, por defecto 60) y `CANCELACIONES_BLOQUEO_MIN` (5 a 1440, por defecto 30).
-- Cuenta los viajes del pasajero con `estado = 'cancelado'`, `cancelado_por = 'pasajero'` y `finalizado_en` dentro de la ventana. Usa el índice `idx_viajes_finalizados_por_pasajero` de la 0017.
+- Cuenta los viajes del pasajero con `estado = 'cancelado'`, `cancelado_por = 'pasajero'` y `finalizado_en` dentro de la ventana. Usa `idx_viajes_pasajero` (0004): el índice `idx_viajes_finalizados_por_pasajero` de la 0017 es parcial sobre `finalizado_por = 'pasajero'` y una cancelación no lo llena. Son pocas filas por pasajero, así que no hace falta un índice nuevo (ajuste del 19 nov 2026).
 - `solicitarViaje` lo revisa junto a `revisarSancion` y responde 429 con `Retry-After` y la hora local.
-- Hay que comprobar que el `PATCH /:id/estado` heredado también deje `cancelado_por`. Si no lo deja, una cancelación con `cancelado_por` nulo en estado `solicitado` cuenta como del pasajero.
+- Hay que comprobar que el `PATCH /:id/estado` heredado también deje `cancelado_por`. Si no lo deja, una cancelación con `cancelado_por` nulo en estado `solicitado` cuenta como del pasajero. → Comprobado: desde el 005 esa ruta pasa por `cancelar_viaje` (0017), que siempre lo deja.
 - **Riesgo aceptado:** la política `viajes_insert_pasajero` deja insertar un viaje directo por la API sin pasar por el backend. Ese viaje no genera ofertas ni avisos, porque el despacho lo arranca el backend, así que no sirve para molestar a conductores. Llevar la regla a la BD queda fuera de este paso.
 
 **P9 · Límites por usuario (brecha 5, E6).**

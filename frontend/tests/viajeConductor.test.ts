@@ -108,6 +108,8 @@ describe('005 · tarjeta del viaje (criterios 1 y 2)', () => {
     expect(v).toMatchObject({ id: 'v1', threadId: 't1', recogida: { lat: 1, lng: 2 }, pasajero: { nombre: null, telefono: null } });
     // Un viaje normal no pide el paquete.
     expect(lector.paquete).not.toHaveBeenCalled();
+    // 007, criterio 11: el teléfono del pasajero depende del viaje (telefono_contraparte).
+    expect(lector.pasajero).toHaveBeenCalledWith('v1', 'p1');
   });
 
   test('si falla la lectura del viaje, lanza (se conserva lo que se veía)', async () => {

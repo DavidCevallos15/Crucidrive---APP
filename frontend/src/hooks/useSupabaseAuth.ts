@@ -5,7 +5,7 @@ import type { UserProfile, VerificationInfo } from '../store/useAuthStore';
 import { API_CONFIG } from '../constants/config';
 import { authFetch } from '../utils/authFetch';
 import { normalizarEmail } from '../utils/validators';
-import { mensajeDeAuth } from '../utils/mensajesAuth';
+import { mensajeDeAuth, resultadoDeRegistro } from '../utils/mensajesAuth';
 import { registroAvisos } from '../servicios/avisos';
 import { detenerSeguimientoFondo } from '../tareas/ubicacionFondo';
 import { captureAccountScope } from '../utils/accountScope';
@@ -52,16 +52,12 @@ export const useSupabaseAuth = ({ bootstrap = false }: { bootstrap?: boolean } =
 
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // ─── Perfil: tabla 'perfiles' (columnas reales) ───────────
+  // ─── Perfil propio: mi_perfil (desde la 0019 el teléfono no se lee con select) ───
   const fetchProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
     const scope = captureAccountScope(useAuthStore.getState);
     if (scope.userId !== userId || !scope.isCurrent()) return null;
     try {
-      const { data, error } = await supabase
-        .from('perfiles')
-        .select('id, nombre, telefono, rol, activo')
-        .eq('id', userId)
-        .maybeSingle();
+      const { data, error } = await supabase.rpc('mi_perfil').maybeSingle();
 
       if (!scope.isCurrent()) return null;
 
@@ -184,12 +180,12 @@ export const useSupabaseAuth = ({ bootstrap = false }: { bootstrap?: boolean } =
       if (error) {
         // Al log (adb logcat en el APK): el usuario solo ve el mensaje traducido.
         console.warn('[Auth] Supabase Auth respondió con error:', error.name, error.status, error.message);
-        const mensaje = mensajeDeAuth(error.message);
-        setAuthError(mensaje);
-        return { ok: false, error: mensaje };
       }
-      // Con confirmación de correo activada no hay sesión hasta que el usuario confirma.
-      return { ok: true, requiereConfirmarCorreo: !data.session };
+      // Con confirmación de correo activada no hay sesión hasta que el usuario confirma. Un correo
+      // ya registrado recibe la misma respuesta que uno nuevo (007, criterio 21).
+      const resultado = resultadoDeRegistro(error, Boolean(data?.session));
+      if (!resultado.ok) setAuthError(resultado.error);
+      return resultado;
     } catch (err) {
       const mensaje = mensajeDeAuth(err instanceof Error ? err.message : 'Error de conexión.');
       setAuthError(mensaje);
