@@ -17,6 +17,7 @@ import { registroAvisos, configurarCanales } from '../servicios/avisos';
 import { leerEstadoActualizacion } from '../servicios/actualizacion';
 import { textoActualizacion } from '../utils/actualizacion';
 import { DeleteAccountPanel } from '../components/DeleteAccountPanel';
+import { TEXTO_INSTALAR, leerEntorno, pasosInstalar } from '../utils/instalarIphone';
 
 export type SettingsPage = 'configuracion' | 'cuenta' | 'privacidad' | 'seguridad' | 'ayuda' | 'acerca';
 const titles: Record<SettingsPage, string> = { configuracion: 'Configuración', cuenta: 'Mi cuenta', privacidad: 'Privacidad y mis datos', seguridad: 'Seguridad y emergencias', ayuda: '¿Cómo te ayudamos?', acerca: 'Acerca de CruciDrive' };
@@ -105,6 +106,7 @@ export default function SettingsScreen({ page }: { page: SettingsPage }) {
         {row('Privacidad y mis datos', 'Uso de datos, consentimiento y cuenta', 'lock-closed-outline', () => go('privacidad'))}
         {row('Ayuda', 'Viajes, encomiendas y solución de problemas', 'help-circle-outline', () => go('ayuda'))}
         {row('Acerca de la app', 'Servicios, tarifas y versión', 'information-circle-outline', () => go('acerca'))}
+        {Platform.OS === 'web' && row('Instalar en el iPhone', 'Agrégala a la pantalla de inicio desde Safari', 'phone-portrait-outline', () => go('ayuda'))}
       </>}
       {page === 'cuenta' && <>
         <Text style={styles.intro}>Administra la cuenta con la que solicitas o realizas tus servicios.</Text>
@@ -129,6 +131,7 @@ export default function SettingsScreen({ page }: { page: SettingsPage }) {
       </>}
       {page === 'ayuda' && <>
         <Text style={styles.intro}>Respuestas para usar los servicios que CruciDrive ofrece en Crucita.</Text>
+        {Platform.OS === 'web' && paragraph(TEXTO_INSTALAR.titulo, pasosInstalar(leerEntorno()).map((p, i) => `${i + 1}. ${p}`).join('\n'))}
         {paragraph('¿Cómo solicito una tricimoto?', 'Elige Tricimoto, indica desde dónde sales y a dónde vas. Revisa el número de pasajeros y el total antes de solicitar. Necesitas una cuenta para confirmar.')}
         {paragraph('¿Cómo envío una encomienda?', 'Elige Encomienda. Indica recogida, destino, contenido y quién recibe. Una vez que un conductor acepte, usa el chat para acordar el precio antes de entregar el paquete.')}
         {paragraph('No hay conductores', 'La app te avisará si nadie acepta. Puedes volver a pedir la solicitud o cambiar el destino. No se garantiza un tiempo de llegada hasta que un conductor acepte.')}
