@@ -12,7 +12,13 @@ const LIMITES = {
   SANCION_BLOQUEO_HORAS: [1, 168, 24],
 };
 
-/** Lee un entero del entorno dentro de su rango; `limites` es { NOMBRE: [mín, máx, defecto] }. */
+/**
+ * Lee un entero del entorno dentro de su rango; `limites` es { NOMBRE: [mín, máx, defecto] }.
+ * @param {Record<string, string | undefined>} env
+ * @param {string} nombre
+ * @param {Record<string, number[]>} [limites]
+ * @returns {number}
+ */
 const leerEntero = (env, nombre, limites = LIMITES) => {
   const [min, max, defecto] = limites[nombre];
   const crudo = env[nombre];

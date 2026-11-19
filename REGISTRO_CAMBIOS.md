@@ -2,6 +2,28 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.87.0] - 2026-11-19 (Hora Local)
+
+### 007 · PR 3: registro de acceso, tipos y D-01 (T14, T16 y T17)
+- **Registro de acceso (T14; criterios 19 y 20; E3):**
+  - `middlewares/registroAcceso.js` escribe una línea JSON por petición: `{ t, uid, m, ruta, st, ms, ip, ua }`. La ruta va sin consulta y el cuerpo nunca se registra, así que no aparecen nombres, teléfonos ni coordenadas.
+  - El socket escribe el mismo formato al conectar y al desconectar. Detrás de Caddy, la IP es la última de `X-Forwarded-For`.
+  - `deploy/vm/journald-crucidrive.conf` guarda 14 días en disco, con un tope de 500 MB. Lo instala `instalar.sh` y está documentado en `deploy/vm/README.md`.
+- **Frontend (T16):** el CI corre `tsc --noEmit`. Ya no había errores.
+- **Backend (T17, D-01):**
+  - `jsconfig.json` estricto, `npm run typecheck` y su paso en el CI.
+  - `typescript` y `@types/express` como dependencias de desarrollo. No llegan a la VM, que instala con `--omit=dev`.
+  - `src/types/socket.d.ts` declara `socket.user` y `socket.supabase`.
+  - Ahora llevan `// @ts-check` `app.js` y `socketHandler.js`.
+  - La revisión encontró un error de tipos real en `leerEntero`.
+- **CLAUDE.md:** D-01 figura como cerrada y la deuda de `tsc` como pagada.
+- **Pruebas:**
+  - Backend 459/459, con 8 nuevas en `registroAcceso.test.js`.
+  - `npm run typecheck` y `tsc --noEmit` sin errores.
+- **Al actualizar la VM:** `instalar.sh` deja journald a 14 días.
+
+---
+
 ## [1.86.1] - 2026-11-19 (Hora Local)
 
 ### 018 · Verificación de Google Search Console para `app.tricimoto.app`

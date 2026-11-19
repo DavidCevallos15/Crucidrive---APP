@@ -22,7 +22,7 @@ const findViajeById = async (db, viajeId) => {
  * @param {import('@supabase/supabase-js').SupabaseClient} db - Cliente del usuario.
  * @param {string} threadId - ID del hilo.
  * @param {string} userId - ID del usuario.
- * @returns {Promise<{member: Object|null, error: Object|null}>}
+ * @returns {Promise<{member: Object|null, error: { message: string }|null}>}
  */
 const checkThreadMembership = async (db, threadId, userId) => {
   const { data: member, error } = await db

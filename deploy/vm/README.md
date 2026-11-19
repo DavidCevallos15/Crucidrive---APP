@@ -82,6 +82,16 @@ sudo journalctl -u caddy -f               # HTTPS
 sudo systemctl status crucidrive-api
 ```
 
+### Registro de acceso (paso 007, criterio 19)
+Cada petición y cada conexión del socket dejan una línea JSON en el registro del backend: `{ t, uid, m, ruta, st, ms, ip, ua }`. No lleva el cuerpo ni la consulta (`?lat=…`), así que no aparecen nombres, teléfonos ni coordenadas. journald lo guarda **14 días** y después lo borra solo: `instalar.sh` copia `journald-crucidrive.conf` a `/etc/systemd/journald.conf.d/`, con almacenamiento en disco y un tope de 500 MB.
+
+```bash
+# Peticiones de un usuario en la última hora
+sudo journalctl -u crucidrive-api --since "1 hour ago" -o cat | grep '"uid":"UUID-DEL-USUARIO"'
+# Comprobar la retención aplicada
+systemd-analyze cat-config systemd/journald.conf | grep -E 'MaxRetentionSec|Storage'
+```
+
 ## Costo y cuidados (Azure for Students)
 - Hasta el 26 oct llevas **0,94 USD**: la IP pública 0,55 y el disco 0,39; el cómputo marcó 0,00. Eso es unos 4 USD al mes por IP y disco, dentro del tope de 25 USD de la regla 5 y del crédito de Azure for Students.
 - **No detengas la VM** desde el portal: apagada, el despacho deja de funcionar y la IP fija se sigue cobrando.

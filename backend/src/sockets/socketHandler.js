@@ -1,3 +1,4 @@
+// @ts-check
 const { supabase, createUserClient } = require('../config/supabase');
 const { guardarUbicacion } = require('../ubicacion/servicio');
 const { checkThreadMembership } = require('../utils/supabaseHelpers');
@@ -7,6 +8,27 @@ const { salaUsuario } = require('../despacho/salas');
 const { obtenerDespachador } = require('../despacho');
 const { leerConfigSockets } = require('./config');
 const { crearCatalogoSectores } = require('./sectores');
+const { lineaSocket, ipDeSocket } = require('../middlewares/registroAcceso');
+const { leerTrustProxy } = require('../config/trustProxy');
+
+const DETRAS_DE_PROXY = leerTrustProxy(process.env.TRUST_PROXY) !== false;
+
+/**
+ * Registro de acceso del socket (007, criterio 19): mismo formato que las peticiones REST.
+ * @param {import('socket.io').Socket} socket
+ * @param {'conectar' | 'desconectar'} evento
+ */
+const registrarSocket = (socket, evento) => {
+  if (process.env.NODE_ENV === 'test') return;
+  const linea = lineaSocket({
+    uid: socket.user?.id,
+    evento,
+    ip: ipDeSocket(socket.handshake, DETRAS_DE_PROXY),
+    ua: socket.handshake?.headers?.['user-agent'],
+  });
+  process.stdout.write(`${linea}
+`);
+};
 
 const VENTANA_CAMBIOS_MS = 60 * 1000;
 const MENSAJE_SECTOR_INVALIDO = 'El identificador del sector (sectorId) no es válido.';
@@ -77,6 +99,7 @@ const initSocketHandler = (io, {
 
   io.on('connection', (socket) => {
     console.log(`[Socket.io] Conexión: usuario=${socket.user.id} rol=${socket.user.rol} socket=${socket.id}`);
+    registrarSocket(socket, 'conectar');
 
     socket.join(salaUsuario(socket.user.id));
     conexiones.agregar(socket.user.id, socket.id);
@@ -87,8 +110,10 @@ const initSocketHandler = (io, {
 
     // Una sola sala de sector por conexión, solo sectores del catálogo y un tope de cambios por
     // minuto: así nadie escucha todos los sectores a la vez ni los recorre en bucle (007, C1 y C2).
+    /** @type {string | null} */
     let sectorActual = null;
     let turnoSector = 0;
+    /** @type {number[]} */
     const cambiosSector = [];
 
     socket.on('join_sector', async ({ sectorId } = {}) => {
@@ -245,6 +270,7 @@ const initSocketHandler = (io, {
     socket.on('disconnect', () => {
       conexiones.quitar(socket.user.id, socket.id);
       console.log(`[Socket.io] Desconexión: usuario=${socket.user.id} socket=${socket.id}`);
+      registrarSocket(socket, 'desconectar');
     });
   });
 };

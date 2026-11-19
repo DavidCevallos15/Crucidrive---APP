@@ -118,6 +118,11 @@ Spec aprobada por David el 4 nov 2026, con las propuestas de E1 a E6. Se entrega
 - `typescript` como dependencia de desarrollo del backend; esta spec la justifica.
 - `npm run typecheck` y un paso nuevo en el CI.
 - Este paso marca con `// @ts-check` los archivos nuevos y los que toca.
+- Ajustes al implementar (19 nov 2026):
+  - **`@types/express`:** sin él, `app.js` no se puede revisar.
+  - **`src/types/socket.d.ts`:** declara `socket.user` y `socket.supabase`.
+  - **`useUnknownInCatchVariables: false`:** los `catch (err)` siguen leyendo `err.message`, como en el resto del código.
+  - **`module: nodenext`:** TypeScript 6 retira la resolución `node`.
 - En la constitución, D-01 pasa a decidida.
 
 ---

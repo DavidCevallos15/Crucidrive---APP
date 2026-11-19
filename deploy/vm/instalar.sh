@@ -74,6 +74,11 @@ fi
 chown root:crucidrive /etc/crucidrive/api.env
 chmod 640 /etc/crucidrive/api.env
 
+echo "==> Registro de 14 días en journald (paso 007, E3)"
+mkdir -p /etc/systemd/journald.conf.d
+cp "$REPO/deploy/vm/journald-crucidrive.conf" /etc/systemd/journald.conf.d/crucidrive.conf
+systemctl restart systemd-journald
+
 echo "==> Servicio y HTTPS para https://$DOMINIO"
 cp "$REPO/deploy/vm/crucidrive-api.service" /etc/systemd/system/crucidrive-api.service
 sed "s/^DOMINIO {/$DOMINIO {/" "$REPO/deploy/vm/Caddyfile" > /etc/caddy/Caddyfile
