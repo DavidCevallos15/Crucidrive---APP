@@ -73,9 +73,9 @@ Spec aprobada por David el 4 nov 2026, con las propuestas de E1 a E6. Se entrega
 
 **P8 · Tope de cancelaciones (brecha 3, E2).**
 - `backend/src/viaje/limiteCancelaciones.js`, con la misma forma que `sancion.js`. Variables: `CANCELACIONES_MAX` (1 a 50, por defecto 5), `CANCELACIONES_VENTANA_MIN` (5 a 1440, por defecto 60) y `CANCELACIONES_BLOQUEO_MIN` (5 a 1440, por defecto 30).
-- Cuenta los viajes del pasajero con `estado = 'cancelado'`, `cancelado_por = 'pasajero'` y `finalizado_en` dentro de la ventana. Usa el índice `idx_viajes_finalizados_por_pasajero` de la 0017.
+- Cuenta los viajes del pasajero con `estado = 'cancelado'`, `cancelado_por = 'pasajero'` y `finalizado_en` dentro de la ventana. Usa `idx_viajes_pasajero` (0004): el índice `idx_viajes_finalizados_por_pasajero` de la 0017 es parcial sobre `finalizado_por = 'pasajero'` y una cancelación no lo llena. Son pocas filas por pasajero, así que no hace falta un índice nuevo (ajuste del 19 nov 2026).
 - `solicitarViaje` lo revisa junto a `revisarSancion` y responde 429 con `Retry-After` y la hora local.
-- Hay que comprobar que el `PATCH /:id/estado` heredado también deje `cancelado_por`. Si no lo deja, una cancelación con `cancelado_por` nulo en estado `solicitado` cuenta como del pasajero.
+- Hay que comprobar que el `PATCH /:id/estado` heredado también deje `cancelado_por`. Si no lo deja, una cancelación con `cancelado_por` nulo en estado `solicitado` cuenta como del pasajero. → Comprobado: desde el 005 esa ruta pasa por `cancelar_viaje` (0017), que siempre lo deja.
 - **Riesgo aceptado:** la política `viajes_insert_pasajero` deja insertar un viaje directo por la API sin pasar por el backend. Ese viaje no genera ofertas ni avisos, porque el despacho lo arranca el backend, así que no sirve para molestar a conductores. Llevar la regla a la BD queda fuera de este paso.
 
 **P9 · Límites por usuario (brecha 5, E6).**

@@ -5,6 +5,11 @@ jest.mock('../src/viaje/sancion', () => ({
   ...jest.requireActual('../src/viaje/sancion'),
   revisarSancion: jest.fn(async () => ({ llevas: 0, bloqueadoHasta: null })),
 }));
+// El tope de cancelaciones del 007 tiene sus pruebas en limiteCancelaciones.test.js.
+jest.mock('../src/viaje/limiteCancelaciones', () => ({
+  ...jest.requireActual('../src/viaje/limiteCancelaciones'),
+  revisarCancelaciones: jest.fn(async () => ({ llevas: 0, bloqueadoHasta: null })),
+}));
 const { solicitarViaje } = require('../src/controllers/viajeController');
 const { armarOferta } = require('../src/despacho/oferta');
 const res = () => ({ status: jest.fn().mockReturnThis(), json: jest.fn().mockReturnThis() });
