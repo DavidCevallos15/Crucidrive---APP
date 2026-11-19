@@ -2,6 +2,26 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.86.0] - 2026-11-19 (Hora Local)
+
+### 018 · Enmienda 1: Google Maps también en la web
+- **Pedido de David:** que el mapa se vea como en Google Maps en todos los teléfonos.
+- **Documentos:**
+  - Spec: W3 pasa a «Google Maps en la web» y se agregan los criterios 14 y 15.
+  - Constitución: se amplía D-02.
+  - Plan: P6. Tareas: T10 y T11.
+- **App web:**
+  - `Map.web.tsx` carga Maps JavaScript una sola vez, sin dependencias nuevas. Usa el mismo estilo claro que Android y dibuja los marcadores: la tricimoto como círculo vino, el pin del administrador y el punto azul «Tú».
+  - Si falta la clave, si Google no carga o si la rechaza, vuelve a OpenStreetMap.
+  - Los cálculos están en `utils/mapaWeb.ts`.
+- **Pruebas:**
+  - 6 nuevas en `mapaWeb018.test.ts`.
+  - `tsc` sin errores.
+  - En WebKit con un iPhone emulado y una clave falsa, Google la rechaza y el mapa vuelve solo a OpenStreetMap, sin errores.
+- **Pendiente de David (T11):** crear la clave web en Google Cloud, restringida a `https://app.tricimoto.app/*` y a Maps JavaScript API, con un tope de 300 cargas por día.
+
+---
+
 ## [1.85.1] - 2026-11-19 (Hora Local)
 
 ### 018 · App web publicada en `app.tricimoto.app`
