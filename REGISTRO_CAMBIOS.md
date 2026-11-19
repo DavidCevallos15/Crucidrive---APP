@@ -2,6 +2,23 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.84.1] - 2026-11-19 (Hora Local)
+
+### 007 · T13: PR 2 en producción
+- **Orden seguido:**
+  1. 0018 aplicada (solo funciones).
+  2. App publicada por aire en `preview` (grupo `5fe5ccb3`).
+  3. Backend actualizado por David en la VM (`fb8838f`, servicio reiniciado a las 18:06 UTC).
+  4. 0019 aplicada (quita la lectura directa de `perfiles.telefono` y `consentimientos.id`).
+- **Advisors de seguridad:** solo «Leaked Password Protection», apagada a propósito (D-10, plan de pago).
+- **Comprobado en producción** con el rol `authenticated`, como administrador y sin modificar datos:
+  - `mi_perfil` y `telefonos_admin` devuelven el teléfono;
+  - los perfiles se siguen viendo;
+  - `select telefono from perfiles` responde `permission denied`.
+- **Falta probar a mano:** crear un perfil nuevo y abrir el panel del administrador en la app.
+
+---
+
 ## [1.84.0] - 2026-11-19 (Hora Local)
 
 ### 007 · PR 2: datos de la otra parte, cancelaciones, límites y cuentas (T8 a T12)
