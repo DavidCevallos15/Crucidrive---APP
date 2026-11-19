@@ -2,6 +2,41 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.83.0] - 2026-11-19 (Hora Local)
+
+### 017 · Parte A: pedir sin depender del mapa (spec aprobada, D-21)
+- **Aprobación:** David aprobó R1 a R8 con las propuestas. Respuesta a R7: en Crucita no tenía megas; no faltó la señal. Se agregó D-21 a la constitución (pedir por SMS como respaldo, con número receptor propio).
+- **Plan y tareas:** `specs/017-pedido-sin-internet/plan.md` y `tasks.md`. La parte A se hace ya; el SMS (B a G), después del PR 2 del 007.
+- **App (solo JavaScript, sale por aire):**
+  - **Sin internet:** si hay sesión y el socket lleva 6 s sin conectar (`estaSinInternet` y `useSinInternet`), aparece la píldora «Sin internet · Revisa tus datos o megas» junto al menú. Se descartaron NetInfo y `expo-network`: son nativos, obligan a un APK nuevo y, sin megas, Android sigue diciendo «conectado».
+  - **Plano simple:** `PlanoSectores` dibuja con SVG los 5 sectores, el mar, la salida, la llegada y «Tú» (con GPS) en el 35 % del alto que el mapa deja libre. No usa la red.
+  - **Pedido sin respuesta:** `solicitar` devuelve `sinConexion`. La pantalla muestra «No se pudo enviar» con «Reintentar», que reenvía el mismo pedido. Si el primer envío sí llegó, el 409 del índice único (0012) sincroniza y muestra ese viaje sin error. No hubo cambios de BD ni de backend.
+  - `sectorDeDestino` en `utils/solicitud.ts`.
+- **Pruebas:**
+  - Frontend 500/500, con 17 nuevas en `tests/sinInternet017.test.ts`.
+  - `tsc --noEmit` sin errores.
+  - Revisión del plano con un render del SVG en 360 × 640 y 393 × 852.
+  - **No se probó en un teléfono:** falta la T7 de David (APK `preview` por aire, con los datos móviles apagados).
+
+---
+
+## [1.82.0] - 2026-11-19 (Hora Local)
+
+### Pruebas de campo del 004 y del 005 aprobadas por David; spec 017 en borrador (pedir sin internet)
+- **Prueba en Crucita (19 nov 2026):** el teléfono de prueba no tenía internet. No cargó ni el mapa y no se pudo pedir. David da la app por funcional y pide seguir.
+- **Aprobadas sin medición:**
+  - 004 T17 y 007 D3. Quedan sin medir la oferta en menos de 5 s, los 10 min en segundo plano, el aviso permanente y el ahorro de batería (criterios 1, 3, 6 y 20).
+  - 005 T12. No quedó registro de cada paso del viaje y la encomienda.
+  - Se miden en el piloto (008), en Crucita y con datos.
+- **017 · Pedir sin internet (borrador):**
+  - A: pedir sin depender del mapa, plano simple de los sectores sin conexión y reintentos sin viajes duplicados.
+  - B a G: si el pasajero lo activa, pedir por SMS con su saldo. La app abre la aplicación de mensajes con el texto listo y la persona decide si lo envía. Un número de CruciDrive lo recibe y el servidor crea el viaje con las mismas reglas. Las respuestas también van por SMS.
+  - Faltan las decisiones R1 a R8 de David. Si se aprueba, se agrega D-21 a la constitución.
+- `specs/README.md`: pasos 4 y 5 completos; fila nueva del 017.
+- Sin cambios de código.
+
+---
+
 ## [1.81.0] - 2026-11-04 (Hora Local)
 
 ### 007 · T15: contraseña de 10 con letras y números en la app; correo con Brevo listo (D1)
