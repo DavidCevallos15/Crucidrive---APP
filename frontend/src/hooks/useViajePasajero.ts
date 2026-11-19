@@ -103,7 +103,8 @@ const crearLector = (descartados: Set<string>): LectorViaje => ({
   },
 });
 
-type Resultado = { ok: true } | { ok: false; mensaje: string };
+/** `sinConexion`: la red falló o se acabó el tiempo; la pantalla ofrece reintentar (017, criterio 3). */
+type Resultado = { ok: true } | { ok: false; mensaje: string; sinConexion?: true };
 type ResultadoTerminar = { ok: true; sancion: Sancion | null } | { ok: false; mensaje: string };
 const SESION_CAMBIO = 'Tu sesión cambió. Vuelve a abrir el viaje con tu cuenta.';
 const SIN_CONEXION = 'No se pudo conectar con el servidor. Revisa tu conexión.';
@@ -195,8 +196,12 @@ export const useViajePasajero = (socket: Pick<ReturnType<typeof useSocket>, 'onE
       const body = await response.json().catch(() => null);
       if (!scope.isCurrent()) return { ok: false, mensaje: SESION_CAMBIO };
       if (!response.ok) {
-        // 409: ya tiene un viaje activo (criterio 13); se muestra ese viaje.
-        if (response.status === 409) void sincronizar();
+        // 409: ya tiene un viaje activo (criterio 13 del 003; índice único de la 0012). Si es un
+        // reintento cuyo primer envío sí llegó, ese viaje es el pedido: se muestra sin error (017, P4).
+        if (response.status === 409) {
+          await sincronizar();
+          if (scope.isCurrent() && useRideStore.getState().activeRide) return { ok: true };
+        }
         return { ok: false, mensaje: body?.message ?? 'No se pudo solicitar el viaje.' };
       }
       const viaje = body?.data;
@@ -220,7 +225,7 @@ export const useViajePasajero = (socket: Pick<ReturnType<typeof useSocket>, 'onE
       return { ok: true };
     } catch (error) {
       console.error('[Viaje] Error al solicitar:', error);
-      return { ok: false, mensaje: SIN_CONEXION };
+      return { ok: false, mensaje: SIN_CONEXION, sinConexion: true };
     } finally {
       if (scope.isCurrent()) setRequesting(false);
     }

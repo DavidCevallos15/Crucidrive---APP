@@ -41,7 +41,11 @@ import { AVISO_FUERA_ZONA, estadoZona, gpsDeServicio } from '../utils/zonaServic
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../store/useAuthStore';
 import { separacionInferior } from '../utils/barraPestanas';
-import { altoMaximoHoja, esCompacta } from '../utils/compacto';
+import { altoMaximoHoja, esCompacta, MAPA_VISIBLE_MIN } from '../utils/compacto';
+import { TEXTO_NO_SE_PUDO_ENVIAR } from '../utils/conexion';
+import { useSinInternet } from '../hooks/useSinInternet';
+import { AvisoSinInternet } from '../components/AvisoSinInternet';
+import { PlanoSectores } from '../components/PlanoSectores';
 import { HojaDesplazable } from '../components/HojaDesplazable';
 import { HojaCierreViaje } from '../components/HojaCierreViaje';
 import { TarjetaViajePasajero } from '../components/TarjetaViajePasajero';
@@ -58,6 +62,7 @@ import {
   nombreLibreValido,
   referenciaEnSector,
   resolverOrigen,
+  sectorDeDestino,
   sectorDeOrigen,
   type Destino,
   type Gps,
@@ -66,6 +71,10 @@ import {
 
 /** Panel visible cuando no hay un viaje en marcha. */
 type Panel = 'destino' | 'origen' | 'ficha';
+
+/** Plano sin internet (017, P3): debajo de la fila del menú, dentro del 35 % que el mapa deja libre. */
+const PLANO_TOPE = 72;
+const PLANO_ALTO_MIN = 120;
 
 /**
  * Pantalla principal del mapa para el pasajero.
@@ -81,7 +90,7 @@ type Panel = 'destino' | 'origen' | 'ficha';
  */
 export const MapScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
-  const { height } = useWindowDimensions();
+  const { height, width } = useWindowDimensions();
   // Con sesión hay barra de pestañas (absoluta): las hojas suben lo que ella mide.
   const conBarra = useAuthStore((st) => Boolean(st.session));
   const separacion = separacionInferior(conBarra, insets.bottom);
@@ -103,6 +112,8 @@ export const MapScreen: React.FC = () => {
   const socket = useSocket();
   const { joinSector, onEvent } = socket;
   const viaje = useViajePasajero(socket);
+  // Sin internet: aviso fijo y plano simple en lugar del mapa vacío (017, criterio 2).
+  const sinInternet = useSinInternet(socket.isConnected);
   const nearbyDrivers = useLocationStore((s) => s.nearbyDrivers);
   const updateNearbyDriver = useLocationStore((s) => s.updateNearbyDriver);
   const podarConductores = useLocationStore((s) => s.podarConductores);
@@ -230,6 +241,25 @@ export const MapScreen: React.FC = () => {
     if (!resultado.ok) Alert.alert('No se pudo completar', resultado.mensaje);
   };
 
+  /**
+   * Pedido sin respuesta del servidor (017, criterio 3): no se da por hecho y se ofrece reintentar.
+   * Reintentar no duplica el viaje: la BD admite uno activo por pasajero y el hook lo muestra.
+   */
+  const avisarPedido = (
+    resultado: { ok: true } | { ok: false; mensaje: string; sinConexion?: true },
+    reintentar: () => void
+  ) => {
+    if (resultado.ok) return;
+    if (!resultado.sinConexion) {
+      avisarSiFalla(resultado);
+      return;
+    }
+    Alert.alert(TEXTO_NO_SE_PUDO_ENVIAR.titulo, TEXTO_NO_SE_PUDO_ENVIAR.mensaje, [
+      { text: TEXTO_NO_SE_PUDO_ENVIAR.cerrar, style: 'cancel' },
+      { text: TEXTO_NO_SE_PUDO_ENVIAR.reintentar, onPress: reintentar },
+    ]);
+  };
+
   const handleRequestRide = useCallback(async () => {
     const parcel = { descripcion: parcelDescription.trim(), destinatario: recipient.trim(), autorizado: authorized };
     if (isParcel) {
@@ -243,17 +273,18 @@ export const MapScreen: React.FC = () => {
       return;
     }
     if (!origen || !destino) return;
-    avisarSiFalla(
-      await viaje.solicitar({
-        origen,
-        destino,
-        pasajeros: isParcel ? 1 : passengers,
-        tipoServicio: service,
-        ...(isParcel ? { encomienda: parcel } : {}),
-        origenNota: origen.tipo === 'sector' ? originNote : '',
-        destinoNota: destinationNote,
-      })
-    );
+    const pedido = {
+      origen,
+      destino,
+      pasajeros: isParcel ? 1 : passengers,
+      tipoServicio: service,
+      ...(isParcel ? { encomienda: parcel } : {}),
+      origenNota: origen.tipo === 'sector' ? originNote : '',
+      destinoNota: destinationNote,
+    };
+    // Reintentar envía el mismo pedido, aunque el formulario haya cambiado mientras tanto.
+    const enviar = async (): Promise<void> => avisarPedido(await viaje.solicitar(pedido), () => void enviar());
+    await enviar();
   }, [session, router, origen, destino, passengers, originNote, destinationNote, viaje, isParcel, service, parcelDescription, recipient, authorized]);
 
   const handleCancelRequest = useCallback(async () => {
@@ -291,7 +322,8 @@ export const MapScreen: React.FC = () => {
   }, [viaje]);
 
   const handleRetry = useCallback(async () => {
-    avisarSiFalla(await viaje.volverAPedir(gps));
+    const enviar = async (): Promise<void> => avisarPedido(await viaje.volverAPedir(gps), () => void enviar());
+    await enviar();
   }, [viaje, gps]);
 
   // ─── Activar botón de pánico ──────────────────────────────
@@ -411,6 +443,21 @@ export const MapScreen: React.FC = () => {
         )}
       </MapView>
 
+      {/* ─── SIN INTERNET: PLANO SIMPLE EN LUGAR DEL MAPA VACÍO (017) ─ */}
+      {sinInternet && (
+        <View style={[StyleSheet.absoluteFill, styles.planoFondo]} pointerEvents="none">
+          <View style={{ marginTop: insets.top + PLANO_TOPE }}>
+            <PlanoSectores
+              ancho={width}
+              alto={Math.max(PLANO_ALTO_MIN, Math.floor(height * MAPA_VISIBLE_MIN) - insets.top - PLANO_TOPE - SPACING.xs)}
+              origenSectorId={activeRide ? activeRide.originSectorId : sectorDeOrigen(origen)}
+              destinoSectorId={activeRide ? activeRide.destinationSectorId : sectorDeDestino(destino)}
+              gps={gps?.coords ?? null}
+            />
+          </View>
+        </View>
+      )}
+
       {/* ─── ESTADO DE UBICACIÓN ───────────────────────────── */}
       <Animated.View
         entering={PANEL_IN}
@@ -419,6 +466,7 @@ export const MapScreen: React.FC = () => {
       >
         <View style={styles.statusRow}>
         <AppMenuButton />
+        {sinInternet && <AvisoSinInternet />}
         </View>
       </Animated.View>
 
@@ -876,6 +924,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs,
   },
 
+  planoFondo: { backgroundColor: COLORS.paper },
   container: {
     flex: 1,
     backgroundColor: COLORS.darkBg,

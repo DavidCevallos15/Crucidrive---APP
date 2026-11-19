@@ -2,6 +2,24 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.83.0] - 2026-11-19 (Hora Local)
+
+### 017 · Parte A: pedir sin depender del mapa (spec aprobada, D-21)
+- **Aprobación:** David aprobó R1 a R8 con las propuestas. Respuesta a R7: en Crucita no tenía megas; no faltó la señal. Se agregó D-21 a la constitución (pedir por SMS como respaldo, con número receptor propio).
+- **Plan y tareas:** `specs/017-pedido-sin-internet/plan.md` y `tasks.md`. La parte A se hace ya; el SMS (B a G), después del PR 2 del 007.
+- **App (solo JavaScript, sale por aire):**
+  - **Sin internet:** si hay sesión y el socket lleva 6 s sin conectar (`estaSinInternet` y `useSinInternet`), aparece la píldora «Sin internet · Revisa tus datos o megas» junto al menú. Se descartaron NetInfo y `expo-network`: son nativos, obligan a un APK nuevo y, sin megas, Android sigue diciendo «conectado».
+  - **Plano simple:** `PlanoSectores` dibuja con SVG los 5 sectores, el mar, la salida, la llegada y «Tú» (con GPS) en el 35 % del alto que el mapa deja libre. No usa la red.
+  - **Pedido sin respuesta:** `solicitar` devuelve `sinConexion`. La pantalla muestra «No se pudo enviar» con «Reintentar», que reenvía el mismo pedido. Si el primer envío sí llegó, el 409 del índice único (0012) sincroniza y muestra ese viaje sin error. No hubo cambios de BD ni de backend.
+  - `sectorDeDestino` en `utils/solicitud.ts`.
+- **Pruebas:**
+  - Frontend 500/500, con 17 nuevas en `tests/sinInternet017.test.ts`.
+  - `tsc --noEmit` sin errores.
+  - Revisión del plano con un render del SVG en 360 × 640 y 393 × 852.
+  - **No se probó en un teléfono:** falta la T7 de David (APK `preview` por aire, con los datos móviles apagados).
+
+---
+
 ## [1.82.0] - 2026-11-19 (Hora Local)
 
 ### Pruebas de campo del 004 y del 005 aprobadas por David; spec 017 en borrador (pedir sin internet)

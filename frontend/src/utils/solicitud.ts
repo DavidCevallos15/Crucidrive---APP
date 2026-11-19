@@ -59,6 +59,12 @@ export const sectorDeOrigen = (origen: Origen | null): string | null => {
   return origen.sectorId;
 };
 
+/** Sector del destino, si se conoce sin preguntar al servidor (un lugar puede no tenerlo). */
+export const sectorDeDestino = (destino: Destino | null): string | null => {
+  if (!destino) return null;
+  return destino.tipo === 'lugar' ? destino.lugar.sector_id : destino.sectorId;
+};
+
 export const nombreOrigen = (origen: Origen | null, nota = ''): string => {
   if (!origen) return '';
   if (origen.tipo === 'lugar') return origen.lugar.nombre;
