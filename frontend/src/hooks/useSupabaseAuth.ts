@@ -5,7 +5,7 @@ import type { UserProfile, VerificationInfo } from '../store/useAuthStore';
 import { API_CONFIG } from '../constants/config';
 import { authFetch } from '../utils/authFetch';
 import { normalizarEmail } from '../utils/validators';
-import { mensajeDeAuth } from '../utils/mensajesAuth';
+import { mensajeDeAuth, resultadoDeRegistro } from '../utils/mensajesAuth';
 import { registroAvisos } from '../servicios/avisos';
 import { detenerSeguimientoFondo } from '../tareas/ubicacionFondo';
 import { captureAccountScope } from '../utils/accountScope';
@@ -180,12 +180,12 @@ export const useSupabaseAuth = ({ bootstrap = false }: { bootstrap?: boolean } =
       if (error) {
         // Al log (adb logcat en el APK): el usuario solo ve el mensaje traducido.
         console.warn('[Auth] Supabase Auth respondió con error:', error.name, error.status, error.message);
-        const mensaje = mensajeDeAuth(error.message);
-        setAuthError(mensaje);
-        return { ok: false, error: mensaje };
       }
-      // Con confirmación de correo activada no hay sesión hasta que el usuario confirma.
-      return { ok: true, requiereConfirmarCorreo: !data.session };
+      // Con confirmación de correo activada no hay sesión hasta que el usuario confirma. Un correo
+      // ya registrado recibe la misma respuesta que uno nuevo (007, criterio 21).
+      const resultado = resultadoDeRegistro(error, Boolean(data?.session));
+      if (!resultado.ok) setAuthError(resultado.error);
+      return resultado;
     } catch (err) {
       const mensaje = mensajeDeAuth(err instanceof Error ? err.message : 'Error de conexión.');
       setAuthError(mensaje);

@@ -11,6 +11,7 @@ import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
 import { COLORS, FONTS, SPACING } from '../constants/theme';
 import { validarEmail, validarPassword, PASSWORD_MIN } from '../utils/validators';
 import { esCompacta } from '../utils/compacto';
+import { avisoCuentaCreada } from '../utils/mensajesAuth';
 
 type Modo = 'entrar' | 'crear';
 
@@ -64,7 +65,7 @@ export const LoginScreen: React.FC = () => {
     if (!r.ok) {
       setErrores({ general: r.error });
     } else if (r.requiereConfirmarCorreo) {
-      setAviso(`Te enviamos un correo a ${email.trim()}. Confírmalo y luego inicia sesión.`);
+      setAviso(avisoCuentaCreada(email));
       setModo('entrar');
       setPassword('');
     }
