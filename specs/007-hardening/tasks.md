@@ -22,8 +22,8 @@ Cada tarea se tilda cuando su prueba pasa, nunca antes. «C» es el criterio de 
 ## PR 3 · Registro, contraseñas, tipos y D-01
 - [x] **T14 · Registro de acceso.** *Prueba (C19 y C20):* una petición con cuerpo `{ nombre, telefono }` y consulta `?lat=` deja una línea sin esos datos y con uid, ruta, estado, IP y user-agent. Se documenta journald a 14 días. → `backend/tests/registroAcceso.test.js` (8 pruebas, sobre una app de Express real). El socket escribe el mismo formato al conectar y al desconectar. `deploy/vm/journald-crucidrive.conf` (14 días, en disco, tope de 500 MB) lo instala `instalar.sh` y se documenta en `deploy/vm/README.md`. Se aplica en la VM la próxima vez que David corra `instalar.sh`.
 - [x] **T15 · Contraseñas de 10 con letras y números.** *Prueba (C23):* `validarPassword` rechaza `abcdefghij` y `1234567890` y acepta `abcde12345`. David aplica el cambio en el panel.
-- [ ] **T16 · `tsc` en el CI del frontend (T18).** *Prueba (C24):* el CI corre `tsc --noEmit` y pasa.
-- [ ] **T17 · `typecheck` del backend con JSDoc (D-01).** *Prueba (C27):* `npm run typecheck` pasa en el CI y la suite tiene 392 tests o más.
+- [x] **T16 · `tsc` en el CI del frontend (T18).** *Prueba (C24):* el CI corre `tsc --noEmit` y pasa. → Paso nuevo en `ci.yml`. En local, `tsc --noEmit` ya no daba errores: la deuda de unos 210 errores se había pagado en pasos anteriores.
+- [x] **T17 · `typecheck` del backend con JSDoc (D-01).** *Prueba (C27):* `npm run typecheck` pasa en el CI y la suite tiene 392 tests o más. → `backend/jsconfig.json` (estricto, `checkJs` por archivo), `typescript` 6.0.3 y `@types/express` 5.0.6 como dependencias de desarrollo, `npm run typecheck` y su paso en `ci.yml`. Revisa 8 archivos con `// @ts-check`, entre ellos `app.js` y `socketHandler.js`, que tocó este PR. Encontró un error real: `leerEntero` solo aceptaba los límites de la sanción. La suite tiene 459 tests.
 
 ## PR 4 · Auditoría del APK
 - [ ] **T18 · REA sobre el APK `preview`.** *Prueba (C25):* existe `auditoria-apk.md`, con los permisos justificados, los componentes exportados, la firma y la key de Maps.

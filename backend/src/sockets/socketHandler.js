@@ -1,3 +1,4 @@
+// @ts-check
 const { supabase, createUserClient } = require('../config/supabase');
 const { guardarUbicacion } = require('../ubicacion/servicio');
 const { checkThreadMembership } = require('../utils/supabaseHelpers');
@@ -12,7 +13,11 @@ const { leerTrustProxy } = require('../config/trustProxy');
 
 const DETRAS_DE_PROXY = leerTrustProxy(process.env.TRUST_PROXY) !== false;
 
-/** Registro de acceso del socket (007, criterio 19): mismo formato que las peticiones REST. */
+/**
+ * Registro de acceso del socket (007, criterio 19): mismo formato que las peticiones REST.
+ * @param {import('socket.io').Socket} socket
+ * @param {'conectar' | 'desconectar'} evento
+ */
 const registrarSocket = (socket, evento) => {
   if (process.env.NODE_ENV === 'test') return;
   const linea = lineaSocket({
@@ -105,8 +110,10 @@ const initSocketHandler = (io, {
 
     // Una sola sala de sector por conexión, solo sectores del catálogo y un tope de cambios por
     // minuto: así nadie escucha todos los sectores a la vez ni los recorre en bucle (007, C1 y C2).
+    /** @type {string | null} */
     let sectorActual = null;
     let turnoSector = 0;
+    /** @type {number[]} */
     const cambiosSector = [];
 
     socket.on('join_sector', async ({ sectorId } = {}) => {

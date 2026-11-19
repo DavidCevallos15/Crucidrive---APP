@@ -31,7 +31,7 @@ Las fechas y los criterios de cada paso están en `specs/README.md`. No adelante
 | Parte | Tecnología | Dónde |
 | --- | --- | --- |
 | App móvil y PWA | Expo (React Native), Expo Router, TypeScript, Zustand, react-native-maps (Google Maps), socket.io-client | `frontend/` |
-| API y tiempo real | Node.js, Express 5, Socket.io, JavaScript CommonJS (migrar a TS es la decisión abierta D-01) | `backend/` |
+| API y tiempo real | Node.js, Express 5, Socket.io, JavaScript CommonJS con JSDoc y `// @ts-check` (D-01, cerrada) | `backend/` |
 | Datos y auth | Supabase: Postgres 17, PostGIS, Auth, RLS | `supabase/` |
 | Builds | EAS (`frontend/eas.json`; el perfil `preview` genera APK) | — |
 
@@ -79,7 +79,7 @@ David trabaja en Windows (PowerShell o Git Bash) y en Fedora (bash). Si das coma
 
 ## Convenciones de código
 
-- TypeScript estricto en el frontend. En el backend, JavaScript con JSDoc hasta que se resuelva D-01.
+- TypeScript estricto en el frontend. En el backend, JavaScript con JSDoc (D-01): los archivos nuevos y los que tocas llevan `// @ts-check` y pasan `npm run typecheck`.
 - Funciones cortas y modulares; `try/catch` o `asyncHandler` en toda operación asíncrona.
 - Los comentarios y textos de UI van en español. Los identificadores siguen la convención que ya existe en el código: términos de dominio en español, iguales a la BD (`viaje`, `perfil`, `tricimoto`, `sector`), y términos técnicos genéricos en inglés. No renombres en masa.
 - La UI es glassmorphism según `DESIGN.md`, con botones grandes y alto contraste para conductores. Debe existir un modo ligero sin blur para teléfonos modestos (constitución, regla 6).
@@ -90,7 +90,7 @@ David trabaja en Windows (PowerShell o Git Bash) y en Fedora (bash). Si das coma
 - Backend: jest con clientes de Supabase simulados (`req.supabase`), en `backend/tests/`.
 - BD: scripts SQL en `supabase/tests/`.
 - El CI (`.github/workflows/ci.yml`) corre los tests de backend y frontend, más `npm audit --omit=dev`, en cada PR. No fusiones con el CI en rojo.
-- Deuda conocida: `tsc --noEmit` en el frontend arrastra unos 210 errores previos (tipos de Jest y `baseUrl`). No agregues nuevos (tarea T18).
+- El CI corre `tsc --noEmit` en el frontend y `npm run typecheck` en el backend (007, T16 y T17). Los dos deben quedar sin errores.
 
 ## Git
 

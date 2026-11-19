@@ -8,6 +8,7 @@
     "dev": "nodemon src/index.js",
     "test": "jest --coverage",
     "test:watch": "jest --watch",
+    "typecheck": "tsc -p jsconfig.json",
     "smoke": "node scripts/smoke.js",
     "lugares:importar": "node scripts/importar-lugares.js"
   },
@@ -36,8 +37,10 @@
     "socket.io": "^4.8.3"
   },
   "devDependencies": {
+    "@types/express": "5.0.6",
     "jest": "^30.4.2",
     "nodemon": "^3.1.14",
-    "socket.io-client": "^4.8.4"
+    "socket.io-client": "^4.8.4",
+    "typescript": "6.0.3"
   }
 }

@@ -24,6 +24,8 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
       - run: npm test
+      # JavaScript con JSDoc (D-01): se revisan los archivos marcados con // @ts-check (007, T17).
+      - run: npm run typecheck
       # Solo dependencias de producción: las de desarrollo (jest, nodemon) no llegan al servidor.
       - name: Auditoría de dependencias de producción
         run: npm audit --omit=dev --audit-level=high
@@ -42,3 +44,5 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm test -- --ci
+      # Tipos del frontend (007, T16; antes T18).
+      - run: npx tsc --noEmit

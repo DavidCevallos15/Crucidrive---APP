@@ -1,3 +1,4 @@
+// @ts-check
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -28,8 +29,12 @@ const getAllowedOrigins = () =>
     ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
     : DEFAULT_ORIGINS;
 
+/**
+ * @param {string | undefined} value
+ * @param {number} fallback
+ */
 const toInt = (value, fallback) => {
-  const n = Number.parseInt(value, 10);
+  const n = Number.parseInt(value ?? '', 10);
   return Number.isFinite(n) && n > 0 ? n : fallback;
 };
 
@@ -46,7 +51,8 @@ const createApp = () => {
 
   // Antes de todo, para registrar también los 404 y los 429 (007, criterio 19).
   app.use(crearRegistroAcceso());
-  app.use(helmet());
+  // helmet se publica como ESM con export por defecto; en CommonJS el require ya es la función.
+  app.use(/** @type {any} */ (helmet)());
   // Sesiones, coordenadas y documentos de identidad no deben quedar en cachés HTTP.
   app.use('/api', (req, res, next) => {
     res.set('Cache-Control', 'no-store');
@@ -94,7 +100,7 @@ const createApp = () => {
 
   // JSON malformado, payload demasiado grande u otro error no capturado.
   // eslint-disable-next-line no-unused-vars
-  app.use((err, req, res, next) => {
+  app.use((/** @type {any} */ err, /** @type {import('express').Request} */ req, /** @type {import('express').Response} */ res, /** @type {import('express').NextFunction} */ next) => {
     const status = Number.isInteger(err.status) && err.status >= 400 && err.status < 600 ? err.status : 500;
     const mensaje = status === 400 ? 'Cuerpo de la petición inválido.'
       : status === 413 ? 'Cuerpo de la petición demasiado grande.'
