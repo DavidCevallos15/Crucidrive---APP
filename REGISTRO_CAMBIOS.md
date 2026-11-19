@@ -2,6 +2,30 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.85.0] - 2026-11-19 (Hora Local)
+
+### 018 · CruciDrive en iPhone como app web instalable
+- **Spec aprobada:** David aceptó W1 a W4 con las propuestas. Sobre W5, no tiene un iPhone ahora: la prueba real queda pendiente (T9).
+- **Problema encontrado:** el proyecto `crucidrive-app` de Vercel nunca compiló la app. Cada despliegue tardaba unos 4 s, no publicaba nada y `crucidrive-app.vercel.app` respondía 404.
+- **Publicación (P1):**
+  - `frontend/vercel.json` compila con `expo export --platform web` y publica `dist`, con reescritura a `index.html`.
+  - Caché: `no-cache` para la página y `immutable` para los paquetes con hash. Cabeceras de seguridad.
+  - En Vercel quedaron cargadas las variables `EXPO_PUBLIC_*` (las mismas del APK `preview`) y el dominio `app.tricimoto.app`.
+- **Caché sin conexión (P2):** versión `v3`. La navegación sigue yendo primero a la red.
+- **Guía de instalación (P3, W4):** un aviso la primera vez en un iPhone sin instalar («Compartir → Añadir a pantalla de inicio»), que se recuerda al cerrarlo. La misma guía está en Configuración y Ayuda.
+- **Conductor en la web (P4, W2):** la consola y la verificación se reemplazan por «Usa la app de Android para conducir».
+- **Pruebas:**
+  - Frontend 524/524, con 12 nuevas en `tests/appWeb018.test.ts`.
+  - `tsc` sin errores. `expo export --platform web` compila.
+  - Revisión en WebKit 18.2 con un iPhone 13 emulado: la guía sale en Safari, no vuelve tras «Entendido», no sale con la app instalada y no hay errores de JavaScript.
+  - **No se probó en un iPhone real.**
+- **Pendiente de David:**
+  - T6: carpeta raíz `frontend` en Vercel.
+  - T7: CNAME de `app` en Name.com.
+  - T8: `https://app.tricimoto.app` en `ALLOWED_ORIGINS` de la VM.
+
+---
+
 ## [1.84.1] - 2026-11-19 (Hora Local)
 
 ### 007 · T13: PR 2 en producción
