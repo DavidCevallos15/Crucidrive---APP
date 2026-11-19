@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const { rateLimit } = require('express-rate-limit');
 const { errorResponse } = require('./utils/response');
 const { leerTrustProxy } = require('./config/trustProxy');
+const { crearRegistroAcceso } = require('./middlewares/registroAcceso');
 
 const authRoutes = require('./routes/authRoutes');
 const viajeRoutes = require('./routes/viajeRoutes');
@@ -43,6 +44,8 @@ const createApp = () => {
   // de una cabecera que también puede enviar un cliente sin proxy.
   app.set('trust proxy', leerTrustProxy(process.env.TRUST_PROXY));
 
+  // Antes de todo, para registrar también los 404 y los 429 (007, criterio 19).
+  app.use(crearRegistroAcceso());
   app.use(helmet());
   // Sesiones, coordenadas y documentos de identidad no deben quedar en cachés HTTP.
   app.use('/api', (req, res, next) => {
