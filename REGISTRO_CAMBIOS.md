@@ -2,6 +2,13 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.86.1] - 2026-11-19 (Hora Local)
+
+### 018 · Verificación de Google Search Console para `app.tricimoto.app`
+- `frontend/public/google93dcb36a7e9a1e5f.html` es el archivo de verificación de David y se sirve en la raíz. Vercel entrega primero los archivos que existen, así que la reescritura a `index.html` no lo tapa.
+
+---
+
 ## [1.86.0] - 2026-11-19 (Hora Local)
 
 ### 018 · Enmienda 1: Google Maps también en la web
