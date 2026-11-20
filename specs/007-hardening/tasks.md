@@ -26,10 +26,10 @@ Cada tarea se tilda cuando su prueba pasa, nunca antes. «C» es el criterio de 
 - [x] **T17 · `typecheck` del backend con JSDoc (D-01).** *Prueba (C27):* `npm run typecheck` pasa en el CI y la suite tiene 392 tests o más. → `backend/jsconfig.json` (estricto, `checkJs` por archivo), `typescript` 6.0.3 y `@types/express` 5.0.6 como dependencias de desarrollo, `npm run typecheck` y su paso en `ci.yml`. Revisa 8 archivos con `// @ts-check`, entre ellos `app.js` y `socketHandler.js`, que tocó este PR. Encontró un error real: `leerEntero` solo aceptaba los límites de la sanción. La suite tiene 459 tests.
 
 ## PR 4 · Auditoría del APK
-- [ ] **T18 · REA sobre el APK `preview`.** *Prueba (C25):* existe `auditoria-apk.md`, con los permisos justificados, los componentes exportados, la firma y la key de Maps.
-- [ ] **T19 · Hallazgos altos corregidos o justificados.** *Prueba (C26):* ninguno queda abierto sin justificación escrita.
+- [x] **T18 · REA sobre el APK `preview`.** *Prueba (C25):* existe `auditoria-apk.md`, con los permisos justificados, los componentes exportados, la firma y la key de Maps. → `auditoria-apk.md` del 19 nov 2026 sobre la compilación `efa4b568`. Se usó androguard en lugar de REA porque la PC no tiene `build-tools`; cubre lo mismo y el JavaScript queda fuera de alcance (D-20).
+- [x] **T19 · Hallazgos altos corregidos o justificados.** *Prueba (C26):* ninguno queda abierto sin justificación escrita. → A1, seis permisos sin uso, y A2, `allowBackup`, quedan corregidos en `app.json` y protegidos por `frontend/tests/permisosApk007.test.ts`. Salen en el próximo APK. A3 (SHA-1 de la clave de Maps) queda pendiente de D2.
 
 ## David
 - [x] **D1 ·** Supabase Auth: «Confirm email» activo; longitud mínima 10 con letras y dígitos.
-- [ ] **D2 ·** Google Cloud: key de Maps restringida a `com.crucidrive.app` y al SHA-1 de EAS.
+- [ ] **D2 ·** Google Cloud: key de Maps restringida a `com.crucidrive.app` y al SHA-1 de EAS. SHA-1 del APK: `78:46:15:05:E4:E0:5B:A5:A4:6B:40:A0:71:8E:F6:C4:51:94:6B:9C` (ver `auditoria-apk.md`).
 - [x] **D3 ·** Prueba de campo del 004 T17 después del PR 1. → aprobada por David el 19 nov 2026 sin medición (ver 004 T17).
