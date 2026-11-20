@@ -27,7 +27,16 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "com.crucidrive.app",
-      "predictiveBackGestureEnabled": true
+      "predictiveBackGestureEnabled": true,
+      "allowBackup": false,
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -39,7 +48,8 @@
         "expo-image-picker",
         {
           "photosPermission": "CruciDrive necesita tu galer\u00eda para que elijas las fotos de verificaci\u00f3n.",
-          "cameraPermission": "CruciDrive necesita la c\u00e1mara para tomar tu foto, la de tu c\u00e9dula y la de tu tricimoto."
+          "cameraPermission": "CruciDrive necesita la c\u00e1mara para tomar tu foto, la de tu c\u00e9dula y la de tu tricimoto.",
+          "microphonePermission": false
         }
       ],
       [

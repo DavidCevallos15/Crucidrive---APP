@@ -2,6 +2,23 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.88.0] - 2026-11-19 (Hora Local)
+
+### 007 · PR 4: auditoría del APK (T18 y T19; D-20)
+- **Qué se auditó:** el APK `preview` `efa4b568` del 4 nov, con androguard (análisis estático, sin decompilar el JavaScript). El informe está en `specs/007-hardening/auditoria-apk.md` e incluye:
+  - los permisos con su justificación y el texto de ubicación en segundo plano para Play Store;
+  - los 5 componentes exportados, todos necesarios o protegidos por permisos del sistema;
+  - la firma, con el SHA-1 `78:46:15:05:E4:E0:5B:A5:A4:6B:40:A0:71:8E:F6:C4:51:94:6B:9C`;
+  - la clave de Maps.
+- **Corregido en `app.json`** (sale en el próximo APK, no por aire):
+  - A1, alta: se quitan micrófono, ventana flotante, almacenamiento externo y huella, que la app no usa.
+  - A2, media: `allowBackup: false`.
+  - `npx expo config --type introspect` lo confirma y `tests/permisosApk007.test.ts` lo protege.
+- **Sin hallazgos:** el APK no es depurable, no admite tráfico sin cifrar y no lleva la clave de servicio de Supabase ni claves de Stripe.
+- **Pendiente:** D2. David confirma en Google Cloud que la clave de Maps para Android usa este SHA-1.
+
+---
+
 ## [1.87.0] - 2026-11-19 (Hora Local)
 
 ### 007 · PR 3: registro de acceso, tipos y D-01 (T14, T16 y T17)
