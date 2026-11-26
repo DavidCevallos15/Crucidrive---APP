@@ -1,9 +1,11 @@
+import { LEGAL_HOLDER, LEGAL_URLS } from './legal';
+
 /**
- * Texto de consentimiento y aviso de privacidad (LOPDP).
- * Versión 0.3, BORRADOR pendiente de revisión legal: debe coincidir con
- * specs/002-identidad/consentimiento-lopdp.md y con CONSENT_VERSION del backend.
+ * Texto de consentimiento y aviso de privacidad (LOPDP Ecuador, spec 002 y spec 019).
+ * Versión 1.0: debe coincidir con specs/002-identidad/consentimiento-lopdp.md,
+ * https://tricimoto.app/privacidad y CONSENT_VERSION del backend.
  */
-export const CONSENT_VERSION = '0.3';
+export const CONSENT_VERSION = '1.0';
 
 export interface SeccionConsentimiento {
   titulo: string;
@@ -12,8 +14,13 @@ export interface SeccionConsentimiento {
 
 export const CONSENTIMIENTO: SeccionConsentimiento[] = [
   {
+    titulo: 'Responsable y contacto',
+    texto: `Responsable: ${LEGAL_HOLDER.name} (RUC ${LEGAL_HOLDER.ruc}), domiciliado en ${LEGAL_HOLDER.address}. Consultas de privacidad y soporte: ${LEGAL_HOLDER.supportEmail}. Documentos completos disponibles en ${LEGAL_URLS.privacy} y ${LEGAL_URLS.terms}.`,
+  },
+  {
     titulo: 'Encomiendas y datos de entrega',
-    texto: 'Si solicitas una encomienda, guardamos su descripción y el nombre de quien recibe. Debes tener autorización para compartir esos datos. Solo tu cuenta, el conductor asignado después de aceptar y los administradores pueden consultarlos. El precio se acuerda directamente por el chat antes de entregar el paquete; la app no lo cobra ni lo fija.',
+    texto:
+      'Si solicitas una encomienda, guardamos su descripción y el nombre de quien recibe. Debes tener autorización para compartir esos datos. Solo tu cuenta, el conductor asignado después de aceptar y los administradores pueden consultarlos. El precio se acuerda directamente por el chat antes de entregar el paquete; no envíes objetos ilícitos ni peligrosos.',
   },
   {
     titulo: 'Qué datos recogemos y para qué',
@@ -23,17 +30,16 @@ export const CONSENTIMIENTO: SeccionConsentimiento[] = [
   {
     titulo: 'Quién puede verlos',
     texto:
-      'El conductor o pasajero de tu viaje ve solo tu nombre y teléfono (y la placa del conductor). Durante el viaje, el pasajero ve en el mapa dónde viene su conductor; nadie más lo ve. Los administradores de CruciDrive ven lo necesario para operar. La cédula y las fotos solo las ven el propio conductor y los administradores. Usamos Supabase para guardar los datos, Google Maps para el mapa, y Expo y Google (Firebase) para los avisos al teléfono, que no llevan el nombre, el teléfono ni la ubicación del pasajero. Del conductor solo guardamos su última posición, no un historial de recorridos. No vendemos tus datos ni los usamos para publicidad.',
+      'El conductor o pasajero de tu viaje ve solo tu nombre y teléfono (y la placa del conductor) únicamente mientras el servicio está activo. Durante el viaje, el pasajero ve en el mapa dónde viene su conductor; nadie más lo ve. Los administradores de CruciDrive ven lo necesario para operar. La cédula y las fotos solo las ven el propio conductor y los administradores. Usamos Supabase para guardar los datos, Microsoft Azure para el servidor API, Google Maps para el mapa, Brevo para correos de verificación y Expo junto a Google (Firebase) para los avisos al teléfono, que no llevan el nombre, el teléfono ni la ubicación del pasajero. Del conductor solo guardamos su última posición, no un historial de recorridos. No vendemos tus datos ni usamos cookies publicitarias ni de analítica.',
   },
   {
     titulo: 'Cuánto tiempo los guardamos',
     texto:
-      'Mientras tengas la cuenta activa y un plazo después de cerrarla, salvo que la ley exija otra cosa. La cédula y las fotos de un conductor rechazado o dado de baja se borran a los 30 días.',
+      'Mientras tengas la cuenta activa y hasta 12 meses después de cerrarla por seguridad o exigencia legal. La cédula y las fotos de un conductor rechazado o dado de baja se borran en un máximo de 30 días. Los registros técnicos de acceso del servidor (sin nombres ni teléfonos) se conservan 14 días.',
   },
   {
     titulo: 'Tus derechos',
-    texto:
-      'Puedes pedir acceso, rectificación, eliminación, oposición, limitación y portabilidad de tus datos, y retirar este consentimiento, en cualquier momento. También puedes reclamar ante la Superintendencia de Protección de Datos Personales.',
+    texto: `Puedes pedir acceso, rectificación, eliminación, oposición, limitación y portabilidad de tus datos, y retirar este consentimiento en cualquier momento desde Configuración → Mi cuenta, en ${LEGAL_URLS.deleteAccount} o escribiendo a ${LEGAL_HOLDER.supportEmail}. También puedes reclamar ante la Superintendencia de Protección de Datos Personales del Ecuador.`,
   },
   {
     titulo: 'El 911',
@@ -41,4 +47,4 @@ export const CONSENTIMIENTO: SeccionConsentimiento[] = [
   },
 ];
 
-export const TEXTO_ACEPTACION = 'He leído y acepto el tratamiento de mis datos personales';
+export const TEXTO_ACEPTACION = 'He leído y acepto la Política de Privacidad y los Términos de Uso';

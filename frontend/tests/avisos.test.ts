@@ -545,11 +545,11 @@ describe('T13 · "Estuviste fuera del despacho" (criterio 20)', () => {
   });
 });
 
-describe('T13 · consentimiento 0.3 antes de ponerse disponible (criterio 5)', () => {
+describe('T13 · consentimiento 1.0 antes de ponerse disponible (criterio 5)', () => {
   const texto = CONSENTIMIENTO.map((s) => s.texto).join(' ');
 
   test('la versión que acepta la app es la que exige el servidor', () => {
-    expect(CONSENT_VERSION).toBe('0.3');
+    expect(CONSENT_VERSION).toBe('1.0');
   });
 
   test('el texto cuenta la ubicación en segundo plano, cuándo se detiene y los avisos', () => {

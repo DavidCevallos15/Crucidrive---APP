@@ -5,10 +5,14 @@ import { AuthScaffold } from '../components/AuthScaffold';
 import { GlassCard } from '../components/GlassCard';
 import { GlassButton } from '../components/GlassButton';
 import { GlassInput } from '../components/GlassInput';
+import { CheckboxRow } from '../components/CheckboxRow';
 import { PressableScale } from '../components/PressableScale';
 import { Ionicons } from '@expo/vector-icons';
 import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
 import { COLORS, FONTS, SPACING } from '../constants/theme';
+import { LEGAL_URLS } from '../constants/legal';
+import { openLegalUrl } from '../servicios/abrirEnlaceLegal';
+import { TEXTO_ACEPTACION } from '../constants/consentimiento';
 import { validarEmail, validarPassword, PASSWORD_MIN } from '../utils/validators';
 import { esCompacta } from '../utils/compacto';
 import { avisoCuentaCreada } from '../utils/mensajesAuth';
@@ -30,28 +34,31 @@ export const LoginScreen: React.FC = () => {
   const [modo, setModo] = useState<Modo>('entrar');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errores, setErrores] = useState<{ email?: string; password?: string; general?: string }>({});
+  const [acceptedLegal, setAcceptedLegal] = useState(false);
+  const [errores, setErrores] = useState<{ email?: string; password?: string; legal?: string; general?: string }>({});
   const [aviso, setAviso] = useState<string | null>(null);
   const enviando = useRef(false);
 
   const cambiarModo = useCallback((nuevo: Modo) => {
     if (enviando.current) return;
     setModo(nuevo);
+    setAcceptedLegal(false);
     setErrores({});
     setAviso(null);
   }, []);
 
   const enviar = useCallback(async () => {
     if (enviando.current || isLoading) return;
-    const nuevos = {
+    const nuevos: { email?: string; password?: string; legal?: string } = {
       email: validarEmail(email) ?? undefined,
       password: validarPassword(password) ?? undefined,
+      legal: modo === 'crear' && !acceptedLegal ? 'Debes aceptar la Política de Privacidad y los Términos de Uso.' : undefined,
     };
     // En "entrar" basta con que haya contraseña; el mínimo solo se exige al crearla.
     if (modo === 'entrar' && password) nuevos.password = undefined;
     setErrores(nuevos);
     setAviso(null);
-    if (nuevos.email || nuevos.password) return;
+    if (nuevos.email || nuevos.password || nuevos.legal) return;
 
     enviando.current = true;
     try {
@@ -72,7 +79,7 @@ export const LoginScreen: React.FC = () => {
     } finally {
       enviando.current = false;
     }
-  }, [modo, email, password, signIn, signUp, isLoading]);
+  }, [modo, email, password, acceptedLegal, signIn, signUp, isLoading]);
 
   return (
     <AuthScaffold welcome>
@@ -135,6 +142,18 @@ export const LoginScreen: React.FC = () => {
           required
         />
 
+        {modo === 'crear' && (
+          <CheckboxRow
+            label={TEXTO_ACEPTACION}
+            checked={acceptedLegal}
+            onChange={(next) => {
+              setAcceptedLegal(next);
+              setErrores((e) => ({ ...e, legal: undefined }));
+            }}
+            error={errores.legal}
+          />
+        )}
+
         {errores.general ? (
           <Text style={styles.errorGeneral} accessibilityRole="alert">
             {errores.general}
@@ -153,6 +172,27 @@ export const LoginScreen: React.FC = () => {
         <View style={[styles.privacy, compacta && styles.privacyCompact]}>
           <Ionicons name="lock-closed-outline" size={16} color={COLORS.primaryLight} />
           <Text style={styles.privacyText}>Tu ubicación se comparte durante el viaje. Si conduces, también cuando estás disponible.</Text>
+        </View>
+        <View style={styles.legalLinks}>
+          <PressableScale
+            onPress={() => {
+              void openLegalUrl(LEGAL_URLS.privacy);
+            }}
+            accessibilityRole="link"
+            style={styles.legalLink}
+          >
+            <Text style={styles.legalLinkText}>Política de Privacidad</Text>
+          </PressableScale>
+          <Text style={styles.legalDot}>·</Text>
+          <PressableScale
+            onPress={() => {
+              void openLegalUrl(LEGAL_URLS.terms);
+            }}
+            accessibilityRole="link"
+            style={styles.legalLink}
+          >
+            <Text style={styles.legalLinkText}>Términos de Uso</Text>
+          </PressableScale>
         </View>
         </View>
       </GlassCard>
@@ -183,6 +223,10 @@ const styles = StyleSheet.create({
   modeTextActive: { color: COLORS.white },
   privacy: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm, marginTop: SPACING.md },
   privacyText: { flex: 1, color: COLORS.glassTextMutedDark, fontFamily: FONTS.body, fontSize: FONTS.sizes.xs, lineHeight: 18 },
+  legalLinks: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: SPACING.xs, marginTop: SPACING.sm },
+  legalLink: { minHeight: 36, justifyContent: 'center', paddingHorizontal: SPACING.xs },
+  legalLinkText: { color: COLORS.primaryLight, fontFamily: FONTS.body, fontSize: FONTS.sizes.xs, textDecorationLine: 'underline' },
+  legalDot: { color: COLORS.glassTextMutedDark, fontFamily: FONTS.body, fontSize: FONTS.sizes.xs },
   titulo: {
     fontSize: FONTS.sizes.xxl,
     fontFamily: FONTS.heading,

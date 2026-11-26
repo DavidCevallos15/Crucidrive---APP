@@ -2,6 +2,36 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.89.0] - 2026-11-25 (Hora Local)
+
+### 019 · Cumplimiento legal previo a Play Store y seguridad web; borrador `020-pagos-y-comisiones`
+- **Páginas legales públicas HTTPS en `web/` (`https://tricimoto.app`):**
+  - `web/privacidad.html` (`/privacidad`, v1.0, < 2.000 palabras): titular **David Cevallos** (RUC `1350766547001`, Crucita, Portoviejo, Manabí, Ecuador, `soporte@tricimoto.app`), tabla completa LOPDP con base legal y plazos de conservación (incluida ubicación en segundo plano de conductores), proveedores externos, 0 cookies publicitarias/analítica, derechos ARCO y Superintendencia de Protección de Datos Personales.
+  - `web/terminos.html` (`/terminos`, v1.0, < 3.000 palabras): intermediación tecnológica, requisitos de cuentas y conductores, viajes y encomiendas (prohibición de objetos ilícitos o peligrosos), prohibición de scraping e ingeniería inversa, SOS ≠ 911, limitación de responsabilidad al 100 % de lo pagado en los últimos 12 meses y jurisdicción de Portoviejo, Ecuador.
+  - `web/reembolsos.html` (`/reembolsos`, v1.0): pagos en efectivo, reglas de créditos de conductores, reintegro automático cuando el pasajero cancela antes de iniciar el servicio y soporte en ≤ 5 días hábiles.
+  - `web/eliminar-cuenta.html` (`/eliminar-cuenta`): eliminación inmediata dentro de la app y solicitud web para cumplir Google Play Data Safety, con tabla de plazos de borrado.
+  - `web/index.html` mantiene intacta la confirmación de correo y enlaza los 4 documentos legales al pie.
+- **Consentimiento `1.0` y enlaces en la app:**
+  - `CONSENT_VERSION` pasa de `'0.3'` a `'1.0'` en `backend/src/config/consent.js` (ahora con `// @ts-check`), `frontend/src/constants/consentimiento.ts` y `specs/002-identidad/consentimiento-lopdp.md`, quitando la leyenda de borrador.
+  - Constantes centralizadas en `frontend/src/constants/legal.ts` y apertura segura en `frontend/src/servicios/abrirEnlaceLegal.ts`.
+  - `LoginScreen.tsx`: casilla explícita sin premarcar al crear cuenta con correo + enlaces a Privacidad y Términos.
+  - `CompleteProfileScreen.tsx` y `SettingsScreen.tsx`: enlaces directos a los documentos públicos y acceso a preferencias web.
+  - `frontend/app/diseno.tsx`: redirige a `/` fuera de `__DEV__`.
+- **Preferencias de cookies y almacenamiento en `app.tricimoto.app`:**
+  - `frontend/src/utils/preferenciasWeb.ts` y `PreferenciasWebModal.tsx` (solo web, montado en `app/_layout.tsx` y reabrible desde Configuración): 3 opciones claras («Solo esenciales», «Personalizar», «Aceptar mapa») con registro de versión y caducidad a 180 días.
+  - `Map.web.tsx` respeta la preferencia en vivo: con «Solo esenciales» usa OpenStreetMap sin cargar el script de Google Maps.
+- **Cabeceras de seguridad y limpieza:**
+  - `web/vercel.json` y `frontend/vercel.json`: agregados `Strict-Transport-Security` y `Content-Security-Policy` compatibles con Google Maps y OpenStreetMap.
+  - Auditoría de historial git sin `.env`, llaves privadas ni credenciales expuestas; `Claude outputs/` agregado a `.gitignore`.
+  - `specs/007-hardening/tasks.md`: `D2` marcada como completada (confirmada por David el 25 nov 2026 junto con el despliegue del backend PR 3).
+  - `specs/018-app-web-iphone/tasks.md` y `specs/README.md`: eliminadas filas duplicadas del merge #81; agregadas filas `019` y borrador `020-pagos-y-comisiones`.
+- **Pruebas:**
+  - Backend: 459/459 (24 suites), `npm run typecheck` sin errores.
+  - Frontend: 548/548 (44 suites, con `tests/cumplimientoLegal019.test.ts`), `npx tsc --noEmit` sin errores.
+- **Al actualizar la VM:** tras fusionar a `main`, reiniciar el backend activa `CONSENT_VERSION = '1.0'` (los conductores que aceptaron `0.3` confirman `1.0` automáticamente al ponerse disponibles).
+
+---
+
 ## [1.88.0] - 2026-11-19 (Hora Local)
 
 ### 007 · PR 4: auditoría del APK (T18 y T19; D-20)

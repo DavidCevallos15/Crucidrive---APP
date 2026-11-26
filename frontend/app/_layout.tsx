@@ -22,6 +22,7 @@ import { useRespuestaAvisos } from '../src/hooks/useRespuestaAvisos';
 import { variablesFaltantes } from '../src/constants/config';
 import { AppMenuProvider } from '../src/components/AppMenuButton';
 import { AvisoInstalarIphone } from '../src/components/AvisoInstalarIphone';
+import { PreferenciasWebModal } from '../src/components/PreferenciasWebModal';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -124,6 +125,7 @@ function AppRaiz() {
       <StatusBar style="dark" />
       <AppMenuProvider><Slot /></AppMenuProvider>
       <AvisoInstalarIphone />
+      <PreferenciasWebModal />
     </GestureHandlerRootView>
   );
 }

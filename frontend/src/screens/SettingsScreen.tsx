@@ -10,6 +10,8 @@ import { PressableScale } from '../components/PressableScale';
 import { GlassButton } from '../components/GlassButton';
 import { BrandLockup } from '../components/BrandLockup';
 import { COLORS, FONTS, SPACING } from '../constants/theme';
+import { LEGAL_HOLDER, LEGAL_URLS } from '../constants/legal';
+import { openLegalUrl } from '../servicios/abrirEnlaceLegal';
 import { CONSENTIMIENTO, CONSENT_VERSION } from '../constants/consentimiento';
 import { useAuthStore } from '../store/useAuthStore';
 import { notificaciones } from '../servicios/notificaciones';
@@ -18,6 +20,7 @@ import { leerEstadoActualizacion } from '../servicios/actualizacion';
 import { textoActualizacion } from '../utils/actualizacion';
 import { DeleteAccountPanel } from '../components/DeleteAccountPanel';
 import { TEXTO_INSTALAR, leerEntorno, pasosInstalar } from '../utils/instalarIphone';
+import { requestOpenWebPreferencesModal } from '../utils/preferenciasWeb';
 
 export type SettingsPage = 'configuracion' | 'cuenta' | 'privacidad' | 'seguridad' | 'ayuda' | 'acerca';
 const titles: Record<SettingsPage, string> = { configuracion: 'Configuración', cuenta: 'Mi cuenta', privacidad: 'Privacidad y mis datos', seguridad: 'Seguridad y emergencias', ayuda: '¿Cómo te ayudamos?', acerca: 'Acerca de CruciDrive' };
@@ -103,9 +106,10 @@ export default function SettingsScreen({ page }: { page: SettingsPage }) {
         <Text style={styles.explanation}>Estos estados vienen del dispositivo. Puedes cambiarlos desde sus ajustes. No solicitamos cámara ni galería hasta que las necesitas para verificar tu perfil de conductor.</Text>
         <Text style={styles.group}>Información y asistencia</Text>
         {row('Seguridad', 'Cuenta, conductor y emergencias', 'shield-checkmark-outline', () => go('seguridad'))}
-        {row('Privacidad y mis datos', 'Uso de datos, consentimiento y cuenta', 'lock-closed-outline', () => go('privacidad'))}
+        {row('Privacidad y mis datos', 'Privacidad, términos, reembolsos y cuenta', 'lock-closed-outline', () => go('privacidad'))}
         {row('Ayuda', 'Viajes, encomiendas y solución de problemas', 'help-circle-outline', () => go('ayuda'))}
         {row('Acerca de la app', 'Servicios, tarifas y versión', 'information-circle-outline', () => go('acerca'))}
+        {Platform.OS === 'web' && row('Preferencias de cookies y mapa', 'Elegir entre Google Maps o solo almacenamiento esencial', 'options-outline', () => requestOpenWebPreferencesModal())}
         {Platform.OS === 'web' && row('Instalar en el iPhone', 'Agrégala a la pantalla de inicio desde Safari', 'phone-portrait-outline', () => go('ayuda'))}
       </>}
       {page === 'cuenta' && <>
@@ -117,8 +121,14 @@ export default function SettingsScreen({ page }: { page: SettingsPage }) {
         </> : <GlassButton label="Iniciar sesión o crear cuenta" onPress={() => router.push('/(auth)/login')} size="lg" variant="secondary" />}
       </>}
       {page === 'privacidad' && <>
-        <Text style={styles.intro}>Aviso de privacidad · Versión {CONSENT_VERSION}. El texto actual está pendiente de revisión legal antes de publicar.</Text>
+        <Text style={styles.intro}>Política de Privacidad · Versión {CONSENT_VERSION} · Responsable: {LEGAL_HOLDER.name} (RUC {LEGAL_HOLDER.ruc}) · {LEGAL_HOLDER.supportEmail}.</Text>
         {CONSENTIMIENTO.map((s) => paragraph(s.titulo, s.texto))}
+        <Text style={styles.group}>Documentos legales públicos</Text>
+        {row('Política de Privacidad (web)', LEGAL_URLS.privacy, 'document-text-outline', () => { void openLegalUrl(LEGAL_URLS.privacy); })}
+        {row('Términos de Uso', LEGAL_URLS.terms, 'reader-outline', () => { void openLegalUrl(LEGAL_URLS.terms); })}
+        {row('Política de Reembolsos', LEGAL_URLS.refunds, 'receipt-outline', () => { void openLegalUrl(LEGAL_URLS.refunds); })}
+        {row('Eliminar cuenta (web)', LEGAL_URLS.deleteAccount, 'trash-outline', () => { void openLegalUrl(LEGAL_URLS.deleteAccount); })}
+        {Platform.OS === 'web' && row('Preferencias de cookies y mapa', 'Cambiar tu elección de mapa externo en cualquier momento', 'options-outline', () => requestOpenWebPreferencesModal())}
         {row('Gestionar mi cuenta', 'Consultar mi perfil y eliminar mi cuenta', 'person-circle-outline', () => go('cuenta'))}
       </>}
       {page === 'seguridad' && <>
