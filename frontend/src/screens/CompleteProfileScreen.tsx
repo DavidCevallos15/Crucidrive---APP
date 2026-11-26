@@ -9,6 +9,8 @@ import { CheckboxRow } from '../components/CheckboxRow';
 import { PressableScale } from '../components/PressableScale';
 import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
 import { COLORS, FONTS, SPACING } from '../constants/theme';
+import { LEGAL_URLS } from '../constants/legal';
+import { openLegalUrl } from '../servicios/abrirEnlaceLegal';
 import { CONSENTIMIENTO, CONSENT_VERSION, TEXTO_ACEPTACION } from '../constants/consentimiento';
 import {
   normalizarNombre,
@@ -148,11 +150,29 @@ export const CompleteProfileScreen: React.FC = () => {
                 <Text style={styles.seccionTexto}>{s.texto}</Text>
               </View>
             ))}
-            <Text style={styles.borrador}>
-              Texto en revisión legal; puede cambiar y se te volverá a pedir tu consentimiento.
-            </Text>
           </View>
         )}
+
+        <View style={styles.enlacesLegales}>
+          <PressableScale
+            onPress={() => {
+              void openLegalUrl(LEGAL_URLS.privacy);
+            }}
+            accessibilityRole="link"
+            style={styles.enlaceInline}
+          >
+            <Text style={styles.enlaceTexto}>Política de Privacidad (web)</Text>
+          </PressableScale>
+          <PressableScale
+            onPress={() => {
+              void openLegalUrl(LEGAL_URLS.terms);
+            }}
+            accessibilityRole="link"
+            style={styles.enlaceInline}
+          >
+            <Text style={styles.enlaceTexto}>Términos de Uso</Text>
+          </PressableScale>
+        </View>
 
         {errores.general ? (
           <Text style={styles.errorGeneral} accessibilityRole="alert">
@@ -198,6 +218,8 @@ const styles = StyleSheet.create({
     lineHeight: FONTS.sizes.sm * FONTS.lineHeights.normal,
   },
   enlace: { minHeight: 44, justifyContent: 'center', marginBottom: SPACING.sm },
+  enlacesLegales: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.md, marginBottom: SPACING.sm },
+  enlaceInline: { minHeight: 40, justifyContent: 'center' },
   enlaceTexto: {
     color: COLORS.primaryLight,
     fontSize: FONTS.sizes.sm,

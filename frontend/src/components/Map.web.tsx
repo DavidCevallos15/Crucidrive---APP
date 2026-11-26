@@ -10,6 +10,11 @@ import {
   usarGoogleMaps,
   vistaDesdeRegion,
 } from '../utils/mapaWeb';
+import {
+  allowsGoogleMapsByPreferences,
+  readWebPreferences,
+  subscribeWebPreferences,
+} from '../utils/preferenciasWeb';
 
 /**
  * Mapa de la app web (spec 018, Enmienda 1). Con la clave web de Google se ve Google Maps con el
@@ -117,15 +122,30 @@ type MapViewProps = {
 
 const MapView = (props: MapViewProps) => {
   const { children, style, initialRegion, region, showsUserLocation, onPress } = props;
-  const [modo, setModo] = useState<'google' | 'osm'>(usarGoogleMaps(CLAVE) && !claveRechazada ? 'google' : 'osm');
+  const [mapaAutorizado, setMapaAutorizado] = useState<boolean>(() => allowsGoogleMapsByPreferences(readWebPreferences()));
+  const [modo, setModo] = useState<'google' | 'osm'>(
+    usarGoogleMaps(CLAVE) && !claveRechazada && allowsGoogleMapsByPreferences(readWebPreferences()) ? 'google' : 'osm',
+  );
   const [mapa, setMapa] = useState<Google | null>(null);
   const contenedor = useRef<HTMLDivElement | null>(null);
   const alTocar = useRef(onPress);
   alTocar.current = onPress;
 
+  // Escucha cambios en las preferencias web (spec 019, criterio 11).
+  useEffect(() => subscribeWebPreferences((prefs) => {
+    const allowed = allowsGoogleMapsByPreferences(prefs);
+    setMapaAutorizado(allowed);
+    if (!allowed) {
+      setMapa(null);
+      setModo('osm');
+    } else if (usarGoogleMaps(CLAVE) && !claveRechazada) {
+      setModo('google');
+    }
+  }), []);
+
   // Crear el mapa una vez que Google cargó.
   useEffect(() => {
-    if (modo !== 'google' || !CLAVE) return undefined;
+    if (modo !== 'google' || !CLAVE || !mapaAutorizado) return undefined;
     let vivo = true;
     const volverAOsm = () => { if (vivo) setModo('osm'); };
     alRechazar.add(volverAOsm);
@@ -153,7 +173,7 @@ const MapView = (props: MapViewProps) => {
     };
     // initialRegion solo sirve al crear; region se sigue en el efecto de abajo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modo]);
+  }, [modo, mapaAutorizado]);
 
   // region controlada (consola del conductor): mover el mapa cuando cambia.
   useEffect(() => {

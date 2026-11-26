@@ -25,6 +25,8 @@
       color: #fff; font-weight: 700; font-size: 17px; text-decoration: none; min-height: 52px; }
     a.boton:focus-visible { outline: 3px solid var(--texto); outline-offset: 3px; }
     footer { padding: 14px 24px; border-top: 1px solid var(--borde); font-size: 13px; color: var(--suave); }
+    footer nav { display: flex; flex-wrap: wrap; gap: 10px 14px; margin-top: 8px; }
+    footer a { color: var(--vino); }
     [hidden] { display: none !important; }
   </style>
 </head>
@@ -53,7 +55,15 @@
       <p>CruciDrive conecta a pasajeros y conductores de tricimoto en Crucita, Manabí. Está en pruebas y pronto estará disponible.</p>
     </section>
 
-    <footer>CruciDrive no es un servicio de emergencias. En peligro, llama al 911.</footer>
+    <footer>
+      <div>CruciDrive no es un servicio de emergencias. En peligro, llama al 911.</div>
+      <nav aria-label="Documentos legales">
+        <a href="/privacidad">Privacidad</a>
+        <a href="/terminos">Términos</a>
+        <a href="/reembolsos">Reembolsos</a>
+        <a href="/eliminar-cuenta">Eliminar cuenta</a>
+      </nav>
+    </footer>
   </main>
 
   <script>

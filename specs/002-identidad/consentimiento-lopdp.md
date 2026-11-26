@@ -1,45 +1,42 @@
-# Consentimiento y aviso de privacidad — CruciDrive (v0.3, BORRADOR)
+# Consentimiento y aviso de privacidad — CruciDrive (v1.0)
 
-> **Borrador técnico, no es asesoría legal.** Basado en la Ley Orgánica de Protección de Datos Personales de Ecuador (LOPDP). Debe revisarlo un abogado antes del piloto. Los textos entre `[corchetes]` están por completar. Cada cambio de fondo sube la versión (`v0.2`, …) y se vuelve a pedir el consentimiento.
+> Vigente desde el 25 de noviembre de 2026. Basado en la Ley Orgánica de Protección de Datos Personales de Ecuador (LOPDP). Versión publicada en `https://tricimoto.app/privacidad`. Cada cambio de fondo sube la versión (`1.1`, `2.0`, …) y vuelve a solicitar el consentimiento explícito.
 
-## 1. Quién es responsable de tus datos
-**[Nombre del responsable: persona natural, cooperativa o GAD]**, con contacto en **[correo]**. CruciDrive es una aplicación para pedir tricimotos en Crucita (parroquia Crucita, cantón Portoviejo, Manabí).
+## 1. Responsable del tratamiento y contacto
+**David Cevallos** (RUC `1350766547001`), domiciliado en la parroquia **Crucita, cantón Portoviejo, provincia de Manabí, Ecuador**, con correo de contacto para privacidad y soporte **`soporte@tricimoto.app`**, es el responsable del tratamiento de los datos personales recogidos en CruciDrive (aplicación móvil Android y versión web `app.tricimoto.app`).
 
-## 2. Qué datos recogemos y para qué
+## 2. Qué datos recogemos, para qué y con qué base legal
 
-| Dato | Quién | Para qué |
-| --- | --- | --- |
-| Nombre, teléfono y correo | Todos | Crear tu cuenta y que el conductor y tú puedan comunicarse durante un viaje |
-| Ubicación (GPS) | Pasajero: mientras pide un viaje. Conductor: mientras está disponible, **también con la app en segundo plano o la pantalla bloqueada** (un aviso permanente en el teléfono lo indica), y durante el viaje. Se detiene al ponerse no disponible o cerrar sesión | Mostrar tricimotos cercanas, asignar el viaje al conductor más cercano, que el pasajero vea llegar a su tricimoto y atender una emergencia |
-| Identificador del teléfono para avisos | Todos | Avisarte de una oferta de viaje o de que te aceptaron aunque la app esté cerrada. Se borra al cerrar sesión |
-| Mensajes del chat del viaje | Pasajero y conductor del viaje | Coordinar la recogida |
-| Descripción del paquete y nombre de quien recibe | Solicitante de una encomienda, con autorización para compartir los datos | Coordinar recogida y entrega. Solo el solicitante, el conductor asignado después de aceptar y los administradores pueden consultarlos. El precio se acuerda por chat antes de entregar el paquete |
-| Número de pasajeros y destino del viaje | Pasajero | Calcular el total (0,50 USD por persona) y asignar el viaje |
-| Cédula, foto de la cédula, foto personal y foto de la tricimoto y su placa | Solo conductores | Verificar tu identidad y aprobarte como conductor, por seguridad de los pasajeros |
+| Dato personal | A quién aplica | Finalidad | Base legal (LOPDP) | Conservación |
+| --- | --- | --- | --- | --- |
+| Nombre, correo y teléfono | Pasajeros y conductores | Crear cuenta, verificar correo y coordinar viajes/encomiendas | Ejecución del servicio y consentimiento explícito | Mientras la cuenta esté activa y hasta 12 meses tras el cierre por seguridad/obligación legal |
+| Ubicación (GPS) en primer plano | Pasajeros y conductores | Mostrar tricimotos cercanas, asignar viajes y atender emergencias SOS | Consentimiento explícito y ejecución del servicio | Solo durante la solicitud o el viaje; sin historial de recorridos |
+| Ubicación (GPS) en segundo plano | Solo conductores en estado «Disponible» | Recibir ofertas cercanas con la pantalla apagada (con aviso permanente visible); se detiene al pasar a «No disponible» o cerrar sesión | Consentimiento explícito | Solo última posición activa; no se guarda historial de recorridos |
+| Identificador del teléfono para avisos (push token) | Pasajeros y conductores (app móvil) | Notificar ofertas y cambios de estado con la app cerrada (sin nombre ni teléfono en el texto del aviso) | Ejecución del servicio | Se elimina al cerrar sesión o eliminar la cuenta |
+| Mensajes del chat del viaje | Pasajero y conductor del viaje | Coordinar recogida y, en encomiendas, acordar el precio | Ejecución del servicio | Vinculado al viaje; acceso restringido a las partes y administración |
+| Descripción del paquete y nombre del destinatario | Solicitante de encomienda | Coordinar recogida y entrega (el solicitante declara autorización del destinatario) | Ejecución del servicio y consentimiento | Vinculado a la encomienda; visible solo para solicitante, conductor asignado y administración |
+| Cédula, foto personal, foto de cédula y foto de tricimoto con placa | Solo conductores | Verificar identidad y habilitar la unidad por seguridad de los pasajeros | Consentimiento explícito e interés legítimo en seguridad | Mientras sea conductor activo; **30 días** tras rechazo o baja, luego se eliminan |
+| Registros técnicos de acceso (IP, ruta sin consulta, fecha, agente de usuario) | Todos | Prevenir abuso, fraude y fallos del servidor (sin nombres, teléfonos ni coordenadas) | Interés legítimo y seguridad informática | **14 días** en el servidor |
+| Preferencias locales (sesión y preferencia de mapa web) | Todos / usuarios web | Mantener sesión iniciada y recordar preferencia de mapa externo (`Google Maps` u `OpenStreetMap`) | Necesario para el servicio / consentimiento en preferencias web | Hasta cierre de sesión o caducidad de 180 días en preferencias web |
 
-No vendemos tus datos ni los usamos para publicidad.
+**No vendemos tus datos personales, no usamos cookies publicitarias ni instalamos rastreadores de analítica o marketing (como Google Analytics o píxeles publicitarios).**
 
-## 3. Quién puede verlos
-- **Tu conductor o pasajero del viaje:** solo tu nombre, teléfono y, del conductor, la placa. Durante el viaje, el pasajero ve en el mapa dónde viene su conductor; nadie más lo ve, y deja de verlo al terminar el viaje.
-- **Administradores de CruciDrive:** los datos necesarios para operar y atender emergencias. La cédula y las fotos de conductores solo las ven los administradores y el propio conductor.
-- **Proveedores técnicos:** guardamos los datos en Supabase (base de datos y archivos) y mostramos el mapa con Google Maps. Los avisos al teléfono los entregan Expo y Google (Firebase); el aviso de una oferta no lleva el nombre, el teléfono ni la ubicación del pasajero. Estos proveedores pueden procesar datos fuera de Ecuador; aplican sus propias medidas de seguridad.
-- **Autoridades:** cuando la ley o una orden judicial lo exija. En una emergencia, el botón SOS abre una llamada al 911; CruciDrive no sustituye al 911.
+## 3. Quién puede verlos y proveedores externos
+- **La otra parte del viaje:** solo mientras el viaje esté activo (aceptado o en curso), ve tu nombre, teléfono y, del conductor, la placa y ubicación en tiempo real. Al terminar el viaje, el teléfono deja de mostrarse.
+- **Administración de CruciDrive:** solo lo necesario para aprobar conductores, gestionar lugares, revisar reportes y atender alertas SOS. La cédula y fotos de conductores solo son visibles para el propio conductor y la administración.
+- **Proveedores técnicos:** Supabase (base de datos y autenticación), Microsoft Azure (servidor API y tiempo real), Google (Google Maps y Firebase Cloud Messaging para avisos), Expo (entrega de avisos), Brevo (correo de verificación y recuperación), Vercel (alojamiento web) y, en futuras compras de créditos de conductores, Google Play Billing. Estos proveedores pueden tratar datos fuera de Ecuador bajo sus propias medidas de seguridad.
+- **Autoridades competentes:** únicamente cuando exista obligación legal u orden judicial válida.
 
 ## 4. Ubicación y privacidad
-Del conductor solo guardamos su **última** posición; no guardamos un historial de sus recorridos. Si en el futuro se guardara un historial para seguridad o mejora del servicio, iría asociado a un identificador anónimo, no a tu nombre, y se pediría de nuevo este consentimiento. Puedes quitar el permiso de ubicación en tu teléfono (o solo el de segundo plano), pero entonces no podrás pedir ni dar viajes (o, como conductor, solo recibirás ofertas con la app abierta).
+Del conductor solo guardamos su **última posición** mientras está disponible; no guardamos un historial de recorridos. Puedes revocar el permiso de ubicación en los ajustes de tu teléfono en cualquier momento (como pasajero podrás seguir pidiendo indicando el sector a mano; como conductor no recibirás ofertas en segundo plano).
 
-## 5. Cuánto tiempo los guardamos
-- Cuenta y viajes: mientras tengas la cuenta activa y **[plazo, p. ej. 12 meses]** después de cerrarla, salvo obligación legal.
-- Ubicaciones: **[plazo, p. ej. 90 días]**.
-- Cédula y fotos de un conductor rechazado o dado de baja: 30 días y luego se borran.
+## 5. Tus derechos (LOPDP) y eliminación de cuenta
+Puedes ejercer tus derechos de acceso, rectificación, actualización, eliminación, oposición, limitación del tratamiento, portabilidad y revocación del consentimiento desde *Configuración → Mi cuenta*, en `https://tricimoto.app/eliminar-cuenta` o escribiendo a **`soporte@tricimoto.app`**. También puedes presentar reclamos ante la **Superintendencia de Protección de Datos Personales del Ecuador**.
 
-## 6. Tus derechos
-Puedes pedir en cualquier momento acceso, rectificación, actualización, eliminación, oposición, limitación del tratamiento y portabilidad de tus datos, y retirar este consentimiento, escribiendo a **[correo]**. Responderemos en los plazos que fija la ley. También puedes reclamar ante la Superintendencia de Protección de Datos Personales.
+## 6. Menores de edad y emergencias (911)
+CruciDrive está dirigida a personas mayores de 18 años como titulares de cuenta. Los menores solo pueden viajar acompañados por un adulto responsable. El botón SOS abre el marcador telefónico al **911 (ECU 911)**; **CruciDrive no es un servicio de emergencias ni sustituye al 911**.
 
-## 7. Menores de edad
-CruciDrive no está dirigida a menores de 18 años como titulares de cuenta. Un menor solo viaja acompañado, y el adulto que pide el viaje responde por él.
+## 7. Consentimiento explícito
+Al marcar la casilla correspondiente y crear tu cuenta o perfil, autorizas de forma libre, específica, informada e inequívoca el tratamiento descrito y aceptas los Términos de Uso (`https://tricimoto.app/terminos`). Registramos la fecha y la versión (`1.0`) aceptada.
 
-## 8. Tu consentimiento
-Al marcar la casilla **"He leído y acepto el tratamiento de mis datos"** y crear tu cuenta, autorizas de forma libre, específica, informada e inequívoca el tratamiento descrito. Guardamos la fecha y la versión del texto que aceptaste. Si no aceptas, no podemos crear tu cuenta, porque sin estos datos el servicio no funciona.
-
-*Versión 0.2 — 9 de octubre de 2026. Cambios respecto a la 0.1: ubicación del conductor en segundo plano mientras está disponible, avisos al teléfono, el pasajero ve a su conductor durante el viaje y se aclara que no se guarda historial de recorridos (paso 004). Los conductores que aceptaron la 0.1 la aceptan de nuevo antes de ponerse disponibles.*
+*Historial: v0.1 (8 oct 2026) · v0.2 (9 oct 2026, segundo plano y avisos) · v0.3 (20 oct 2026, encomiendas) · v1.0 (25 nov 2026, titular David Cevallos RUC 1350766547001, tabla LOPDP completa, plazos, documentos públicos en `tricimoto.app` y preferencias web).*
