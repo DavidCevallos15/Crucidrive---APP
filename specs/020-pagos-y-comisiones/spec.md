@@ -1,46 +1,53 @@
 # 020 · Pagos y comisiones por créditos para conductores (híbrido por fases)
 
-Estado: **Borrador basado en las recomendaciones aceptadas por David el 25 nov 2026.** Pendiente de confirmación final de montos/reglas y actualización de D-03/D-19 en `specs/constitution.md` antes de escribir `plan.md` y código (regla 1).
+Estado: **Aprobada por David el 27 nov 2026.** M1 y M2 con las propuestas; M3 aprobada como D-22 en `specs/constitution.md`. Cambio respecto del borrador del 25 nov: **sin Google Play Billing**; las recargas son manuales (DeUna, transferencia, depósito o efectivo) y las acredita el administrador.
 
 ## Por qué
-CruciDrive necesita ser sostenible y rentable incluso arrancando con pocos conductores (3 a 6 unidades activas en Crucita). Una cuota mensual fija baja (ej. 5 USD/mes) no cubre el escalado con pocos conductores, y una cuota fija alta frena la adopción cuando todavía hay pocos pedidos. Al mismo tiempo, los pasajeros pagan en efectivo (0,50 USD por persona en viajes y precio acordado en encomiendas), por lo que la plataforma necesita un mecanismo seguro de mediación que garantice el cobro de su comisión sin depender de que pasajero y conductor reporten cambios de precio en efectivo.
+CruciDrive necesita ser sostenible arrancando con pocos conductores (3 a 6 unidades activas en Crucita). Una cuota mensual fija baja no cubre los costos y una alta frena la adopción cuando todavía hay pocos pedidos. Los pasajeros pagan en efectivo (0,50 USD por persona en viajes y precio acordado en encomiendas), así que la plataforma necesita cobrar su comisión sin depender de que pasajero o conductor declaren lo que se pagó en efectivo.
+
+Las compras dentro de la tienda se descartan para la Fase 1: la tienda retiene una parte de cada recarga, que con comisiones de 0,10 y 0,20 USD se come buena parte del margen. Las recargas se pagan por canales locales sin costo o de bajo costo y las verifica el administrador.
 
 ## Modelo por fases
-- **Fase 1 (lanzamiento en Play Store):** los viajes y encomiendas siguen pagándose en efectivo directamente al conductor. Los **conductores** mantienen un **saldo prepago de créditos** en la app; cada servicio aceptado descuenta una comisión fija o mínima desde el servidor.
-- **Fase 2 (post-piloto, fuera de este primer alcance):** pagos digitales de pasajeros (billetera recargable o pasarela local ecuatoriana como PayPhone/DeUna) y pase semanal opcional para conductores frecuentes.
+- **Fase 1 (esta spec):** viajes y encomiendas se siguen pagando en efectivo al conductor. Cada **conductor** tiene un **saldo prepago de créditos**; cada servicio aceptado descuenta una comisión fija desde el servidor. El conductor recarga pagando al administrador por un canal local y el administrador acredita el saldo en el panel.
+- **Fase 2 (fuera de alcance):** pagos digitales de pasajeros (billetera o pasarela local), avisos de pago con comprobante enviados desde la app y pase semanal opcional para conductores frecuentes.
 
 ## Historias
-- Como **conductor nuevo aprobado**, quiero recibir un bono de bienvenida en créditos para probar CruciDrive y completar mis primeros viajes y encomiendas sin pagar por adelantado.
-- Como **conductor**, quiero recargar paquetes pequeños de créditos desde la app y ver un historial claro de cada recarga, comisión descontada y devolución.
-- Como **conductor**, quiero que me devuelvan automáticamente la comisión si el pasajero cancela antes de iniciar el servicio, para no perder dinero por cancelaciones ajenas.
-- Como **administrador (David)**, quiero poder acreditar recargas o cortesías manualmente (por ejemplo, pagos acordados localmente con conductores o cooperativas en Crucita) con auditoría inmutable, y ver el resumen de ingresos y consumos.
-- Como **plataforma**, quiero que el cálculo de saldos, comisiones y devoluciones ocurra únicamente en el servidor con un libro contable inmutable, para que nadie pueda alterar su saldo desde el teléfono.
+- Como **conductor nuevo aprobado**, quiero un bono de bienvenida en créditos para completar mis primeros servicios sin pagar por adelantado.
+- Como **conductor**, quiero ver mi saldo y un historial claro de recargas, comisiones, devoluciones y ajustes.
+- Como **conductor**, quiero que me devuelvan la comisión si el pasajero cancela antes de iniciar el servicio.
+- Como **conductor**, quiero saber cómo recargar sin salir de dudas: a quién pagar y qué datos enviar.
+- Como **administrador (David)**, quiero acreditar recargas indicando el canal (DeUna, transferencia, depósito, efectivo) y el número de comprobante, sin poder acreditar dos veces el mismo comprobante, y ver el resumen mensual de ingresos.
+- Como **administrador**, quiero activar el cobro cuando decida, sin depender de un despliegue.
+- Como **plataforma**, quiero que saldos, comisiones y devoluciones se calculen solo en el servidor con un libro contable inmutable.
 
-## Reglas de negocio propuestas (Fase 1)
-- **Bono de bienvenida:** `2,00 USD` en créditos al aprobarse el conductor por primera vez (una sola vez por cuenta y cédula).
-- **Comisión por encomienda:** `0,20 USD` fijo mientras el precio sea libre por chat; cuando exista contraoferta registrada (`013`), `10 %` del precio acordado con un **mínimo de `0,20 USD`**. Aunque pasajero y conductor ajusten el pago en efectivo fuera de la app, la comisión de mediación ya quedó liquidada.
+## Reglas de negocio (Fase 1)
+- **Bono de bienvenida:** `2,00 USD` en créditos la primera vez que se aprueba a un conductor. Una sola vez por cédula, aunque la cuenta se elimine y se vuelva a crear.
+- **Comisión por encomienda:** `0,20 USD` fijo mientras el precio se acuerde por chat (D-14). Cuando exista `013-encomiendas-contraoferta` y el precio quede registrado, pasará a `10 %` del precio acordado con mínimo de `0,20 USD`; ese cambio se especifica en el 013.
 - **Comisión por viaje de pasajeros:** `0,10 USD` fijo por viaje aceptado.
-- **Paquetes de recarga dentro de la app:** `3,00 USD`, `5,00 USD` y `10,00 USD` (sin caducidad mientras la cuenta siga activa).
-- **Saldo mínimo para recibir ofertas:** el conductor debe tener saldo mayor o igual a la comisión máxima vigente (`0,20 USD`) para ponerse disponible y recibir ofertas. Si su saldo baja de ese umbral al aceptar un servicio, termina el servicio actual y pasa a no disponible hasta recargar.
-- **Reembolso automático de comisión:** si el pasajero cancela antes de que el viaje pase a «en curso» (o si la solicitud se cancela por causa ajena al conductor), el servidor registra un asiento de devolución automático en el libro contable del conductor.
+- **Montos de recarga:** paquetes sugeridos de `3`, `5` y `10 USD`; el administrador puede acreditar cualquier monto entre `1` y `50 USD`. Los créditos no caducan mientras la cuenta siga activa.
+- **Canales de recarga:** DeUna, transferencia bancaria, depósito y efectivo entregado en persona al administrador. Además, el administrador puede dar créditos de cortesía con motivo.
+- **Saldo mínimo para recibir ofertas:** saldo mayor o igual a la comisión más alta vigente (`0,20 USD`). Si al terminar o cancelar un servicio el saldo quedó por debajo, el conductor pasa a no disponible hasta recargar.
+- **Devolución automática:** si el pasajero cancela antes de que el servicio pase a «en curso», el servidor devuelve la comisión exacta una sola vez.
+- **Cancelación del conductor (M2):** si el conductor cancela después de aceptar, la comisión **no** se devuelve. Una falla técnica atribuible a la plataforma se corrige con un ajuste manual del administrador, con motivo.
+- **Interruptor de cobro:** mientras el administrador no active el cobro, no se descuentan comisiones ni se exige saldo mínimo. Los bonos sí se registran.
+- **Parámetros:** comisiones, bono, saldo mínimo y el interruptor los cambia el administrador sin desplegar código.
 
 ## Criterios de aceptación
-1. **Dado** un conductor recién aprobado por primera vez, **cuando** su verificación pasa a aprobada, **entonces** recibe un único asiento de bono inicial de `2,00 USD` en créditos. Una re-aprobación posterior no vuelve a otorgar bono.
-2. **Dado** un conductor con saldo menor al mínimo configurado (`0,20 USD`), **cuando** intenta ponerse disponible, **entonces** el servidor lo rechaza con un mensaje claro indicando su saldo actual y cómo recargar.
-3. **Dado** un conductor disponible con saldo suficiente, **cuando** acepta un viaje de pasajeros o una encomienda, **entonces** el servidor descuenta atómicamente `0,10 USD` (viaje) o `0,20 USD` (encomienda) en un libro contable inmutable en la misma operación de aceptación, sin posibilidad de saldo negativo por solicitudes simultáneas.
-4. **Dado** un viaje o encomienda aceptado cuya comisión fue descontada, **cuando** el pasajero cancela antes de iniciar el recorrido, **entonces** el servidor registra automáticamente un asiento de reintegro exacto al conductor y evita devoluciones duplicadas.
-5. **Dado** un conductor que compra un paquete de créditos dentro de la app móvil, **cuando** la tienda confirma el pago, **entonces** el servidor verifica la validez del comprobante directamente con la tienda antes de acreditar el saldo y garantiza idempotencia (un mismo comprobante nunca se acredita dos veces).
-6. **Dado** el administrador en el panel web, **cuando** acredita una recarga manual o ajuste a un conductor, **entonces** debe indicar monto y motivo; el sistema registra el movimiento con el identificador del administrador y el conductor ve el nuevo saldo y el movimiento en su historial.
-7. **Dado** cualquier usuario (pasajero o conductor), **cuando** intenta modificar su saldo o insertar movimientos directamente, **entonces** el sistema lo rechaza; solo puede leer sus propios movimientos.
-8. **Dado** la app móvil en Android, **cuando** el conductor abre la pantalla de créditos, **entonces** las compras dentro de la app usan exclusivamente el flujo oficial de la tienda y no incluyen enlaces ni botones hacia pasarelas de pago externas (cumplimiento de políticas de Play Store).
-
-## Decisiones pendientes para confirmar antes del plan
-- **M1 · Montos iniciales:** confirmar `0,10 USD` por viaje, `0,20 USD` mínimo por encomienda, `2,00 USD` de bono de bienvenida y paquetes de `3 / 5 / 10 USD`.
-- **M2 · Cancelación del conductor:** si el conductor cancela después de aceptar sin llegar al punto de recogida, ¿se le retiene la comisión para desincentivar cancelaciones falsas o se devuelve solo en las primeras N cancelaciones? Propuesta: devolver solo si cancela el pasajero (o por falla técnica); si cancela el conductor tras aceptar, la comisión no se devuelve.
-- **M3 · Actualización de la constitución:** aprobar la enmienda de D-03/D-19 para habilitar cobros de créditos a conductores manteniendo el efectivo para pasajeros en Fase 1.
+1. **Dado** un conductor aprobado por primera vez, **cuando** su verificación pasa a aprobada, **entonces** recibe un único movimiento de bono de `2,00 USD`. Una re-aprobación, o una cuenta nueva con la misma cédula, no vuelve a recibir bono.
+2. **Dado** el cobro activo y un conductor con saldo menor al mínimo, **cuando** intenta ponerse disponible, **entonces** el servidor lo rechaza con un mensaje que indica su saldo actual y cómo recargar.
+3. **Dado** el cobro activo y un conductor con saldo suficiente, **cuando** acepta un viaje o una encomienda, **entonces** el servidor descuenta `0,10 USD` (viaje) o `0,20 USD` (encomienda) en la misma operación de aceptación, y el saldo nunca queda negativo, ni con solicitudes simultáneas.
+4. **Dado** un servicio aceptado con comisión descontada, **cuando** el pasajero lo cancela antes de iniciar el recorrido, **entonces** el servidor registra una devolución exacta, y un segundo intento de devolución para el mismo servicio no suma nada.
+5. **Dado** un servicio aceptado, **cuando** lo cancela el conductor, **entonces** no hay devolución.
+6. **Dado** el administrador en el panel, **cuando** acredita una recarga, **entonces** debe indicar monto, canal y número de comprobante (o motivo, si es cortesía o efectivo sin comprobante); el movimiento guarda quién lo registró, y el mismo comprobante de un mismo canal no se puede acreditar dos veces.
+7. **Dado** un conductor, **cuando** abre su pantalla de créditos, **entonces** ve su saldo, su historial y las instrucciones para recargar (contactar a soporte), sin enlaces ni botones de pago dentro de la app.
+8. **Dado** cualquier usuario, **cuando** intenta modificar un saldo o crear, editar o borrar movimientos directamente, **entonces** el sistema lo rechaza; cada conductor solo puede leer los suyos y el administrador los de todos.
+9. **Dado** el cobro inactivo, **cuando** un conductor acepta un servicio o se pone disponible, **entonces** no se descuenta nada ni se exige saldo.
+10. **Dado** el administrador, **cuando** abre el resumen de créditos, **entonces** ve por mes el total recargado por canal, las comisiones cobradas, las devoluciones, los bonos y los ajustes.
 
 ## Fuera de alcance (Fase 1)
-- Cobro electrónico al pasajero dentro de la app (tarjetas, billetera pasajero, PayPhone/DeUna/Kushki). Se aborda en Fase 2.
-- Facturación electrónica automatizada ante el SRI (en Fase 1 se emite manualmente según reportes mensuales del panel admin; se automatiza cuando el volumen lo justifique).
-- Retiro de créditos a dinero en efectivo (los créditos solo sirven para aceptar servicios en CruciDrive, sujeto a la Política de Reembolsos).
-- Compras dentro de la app en iOS (se activan junto con `021-ios-nativo` cuando exista cuenta de Apple Developer).
+- Compras dentro de la tienda (Google Play Billing o Apple). Si se reconsideran, va en una spec nueva.
+- Cobro electrónico al pasajero (tarjetas, billetera, PayPhone, DeUna integrado). Fase 2.
+- Avisos de pago con foto del comprobante desde la app. Fase 2; en la Fase 1 el comprobante llega por correo a `soporte@tricimoto.app` o en persona.
+- Facturación electrónica automática ante el SRI (en la Fase 1 se emite manualmente con el resumen mensual).
+- Retiro de créditos a dinero. Los créditos solo sirven para pagar comisiones en CruciDrive, salvo lo que diga la Política de Reembolsos.
+- Comisión porcentual de encomiendas (depende del 013).

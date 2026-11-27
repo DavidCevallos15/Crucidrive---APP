@@ -76,5 +76,15 @@ Salen de revisar el handbook público de inDrive (github.com/inDriver/handbook, 
   - Los conductores siguen recibiendo las ofertas por la app; no hay despacho por SMS.
   - Se especifica en `017-pedido-sin-internet`.
 
+## Decisiones del 27 nov 2026
+
+- D-22: **Comisión de la plataforma con créditos prepagos del conductor. Precisa D-03 y D-19.**
+  - Los pasajeros siguen pagando en efectivo al conductor (D-03, D-08, D-14 y D-19 no cambian para ellos).
+  - Cada conductor tiene un saldo de créditos; el servidor descuenta una comisión fija al aceptar: 0,10 USD por viaje y 0,20 USD por encomienda. Bono de bienvenida de 2 USD, una vez por cédula. Los montos son parámetros que cambia el administrador.
+  - Si el pasajero cancela antes de iniciar, la comisión se devuelve; si cancela el conductor, no.
+  - **Sin compras dentro de la tienda (Google Play Billing ni Apple):** la tienda retiene una parte de cada recarga. Las recargas se pagan por DeUna, transferencia, depósito o efectivo, y las acredita el administrador con el comprobante. La app no muestra enlaces ni datos de pago.
+  - El cobro empieza apagado y lo activa el administrador.
+  - Se especifica en `020-pagos-y-comisiones`.
+
 ## Decisiones abiertas
 - D-07: aliado institucional (cooperativa de tricimotos o GAD de Crucita). Pendiente del paso 0.
