@@ -1,3 +1,4 @@
+// @ts-check
 const asyncHandler = require('../utils/asyncHandler');
 const { errorResponse, successResponse } = require('../utils/response');
 const { isCedulaValida, normalizarCedula } = require('../utils/validation');
@@ -5,9 +6,11 @@ const { obtenerDespachador } = require('../despacho');
 const { guardarUbicacion } = require('../ubicacion/servicio');
 const { leerConfigUbicacion } = require('../ubicacion/config');
 const { CONSENT_VERSION } = require('../config/consent');
+const { esSaldoInsuficiente, responderSaldoInsuficiente } = require('./creditosController');
 
 const BUCKET = 'verificacion';
 const TIPOS_FOTO = ['conductor', 'cedula', 'vehiculo'];
+/** @param {string} userId @param {string} tipo */
 const rutaFoto = (userId, tipo) => `${userId}/${tipo}.jpg`;
 
 /**
@@ -29,7 +32,7 @@ const enviarVerificacion = asyncHandler(async (req, res) => {
   if (listError) {
     return errorResponse(res, 500, 'No se pudo comprobar las fotos subidas.', listError.message);
   }
-  const subidas = new Set((archivos || []).map((a) => a.name));
+  const subidas = new Set((archivos || []).map((/** @type {{ name: string }} */ a) => a.name));
   const faltan = TIPOS_FOTO.filter((tipo) => !subidas.has(`${tipo}.jpg`));
   if (faltan.length > 0) {
     return errorResponse(res, 400, `Faltan fotos por subir: ${faltan.join(', ')}.`);
@@ -151,6 +154,8 @@ const cambiarDisponibilidad = asyncHandler(async (req, res) => {
     .select('estado, disponible_desde');
 
   if (error) {
+    // Con el cobro activo hace falta el saldo mínimo para estar disponible (020, criterio 2).
+    if (esSaldoInsuficiente(error)) return responderSaldoInsuficiente(res, db, conductorId, error.message);
     return errorResponse(res, 400, 'No se pudo cambiar tu disponibilidad.', error.message);
   }
   // La RLS no da error si el conductor no está aprobado: simplemente no actualiza nada.
