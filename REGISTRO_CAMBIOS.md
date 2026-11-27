@@ -2,6 +2,22 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.91.0] - 2026-11-27 (Hora Local)
+
+### 020 · PR A: créditos del conductor en la BD (T1 a T6)
+- `supabase/migrations/0020_creditos_conductor.sql`:
+  - `parametros_cobro` (una fila): comisiones de 0,10 y 0,20 USD, bono de 2 USD, recargas de 1 a 50 USD y `cobro_activo = false`. La leen los usuarios autenticados y solo la cambia el admin, por columna.
+  - `movimientos_credito`: libro inmutable (ni la clave de servicio ni el dueño de la BD editan ni borran; solo se permite el `on delete set null` al borrar una cuenta o un viaje). Índices únicos para una comisión y una devolución por servicio, un bono por conductor y un comprobante por canal.
+  - `saldos_credito` con `check (saldo >= 0)`, mantenido por trigger con `update` primero: `insert … on conflict` evalúa el check sobre el monto negativo y rechazaba todo descuento.
+  - `private.bonos_por_cedula` con la huella SHA-256 de la cédula: el bono no se repite al recrear la cuenta. Bono inicial para los conductores ya aprobados.
+  - `aceptar_viaje` descuenta la comisión en la misma transacción; si no alcanza, revierte toda la aceptación (`saldo_insuficiente`).
+  - Devolución automática si cancela el pasajero, por trigger que corre antes de liberar la tricimoto. Sin devolución si cancela el conductor.
+  - Saldo mínimo al pasar a `disponible`: error si lo intenta el conductor; si viene de `ocupado`, queda `inactivo` sin romper el cierre del servicio.
+  - `acreditar_credito` y `resumen_creditos`, solo para el admin.
+- Pruebas: `supabase/tests/rls_009.sql` (37 en verde) y `concurrencia_020.sh` (dos descuentos simultáneos, solo pasa uno), añadidos a `run-docker.sh`. `rls_001` a `rls_008` y `concurrencia_003` siguen en verde.
+- Revisión con las skills de seguridad del vault de Obsidian (`devsecops/hardening-app-vibe-coding`): montos y comisiones solo en el servidor, validación en la BD, libro sin escritura desde la API; el límite por usuario de las rutas de recarga queda para el PR B.
+- Falta T7: advisors y aplicación en producción, con autorización de David.
+
 ## [1.90.0] - 2026-11-27 (Hora Local)
 
 ### 020 · Spec aprobada, plan y tareas de créditos para conductores; D-22

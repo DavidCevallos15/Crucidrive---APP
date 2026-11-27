@@ -24,3 +24,5 @@ Resultado esperado: cada intento indebido aparece como `NOTICE: OK ... (bloquead
 Última ejecución: 8 oct 2026, PostgreSQL 16 + PostGIS 3, 7 migraciones aplicadas, 17 comprobaciones en verde (tras la enmienda 1; incluye tarifa por persona). En Windows: contenedor `postgis/postgis:16-3.4` y base creada con `template0`, porque la imagen preinstala PostGIS en `public`.
 
 Paso 004 (9 oct 2026): `rls_004.sql` 21 en verde y `rls_001` a `rls_003` siguen en verde con las 14 migraciones (Postgres 16 + PostGIS 3 instalado localmente, sin Docker).
+
+Paso 020 (27 nov 2026): `rls_009.sql` 37 en verde y `concurrencia_020.sh` en verde; `rls_001` a `rls_008` y `concurrencia_003` siguen en verde con las 20 migraciones (Docker, `postgis/postgis:16-3.4`).

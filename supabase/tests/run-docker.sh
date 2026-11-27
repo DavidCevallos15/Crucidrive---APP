@@ -39,4 +39,6 @@ done
 
 # Concurrencia de la aceptación (paso 003, criterio 8).
 bash supabase/tests/concurrencia_003.sh "$NAME" || status=1
+# Saldo de créditos con descuentos simultáneos (paso 020, criterio 3).
+bash supabase/tests/concurrencia_020.sh "$NAME" || status=1
 exit $status
