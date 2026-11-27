@@ -62,7 +62,8 @@ David trabaja en Windows (PowerShell o Git Bash) y en Fedora (bash). Si das coma
 ## Base de datos (Supabase)
 
 - **El esquema solo cambia con migraciones nuevas** en `supabase/migrations/NNNN_nombre.sql`. Nunca edites una migración ya aplicada ni cambies tablas desde el panel.
-- La integración de Supabase con GitHub aplica las migraciones al fusionar a `main`. Una migración rota rompe producción, así que **pruébala antes en local** con `supabase/tests/` y amplía `rls_001.sql` o crea un `rls_NNN.sql` para cada tabla o política nueva.
+- La integración de Supabase con GitHub **no** aplica migraciones (sin ramas de Supabase, el check sale *skipping*). Se aplican a mano, con autorización de David, **después de probarlas en local** con `supabase/tests/`; amplía `rls_001.sql` o crea un `rls_NNN.sql` para cada tabla o política nueva.
+- El historial de producción (`supabase_migrations.schema_migrations`) debe coincidir con los archivos: versión `NNNN` y nombre sin el número. `apply_migration` (MCP) registra una versión de fecha; corrígela en la misma sesión como explica `supabase/README.md`, o usa `supabase db push`.
 - RLS va activo en todas las tablas. Las políticas usan `(select auth.uid())`, nunca `auth.uid()` a secas. Las funciones auxiliares van en el schema `private`, como `security definer` y con `set search_path = ''`.
 - Las columnas sensibles se protegen con permisos por columna (`grant update (col, ...)`): RLS no limita columnas.
 - PostGIS vive en el schema `extensions`; usa `extensions.geography(point, 4326)`.
