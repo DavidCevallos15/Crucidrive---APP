@@ -22,8 +22,11 @@ Probado el 27 nov 2026: `tests/creditos020.test.js` y el límite de recargas en 
 - [x] **T10 · `saldo_insuficiente` → `402` al aceptar y al ponerse disponible (criterios 2 y 3).** *Prueba:* jest en `viajeController` y `conductorController`; `npm run typecheck` sin errores.
 
 ## PR C · Frontend y legales
-- [ ] **T11 · Pantalla «Mis créditos» del conductor, sin enlaces de pago, y manejo del `402` (criterios 2 y 7).** *Prueba:* jest de la pantalla y del flujo de disponibilidad.
-- [ ] **T12 · Créditos en el panel admin: formulario, interruptor, parámetros y resumen (criterios 6 y 10).** *Prueba:* jest de las pantallas y del servicio.
-- [ ] **T13 · Páginas legales sin Google Play Billing y con recargas manuales; en Privacidad, la huella SHA-256 de la cédula que se conserva tras borrar la cuenta solo para no repetir el bono, y los movimientos que quedan sin identidad.** *Prueba:* `cumplimientoLegal019.test.ts` actualizado.
-- [ ] **T14 · Verificación completa:** backend y frontend en verde, `tsc --noEmit`, `npm run typecheck`, `npm audit --omit=dev`; entrada en `REGISTRO_CAMBIOS.md`.
+
+Probado el 27 nov 2026: `frontend/tests/creditos020.test.ts` (37) y las pruebas de versión del aviso; frontend 585/585, `npx tsc --noEmit` sin errores; backend 511/511. El aviso de privacidad sube a 1.1 (nuevo tratamiento: movimientos de créditos y huella de cédula).
+
+- [x] **T11 · Pantalla «Mis créditos» del conductor, sin enlaces de pago, y manejo del `402` (criterios 2 y 7).** *Prueba:* jest de la pantalla y del flujo de disponibilidad.
+- [x] **T12 · Créditos en el panel admin: formulario, interruptor, parámetros y resumen (criterios 6 y 10).** *Prueba:* jest de las pantallas y del servicio.
+- [x] **T13 · Páginas legales sin Google Play Billing y con recargas manuales; en Privacidad, la huella SHA-256 de la cédula que se conserva tras borrar la cuenta solo para no repetir el bono, y los movimientos que quedan sin identidad.** *Prueba:* `cumplimientoLegal019.test.ts` actualizado.
+- [x] **T14 · Verificación completa:** backend y frontend en verde, `tsc --noEmit`, `npm run typecheck`, `npm audit --omit=dev`; entrada en `REGISTRO_CAMBIOS.md`.
 - [ ] **T15 · Prueba de campo:** David acredita una recarga real por DeUna o transferencia, activa el cobro y un conductor acepta y le cancelan un servicio; los saldos cuadran con el resumen.

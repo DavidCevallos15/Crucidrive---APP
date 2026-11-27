@@ -65,7 +65,7 @@ describe('019 · páginas legales públicas HTTPS en web/ (criterios 1 a 5)', ()
     expect(reembolsos).toContain(LEGAL_HOLDER.ruc);
     expect(reembolsos).toMatch(/efectivo/i);
     expect(reembolsos).toMatch(/pasajero cancela/i);
-    expect(reembolsos).toContain('Google Play Billing');
+    expect(reembolsos).toContain('comprobante');
     expect(reembolsos).toContain(LEGAL_HOLDER.supportEmail);
   });
 
@@ -90,8 +90,8 @@ describe('019 · páginas legales públicas HTTPS en web/ (criterios 1 a 5)', ()
 describe('019 · consentimiento 1.0 y enlaces dentro de la app (criterios 6 a 8)', () => {
   test('criterio 6: versión 1.0 sincronizada entre frontend y backend y sin etiquetas de borrador', () => {
     const backendConsent = readRepo('backend/src/config/consent.js');
-    expect(CONSENT_VERSION).toBe('1.0');
-    expect(backendConsent).toContain("const CONSENT_VERSION = '1.0'");
+    expect(CONSENT_VERSION).toBe('1.1');
+    expect(backendConsent).toContain("const CONSENT_VERSION = '1.1'");
     expect(backendConsent).toContain('// @ts-check');
     const joined = CONSENTIMIENTO.map((s) => `${s.titulo} ${s.texto}`).join(' ');
     expect(joined).toContain(LEGAL_HOLDER.name);

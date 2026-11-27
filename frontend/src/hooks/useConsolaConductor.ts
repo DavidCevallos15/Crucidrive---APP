@@ -19,7 +19,8 @@ import { ofertaDesdeFila, type FilaOferta } from '../utils/avisoOferta';
 import { descartarAvisosDeOferta } from '../servicios/avisos';
 import type { useSocket } from './useSocket';
 
-type Resultado = { ok: true } | { ok: false; mensaje: string; consentimiento?: boolean };
+// sinSaldo: 402, el saldo de créditos no alcanza para la comisión (020, criterios 2 y 3).
+type Resultado = { ok: true } | { ok: false; mensaje: string; consentimiento?: boolean; sinSaldo?: boolean };
 
 const SIN_CONEXION = 'Sin conexión con el servidor. Revisa tus datos móviles.';
 
@@ -123,6 +124,7 @@ export const useConsolaConductor = (
           mensaje: body?.message ?? 'No se pudo cambiar tu disponibilidad.',
           // 428: falta aceptar la versión vigente del aviso de privacidad (004, criterio 5).
           consentimiento: response.status === 428,
+          sinSaldo: response.status === 402,
         };
       }
       setEstado((body?.data?.estado as EstadoTricimoto | undefined) ?? (disponible ? 'disponible' : 'inactivo'));
@@ -153,7 +155,7 @@ export const useConsolaConductor = (
       void descartarAvisosDeOferta(oferta.viajeId);
       if (!response.ok) {
         // 409: ya fue tomado o la oferta venció (criterios 8 y 9).
-        return { ok: false, mensaje: body?.message ?? 'No se pudo aceptar el viaje.' };
+        return { ok: false, mensaje: body?.message ?? 'No se pudo aceptar el viaje.', sinSaldo: response.status === 402 };
       }
       // El servidor liberó las demás (010, criterio 9) y además avisa con oferta_retirada.
       for (const otra of ofertas) if (otra.viajeId !== oferta.viajeId) void descartarAvisosDeOferta(otra.viajeId);

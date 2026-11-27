@@ -158,6 +158,14 @@ export const DriverConsoleScreen: React.FC = () => {
   const [enviandoConsentimiento, setEnviandoConsentimiento] = useState(false);
   const [errorConsentimiento, setErrorConsentimiento] = useState<string | null>(null);
 
+  // Sin saldo para la comisión (020, criterios 2 y 3): explica y lleva a «Créditos».
+  const avisarSinSaldo = useCallback((titulo: string, mensaje: string) => {
+    Alert.alert(titulo, mensaje, [
+      { text: 'Cerrar', style: 'cancel' },
+      { text: 'Ver mis créditos', onPress: () => router.push('/(app)/(driver)/creditos' as never) },
+    ]);
+  }, [router]);
+
   const handleToggleAvailability = useCallback(async (value: boolean) => {
     const resultado = await consola.cambiarDisponibilidad(value);
     if (resultado.ok) return;
@@ -166,8 +174,9 @@ export const DriverConsoleScreen: React.FC = () => {
       setPidiendoConsentimiento(true);
       return;
     }
+    if (resultado.sinSaldo) return avisarSinSaldo('Saldo insuficiente', resultado.mensaje);
     Alert.alert('No se pudo cambiar', resultado.mensaje);
-  }, [consola]);
+  }, [consola, avisarSinSaldo]);
 
   const handleAceptarConsentimiento = useCallback(async () => {
     setEnviandoConsentimiento(true);
@@ -180,8 +189,9 @@ export const DriverConsoleScreen: React.FC = () => {
     const disponible = await consola.cambiarDisponibilidad(true);
     setEnviandoConsentimiento(false);
     setPidiendoConsentimiento(false);
+    if (!disponible.ok && disponible.sinSaldo) return avisarSinSaldo('Saldo insuficiente', disponible.mensaje);
     if (!disponible.ok) Alert.alert('No se pudo cambiar', disponible.mensaje);
-  }, [consola]);
+  }, [consola, avisarSinSaldo]);
 
   // ─── "Estuviste fuera del despacho" (004, criterio 20) ────
   const fuera = useFueraDelDespacho(estado);
@@ -207,8 +217,9 @@ export const DriverConsoleScreen: React.FC = () => {
   const handleAcceptRide = useCallback(async (viajeId: string) => {
     const resultado = await consola.aceptar(viajeId);
     // Aceptado: aparece la tarjeta del viaje (005, criterio 1).
+    if (!resultado.ok && resultado.sinSaldo) return avisarSinSaldo('No se pudo aceptar', resultado.mensaje);
     if (!resultado.ok) Alert.alert('No se pudo aceptar', resultado.mensaje);
-  }, [consola]);
+  }, [consola, avisarSinSaldo]);
 
   // ─── Pasos del viaje (005, criterios 3 a 5 y 20) ───────────
   const { darPaso, cancelar } = viajeActivo;

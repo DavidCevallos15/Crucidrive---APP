@@ -2,6 +2,25 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.93.0] - 2026-11-27 (Hora Local)
+
+### 020 · PR C: créditos en la app, panel de cobro y aviso de privacidad 1.1 (T11 a T14)
+- **Conductor:**
+  - Pestaña «Créditos» (`CreditosConductorScreen`) con saldo grande, aviso si está bajo el mínimo, reglas de comisión y devolución, historial y «Cómo recargar» (escribir a `soporte@tricimoto.app`).
+  - Sin enlaces de pago, QR ni datos bancarios. Superficies opacas, sin blur (regla 6).
+  - En la consola, un `402` al ponerse disponible o al aceptar muestra el saldo y ofrece «Ver mis créditos».
+- **Administrador:**
+  - Sección «Créditos» en la ficha del conductor aprobado (`CreditosConductorAdmin`): recarga por canal con comprobante, o motivo si es efectivo o cortesía; ajuste con motivo; últimos movimientos.
+  - Pantalla «Cobro de créditos» (botón «Cobro» del panel): interruptor del cobro, montos y resumen por mes con recargas por canal, comisiones, devoluciones e ingreso neto.
+- `frontend/src/utils/creditos.ts`: formato, lectura de montos con coma, validación igual a la del servidor y resumen mensual.
+- **Aviso de privacidad 1.1:**
+  - Nuevo tratamiento: movimientos de créditos de conductores y huella (hash) de la cédula para no repetir el bono.
+  - Cambia en `CONSENT_VERSION` del backend y de la app, en `specs/002-identidad/consentimiento-lopdp.md` y en `web/privacidad.html`.
+  - Los conductores vuelven a aceptar al ponerse disponibles (428, como en el 004).
+- `web/reembolsos.html` y `web/terminos.html`: sin Google Play Billing; recargas por DeUna, transferencia, depósito o efectivo con número de comprobante; comisión de 0,10 y 0,20 USD con devolución si cancela el pasajero.
+- Pruebas: frontend 585/585 (`tests/creditos020.test.ts` es nuevo), `npx tsc --noEmit` sin errores; backend 511/511.
+- `npm audit` del frontend sigue mostrando 16 avisos en dependencias de Expo, que ya estaban: este PR no toca dependencias y el CI audita solo el backend.
+
 ## [1.92.0] - 2026-11-27 (Hora Local)
 
 ### 020 · PR B: créditos del conductor en la API (T8 a T10)
