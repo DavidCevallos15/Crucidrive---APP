@@ -1,3 +1,4 @@
+// @ts-check
 const express = require('express');
 const { rateLimit } = require('express-rate-limit');
 const router = express.Router();
@@ -5,6 +6,7 @@ const { enviarVerificacion, obtenerMiVerificacion, cambiarDisponibilidad, actual
 const authMiddleware = require('../middlewares/authMiddleware');
 const { misResenas } = require('../controllers/viajeEnCursoController');
 const roleMiddleware = require('../middlewares/roleMiddleware');
+const { misCreditos } = require('../controllers/creditosController');
 
 // Solo conductores: enviar o corregir su solicitud de verificación y ver su estado.
 router.post('/verificacion', authMiddleware, roleMiddleware(['conductor']), enviarVerificacion);
@@ -16,13 +18,16 @@ router.patch('/disponibilidad', authMiddleware, roleMiddleware(['conductor']), c
 // Reseñas propias, sin autor (paso 005, criterio 17).
 router.get('/resenas', authMiddleware, roleMiddleware(['conductor']), misResenas);
 
+// Saldo, reglas y movimientos de créditos propios (020, criterio 7).
+router.get('/creditos', authMiddleware, roleMiddleware(['conductor']), misCreditos);
+
 // Respaldo REST de update_location (paso 004, plan P11). Límite por conductor, no por IP:
 // detrás del CGNAT de las operadoras muchos conductores comparten IP. La app envía como mucho
 // cada 5 s; 2 envíos cada 5 s dan margen a un reintento.
 const limiteUbicacion = rateLimit({
   windowMs: 5000,
   limit: 2,
-  keyGenerator: (req) => req.user.id,
+  keyGenerator: (req) => /** @type {any} */ (req).user.id,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   message: { status: 'error', message: 'Envías tu ubicación demasiado seguido.' },

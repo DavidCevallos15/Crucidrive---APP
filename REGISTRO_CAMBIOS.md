@@ -2,6 +2,56 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.93.0] - 2026-11-27 (Hora Local)
+
+### 020 · PR C: créditos en la app, panel de cobro y aviso de privacidad 1.1 (T11 a T14)
+- **Conductor:**
+  - Pestaña «Créditos» (`CreditosConductorScreen`) con saldo grande, aviso si está bajo el mínimo, reglas de comisión y devolución, historial y «Cómo recargar» (escribir a `soporte@tricimoto.app`).
+  - Sin enlaces de pago, QR ni datos bancarios. Superficies opacas, sin blur (regla 6).
+  - En la consola, un `402` al ponerse disponible o al aceptar muestra el saldo y ofrece «Ver mis créditos».
+- **Administrador:**
+  - Sección «Créditos» en la ficha del conductor aprobado (`CreditosConductorAdmin`): recarga por canal con comprobante, o motivo si es efectivo o cortesía; ajuste con motivo; últimos movimientos.
+  - Pantalla «Cobro de créditos» (botón «Cobro» del panel): interruptor del cobro, montos y resumen por mes con recargas por canal, comisiones, devoluciones e ingreso neto.
+- `frontend/src/utils/creditos.ts`: formato, lectura de montos con coma, validación igual a la del servidor y resumen mensual.
+- **Aviso de privacidad 1.1:**
+  - Nuevo tratamiento: movimientos de créditos de conductores y huella (hash) de la cédula para no repetir el bono.
+  - Cambia en `CONSENT_VERSION` del backend y de la app, en `specs/002-identidad/consentimiento-lopdp.md` y en `web/privacidad.html`.
+  - Los conductores vuelven a aceptar al ponerse disponibles (428, como en el 004).
+- `web/reembolsos.html` y `web/terminos.html`: sin Google Play Billing; recargas por DeUna, transferencia, depósito o efectivo con número de comprobante; comisión de 0,10 y 0,20 USD con devolución si cancela el pasajero.
+- Pruebas: frontend 585/585 (`tests/creditos020.test.ts` es nuevo), `npx tsc --noEmit` sin errores; backend 511/511.
+- `npm audit` del frontend sigue mostrando 16 avisos en dependencias de Expo, que ya estaban: este PR no toca dependencias y el CI audita solo el backend.
+
+## [1.92.0] - 2026-11-27 (Hora Local)
+
+### 020 · PR B: créditos del conductor en la API (T8 a T10)
+- `backend/src/controllers/creditosController.js` (`// @ts-check`), todo con `req.supabase`:
+  - `GET /api/conductores/creditos`: saldo, saldo mínimo, si el cobro está activo, comisiones y últimos 50 movimientos propios.
+  - `GET` y `PATCH /api/admin/creditos/parametros`: interruptor de cobro y montos (solo los campos enviados, 2 decimales).
+  - `POST /api/admin/conductores/:id/creditos`: recarga (canal + comprobante, o motivo si es efectivo o cortesía) o ajuste con motivo; `409` si el comprobante se repite o el ajuste deja saldo negativo.
+  - `GET /api/admin/conductores/:id/creditos` y `GET /api/admin/creditos/resumen?desde&hasta`.
+- `saldo_insuficiente` de la BD → `402` con `codigo`, saldo y mínimo, al aceptar (`viajeController`) y al ponerse disponible (`conductorController`).
+- Límite por usuario `RATE_LIMIT_USUARIO_ACREDITAR` (30 cada 15 min por defecto) en acreditar y en cambiar parámetros; agregado a `.env.example`.
+- `validation.js`: canales, comprobante, montos con 2 decimales (con tolerancia de coma flotante) y fechas ISO reales.
+- `// @ts-check` en los archivos tocados (`validation.js`, `viajeController.js`, `conductorController.js`, `adminRoutes.js`, `conductorRoutes.js`). Para lograrlo, `asyncHandler` declara que devuelve `RequestHandler` y `findViajeById`, `any`.
+- Pruebas: `tests/creditos020.test.js` y el límite de recargas en `limitePorUsuario.test.js`. Backend 511/511, typecheck sin errores, `npm audit --omit=dev` sin vulnerabilidades.
+- **Al actualizar la VM:** opcionalmente `RATE_LIMIT_USUARIO_ACREDITAR` en `.env`; sin ella vale 30.
+
+## [1.91.0] - 2026-11-27 (Hora Local)
+
+### 020 · PR A: créditos del conductor en la BD (T1 a T6)
+- `supabase/migrations/0020_creditos_conductor.sql`:
+  - `parametros_cobro` (una fila): comisiones de 0,10 y 0,20 USD, bono de 2 USD, recargas de 1 a 50 USD y `cobro_activo = false`. La leen los usuarios autenticados y solo la cambia el admin, por columna.
+  - `movimientos_credito`: libro inmutable (ni la clave de servicio ni el dueño de la BD editan ni borran; solo se permite el `on delete set null` al borrar una cuenta o un viaje). Índices únicos para una comisión y una devolución por servicio, un bono por conductor y un comprobante por canal.
+  - `saldos_credito` con `check (saldo >= 0)`, mantenido por trigger con `update` primero: `insert … on conflict` evalúa el check sobre el monto negativo y rechazaba todo descuento.
+  - `private.bonos_por_cedula` con la huella SHA-256 de la cédula: el bono no se repite al recrear la cuenta. Bono inicial para los conductores ya aprobados.
+  - `aceptar_viaje` descuenta la comisión en la misma transacción; si no alcanza, revierte toda la aceptación (`saldo_insuficiente`).
+  - Devolución automática si cancela el pasajero, por trigger que corre antes de liberar la tricimoto. Sin devolución si cancela el conductor.
+  - Saldo mínimo al pasar a `disponible`: error si lo intenta el conductor; si viene de `ocupado`, queda `inactivo` sin romper el cierre del servicio.
+  - `acreditar_credito` y `resumen_creditos`, solo para el admin.
+- Pruebas: `supabase/tests/rls_009.sql` (37 en verde) y `concurrencia_020.sh` (dos descuentos simultáneos, solo pasa uno), añadidos a `run-docker.sh`. `rls_001` a `rls_008` y `concurrencia_003` siguen en verde.
+- Revisión con las skills de seguridad del vault de Obsidian (`devsecops/hardening-app-vibe-coding`): montos y comisiones solo en el servidor, validación en la BD, libro sin escritura desde la API; el límite por usuario de las rutas de recarga queda para el PR B.
+- **T7 (27 nov 2026, autorizada por David):** 0020 aplicada en producción por MCP (`20261127123547`), con el cobro apagado; el único conductor aprobado recibió el bono de 2,00 USD. El linter marcó «RLS Enabled No Policy» (INFO) en `private.bonos_por_cedula`; `0021_bonos_politica_explicita.sql` agrega una política restrictiva `using (false)` y el linter de seguridad vuelve a su estado anterior (solo D-10). Pruebas locales en verde con las 21 migraciones.
+
 ## [1.90.0] - 2026-11-27 (Hora Local)
 
 ### 020 · Spec aprobada, plan y tareas de créditos para conductores; D-22

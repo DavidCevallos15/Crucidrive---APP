@@ -57,12 +57,12 @@ const repetir = async (n, fn) => {
 };
 
 describe('T11 · configuración', () => {
-  test('por defecto: pedir 10, cancelar 10 y aceptar 30 cada 15 min (E6)', () => {
-    expect(leerConfigLimites({})).toEqual({ pedir: 10, cancelar: 10, aceptar: 30 });
-    expect(Object.keys(LIMITES)).toEqual(['RATE_LIMIT_USUARIO_PEDIR', 'RATE_LIMIT_USUARIO_CANCELAR', 'RATE_LIMIT_USUARIO_ACEPTAR']);
+  test('por defecto: pedir 10, cancelar 10, aceptar 30 y acreditar 30 cada 15 min (E6; 020)', () => {
+    expect(leerConfigLimites({})).toEqual({ pedir: 10, cancelar: 10, aceptar: 30, acreditar: 30 });
+    expect(Object.keys(LIMITES)).toEqual(['RATE_LIMIT_USUARIO_PEDIR', 'RATE_LIMIT_USUARIO_CANCELAR', 'RATE_LIMIT_USUARIO_ACEPTAR', 'RATE_LIMIT_USUARIO_ACREDITAR']);
   });
 
-  test.each([['RATE_LIMIT_USUARIO_PEDIR', '0'], ['RATE_LIMIT_USUARIO_ACEPTAR', 'treinta'], ['RATE_LIMIT_USUARIO_CANCELAR', '1001']])(
+  test.each([['RATE_LIMIT_USUARIO_PEDIR', '0'], ['RATE_LIMIT_USUARIO_ACEPTAR', 'treinta'], ['RATE_LIMIT_USUARIO_CANCELAR', '1001'], ['RATE_LIMIT_USUARIO_ACREDITAR', '-1']])(
     '%s=%s impide arrancar y dice qué valor falla', (nombre, valor) => {
       expect(() => leerConfigLimites({ [nombre]: valor })).toThrow(nombre);
     },
@@ -102,6 +102,22 @@ describe('T11 · límites por usuario en las rutas del viaje (criterio 17)', () 
 
   test('sin sesión responde 401 antes del límite: no se cuenta a nadie', async () => {
     expect((await srv.pedir('POST', '/api/viajes/solicitar')).status).toBe(401);
+  });
+});
+
+describe('020 · límite por usuario en las recargas del administrador', () => {
+  let srv;
+  beforeAll(async () => { srv = await levantar(); });
+  afterAll(() => srv.cerrar());
+
+  test('acreditar admite 30 intentos (válidos o no) y el 31 recibe 429 con Retry-After', async () => {
+    const ruta = `/api/admin/conductores/${VIAJE}/creditos`;
+    const estados = await repetir(31, () => srv.pedir('POST', ruta, 'admin-1'));
+    expect(estados.slice(0, 30).every((s) => s === 400)).toBe(true);  // cuerpo vacío: lo rechaza la validación
+    const ultimo = await srv.pedir('POST', ruta, 'admin-1');
+    expect(ultimo.status).toBe(429);
+    expect(ultimo.headers.get('retry-after')).toBeTruthy();
+    expect((await srv.pedir('POST', ruta, 'admin-2')).status).toBe(400);
   });
 });
 

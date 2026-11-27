@@ -34,11 +34,11 @@ Una migración nueva (`0020_creditos_conductor.sql`), rutas REST de conductor y 
 - RLS: `select` del propio conductor o admin. Sin políticas ni `grant` de `insert/update/delete` para `authenticated`: solo escriben las funciones `security definer`.
 
 **`public.saldos_credito`**: `conductor_id uuid primary key`, `saldo numeric(7,2) not null default 0 check (saldo >= 0)`, `actualizado_en`.
-- Lo mantiene un trigger `after insert` en `movimientos_credito` con `insert … on conflict do update set saldo = saldo + new.monto`. El `update` toma el bloqueo de la fila, así que dos aceptaciones simultáneas se serializan, y el `check (saldo >= 0)` impide el negativo (criterio 3).
+- Lo mantiene un trigger `after insert` en `movimientos_credito`: primero `update … set saldo = saldo + new.monto` y, si no hay fila, `insert … on conflict do update`. No basta con `insert … on conflict`, porque Postgres evalúa el `check` sobre la fila propuesta (el monto negativo) antes de ver el conflicto. El `update` toma el bloqueo de la fila, así que dos aceptaciones simultáneas se serializan, y el `check (saldo >= 0)` impide el negativo (criterio 3).
 - RLS: `select` propio o admin; sin escritura para `authenticated`.
 - *Descartado:* calcular el saldo con `sum()` en cada consulta, porque obliga a bloquear todo el historial para evitar carreras al aceptar. *Descartado:* una columna `saldo` en `perfiles`, porque `perfiles` ya tiene permisos por columna para el usuario y mezclarla aumenta el riesgo de abrirla por error.
 
-**`private.bonos_por_cedula`**: `cedula_hash text primary key` (SHA-256 de la cédula con `extensions.digest`), `otorgado_en`. Sobrevive a la eliminación de la cuenta y no guarda la cédula en claro (LOPDP). Sin acceso desde la API.
+**`private.bonos_por_cedula`**: `cedula_hash text primary key` (SHA-256 de la cédula con la función `sha256` de Postgres, sin extensiones), `otorgado_en`. Sobrevive a la eliminación de la cuenta y no guarda la cédula en claro (LOPDP). Sin acceso desde la API.
 
 ### Funciones (`private`, `security definer`, `set search_path = ''`)
 
@@ -56,7 +56,7 @@ Una migración nueva (`0020_creditos_conductor.sql`), rutas REST de conductor y 
 - **Datos existentes:** la migración da el bono a los conductores ya aprobados (con su cédula en `bonos_por_cedula`), para que nadie quede bloqueado cuando David active el cobro.
 
 ### Pruebas de BD: `supabase/tests/rls_009.sql`
-Conductor A no lee movimientos ni saldo de B; nadie con `authenticated` inserta, edita ni borra en el libro; ni el admin edita un movimiento; bono único por cédula (re-aprobación y cuenta nueva); aceptación con y sin cobro activo; saldo insuficiente revierte la aceptación; devolución única al cancelar el pasajero; sin devolución al cancelar el conductor; `ocupado → disponible` con saldo bajo queda `inactivo`; comprobante repetido rechazado; no admin no llama `acreditar_credito` ni `resumen_creditos`. Concurrencia: extender `concurrencia_003.sh` con dos aceptaciones simultáneas con saldo para una sola. Después, advisors de Supabase sin hallazgos.
+Conductor A no lee movimientos ni saldo de B; nadie con `authenticated` inserta, edita ni borra en el libro; ni el admin edita un movimiento; bono único por cédula (re-aprobación y cuenta nueva); aceptación con y sin cobro activo; saldo insuficiente revierte la aceptación; devolución única al cancelar el pasajero; sin devolución al cancelar el conductor; `ocupado → disponible` con saldo bajo queda `inactivo`; comprobante repetido rechazado; no admin no llama `acreditar_credito` ni `resumen_creditos`. Concurrencia: `concurrencia_020.sh`, dos descuentos simultáneos sobre el mismo saldo; solo pasa uno. Dos aceptaciones del mismo conductor ya no pueden correr a la vez: la primera libera sus otras ofertas (0016) y la segunda recibe `oferta_no_vigente`. Después, advisors de Supabase sin hallazgos.
 
 ## Backend (`// @ts-check`, `req.supabase`)
 

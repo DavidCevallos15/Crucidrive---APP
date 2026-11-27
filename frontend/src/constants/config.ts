@@ -50,6 +50,8 @@ export const API_CONFIG = {
       location: '/api/conductores/ubicacion',
       // Reseñas propias, sin autor (paso 005, criterio 17).
       resenas: '/api/conductores/resenas',
+      // Saldo y movimientos de créditos (020).
+      creditos: '/api/conductores/creditos',
     },
     admin: {
       drivers: '/api/admin/conductores',
@@ -58,6 +60,10 @@ export const API_CONFIG = {
       reject: (id: string) => `/api/admin/conductores/${id}/rechazar`,
       places: '/api/admin/lugares',
       place: (id: string) => `/api/admin/lugares/${id}`,
+      // Créditos del conductor (020).
+      creditos: (id: string) => `/api/admin/conductores/${id}/creditos`,
+      parametrosCobro: '/api/admin/creditos/parametros',
+      resumenCreditos: '/api/admin/creditos/resumen',
     },
     rides: {
       request: '/api/viajes/solicitar',

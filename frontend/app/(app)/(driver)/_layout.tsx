@@ -7,6 +7,7 @@ import ConductorSoloAndroidScreen from '../../../src/screens/ConductorSoloAndroi
 const DRIVER_TABS: TabDefinition[] = [
   { name: 'index', title: 'Consola', iconName: 'speedometer' },
   { name: 'chat', title: 'Chat', iconName: 'chatbubbles' },
+  { name: 'creditos', title: 'Créditos', iconName: 'wallet' },
   { name: 'profile', title: 'Perfil', iconName: 'person' },
 ];
 

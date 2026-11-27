@@ -15,13 +15,16 @@ const LIMITES = {
   RATE_LIMIT_USUARIO_PEDIR: [1, 1000, 10],
   RATE_LIMIT_USUARIO_CANCELAR: [1, 1000, 10],
   RATE_LIMIT_USUARIO_ACEPTAR: [1, 1000, 30],
+  // Recargas y ajustes del administrador (020): frena errores en bucle o una sesión robada.
+  RATE_LIMIT_USUARIO_ACREDITAR: [1, 1000, 30],
 };
 
-/** @returns {{ pedir: number, cancelar: number, aceptar: number }} */
+/** @returns {{ pedir: number, cancelar: number, aceptar: number, acreditar: number }} */
 const leerConfigLimites = (env = process.env) => ({
   pedir: leerEntero(env, 'RATE_LIMIT_USUARIO_PEDIR', LIMITES),
   cancelar: leerEntero(env, 'RATE_LIMIT_USUARIO_CANCELAR', LIMITES),
   aceptar: leerEntero(env, 'RATE_LIMIT_USUARIO_ACEPTAR', LIMITES),
+  acreditar: leerEntero(env, 'RATE_LIMIT_USUARIO_ACREDITAR', LIMITES),
 });
 
 const MENSAJE = { status: 'error', message: 'Hiciste demasiadas solicitudes seguidas. Intenta de nuevo en unos minutos.' };
@@ -49,6 +52,7 @@ const crearLimitesPorUsuario = (env = process.env) => {
     pedir: crearLimite(config.pedir),
     cancelar: crearLimite(config.cancelar),
     aceptar: crearLimite(config.aceptar),
+    acreditar: crearLimite(config.acreditar),
   };
 };
 
