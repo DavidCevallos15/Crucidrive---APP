@@ -4,6 +4,13 @@ Cada tarea se tilda cuando su prueba pasa, nunca antes.
 
 PR A probado el 27 nov 2026 con `bash supabase/tests/run-docker.sh`: `rls_001` a `rls_009` en verde (`rls_009`: 37), `concurrencia_003` y `concurrencia_020` en verde.
 
+## Despliegue (27 nov 2026)
+
+- #86 a #89 fusionados en `main`. Las migraciones 0020 y 0021 se aplicaron antes por MCP y la integración con GitHub no las reaplicó.
+- VM actualizada (`instalar.sh 158.23.144.156`): `/api/conductores/creditos` y `/api/admin/creditos/*` responden 401 sin sesión, es decir, existen.
+- Cobro activado a pedido de David el 27 nov a las 13:07 UTC (`parametros_cobro.cobro_activo = true`).
+- App publicada por EAS Update en el canal `preview` (Android, runtime 1.0.0, grupo `1071be54-6daa-4be1-9680-ca1574baa3e5`, desde `798b4a7`). La web `app.tricimoto.app` se desplegó en Vercel al fusionar.
+
 ## PR A · Base de datos
 - [x] **T1 · Tablas `parametros_cobro`, `movimientos_credito`, `saldos_credito` y `private.bonos_por_cedula`, con RLS, permisos y libro inmutable (criterio 8).** *Prueba:* `rls_009.sql`: `authenticated` no inserta, edita ni borra en el libro ni en saldos; el admin tampoco edita un movimiento; A no lee lo de B.
 - [x] **T2 · Bono de bienvenida por cédula y carga a conductores ya aprobados (criterio 1).** *Prueba:* `rls_009.sql`: aprobar da un bono; re-aprobar y una cuenta nueva con la misma cédula no dan otro.
