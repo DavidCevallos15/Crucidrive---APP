@@ -2,6 +2,20 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.94.0] - 2026-11-27 (Hora Local)
+
+### 020 · Despliegue, cobro activo y correo de soporte
+- **Producción:**
+  - #89 fusionado: lleva a `main` la BD, la API, la app y el aviso 1.1. Los #87 y #88 se habían fusionado en ramas intermedias.
+  - La integración de Supabase no reaplicó 0020 ni 0021.
+  - VM actualizada: las rutas de créditos responden 401 sin sesión.
+  - **Cobro activado** el 27 nov a las 13:07 UTC, a pedido de David.
+- **`soporte@tricimoto.app` recibe correo:**
+  - Reenvío en Name.com hacia el Gmail de David. Name.com creó 6 MX (`mx3` a `mx8.name.com`).
+  - SPF del dominio raíz editado a `v=spf1 a mx include:spf.brevo.com ~all`: un solo registro SPF, que ahora autoriza también a Brevo, el SMTP de Supabase Auth.
+- **App:** EAS Update en el canal `preview` (Android, runtime 1.0.0, grupo `1071be54-6daa-4be1-9680-ca1574baa3e5`) con la pestaña «Créditos», el panel «Cobro» y el aviso 1.1. La web se desplegó en Vercel al fusionar el #89.
+- `specs/README.md`: el 020 pasa a «Implementado y en producción». `tasks.md`: sección de despliegue. Falta T15 (prueba de campo).
+
 ## [1.93.0] - 2026-11-27 (Hora Local)
 
 ### 020 · PR C: créditos en la app, panel de cobro y aviso de privacidad 1.1 (T11 a T14)
