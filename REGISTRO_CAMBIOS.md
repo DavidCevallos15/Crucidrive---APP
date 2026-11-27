@@ -2,6 +2,17 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.90.0] - 2026-11-27 (Hora Local)
+
+### 020 · Spec aprobada, plan y tareas de créditos para conductores; D-22
+- **Decisión de David:** sin Google Play Billing, porque la tienda retiene una parte de cada recarga. Las recargas se pagan por DeUna, transferencia, depósito o efectivo y las acredita el administrador con el número de comprobante.
+- `specs/020-pagos-y-comisiones/spec.md`: aprobada con M1 (0,10 USD por viaje, 0,20 USD por encomienda, bono de 2 USD una vez por cédula, recargas de 1 a 50 USD) y M2 (sin devolución si cancela el conductor). Agrega el interruptor de cobro (apagado por defecto), el comprobante único por canal y el resumen mensual.
+- `specs/020-pagos-y-comisiones/plan.md`: migración `0020_creditos_conductor.sql` con libro contable inmutable, saldo con `check (saldo >= 0)`, comisión dentro de `aceptar_viaje`, devolución por trigger, saldo mínimo en `tricimotos`, rutas REST de conductor y admin, pantallas y ajuste de las páginas legales. Cada decisión con su alternativa descartada.
+- `specs/020-pagos-y-comisiones/tasks.md`: T1 a T15 en tres PR (BD, backend, frontend y legales).
+- `specs/constitution.md`: nueva D-22, que precisa D-03 y D-19 para los conductores. Los pasajeros siguen pagando en efectivo.
+- `specs/README.md`: fila del 020 actualizada.
+- Sin cambios de código ni de esquema.
+
 ## [1.89.0] - 2026-11-25 (Hora Local)
 
 ### 019 · Cumplimiento legal previo a Play Store y seguridad web; borrador `020-pagos-y-comisiones`
