@@ -16,7 +16,7 @@
   - `acreditar_credito` y `resumen_creditos`, solo para el admin.
 - Pruebas: `supabase/tests/rls_009.sql` (37 en verde) y `concurrencia_020.sh` (dos descuentos simultáneos, solo pasa uno), añadidos a `run-docker.sh`. `rls_001` a `rls_008` y `concurrencia_003` siguen en verde.
 - Revisión con las skills de seguridad del vault de Obsidian (`devsecops/hardening-app-vibe-coding`): montos y comisiones solo en el servidor, validación en la BD, libro sin escritura desde la API; el límite por usuario de las rutas de recarga queda para el PR B.
-- Falta T7: advisors y aplicación en producción, con autorización de David.
+- **T7 (27 nov 2026, autorizada por David):** 0020 aplicada en producción por MCP (`20261127123547`), con el cobro apagado; el único conductor aprobado recibió el bono de 2,00 USD. El linter marcó «RLS Enabled No Policy» (INFO) en `private.bonos_por_cedula`; `0021_bonos_politica_explicita.sql` agrega una política restrictiva `using (false)` y el linter de seguridad vuelve a su estado anterior (solo D-10). Pruebas locales en verde con las 21 migraciones.
 
 ## [1.90.0] - 2026-11-27 (Hora Local)
 

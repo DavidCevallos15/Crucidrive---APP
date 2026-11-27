@@ -11,7 +11,7 @@ PR A probado el 27 nov 2026 con `bash supabase/tests/run-docker.sh`: `rls_001` a
 - [x] **T4 · Devolución al cancelar el pasajero y ninguna al cancelar el conductor (criterios 4 y 5).** *Prueba:* `rls_009.sql`, incluido un segundo intento que no suma y el conductor que intenta marcar `cancelado_por = 'pasajero'`.
 - [x] **T5 · Saldo mínimo al ponerse disponible (criterio 2).** *Prueba:* `rls_009.sql`: `inactivo → disponible` con saldo bajo falla; `ocupado → disponible` queda `inactivo`.
 - [x] **T6 · `acreditar_credito` y `resumen_creditos` solo admin, comprobante único (criterios 6 y 10).** *Prueba:* `rls_009.sql`.
-- [ ] **T7 · Advisors de Supabase sin hallazgos y migración aplicada en producción con `cobro_activo = false`** (requiere autorización de David).
+- [x] **T7 · Advisors de Supabase sin hallazgos y migración aplicada en producción con `cobro_activo = false`** (autorizada por David el 27 nov 2026). 0020 aplicada por MCP; el linter marcó «RLS Enabled No Policy» en `private.bonos_por_cedula` y lo cerró la 0021 (política restrictiva explícita). Linter de seguridad igual que antes: solo D-10. Producción: 1 conductor aprobado con bono de 2,00 USD; `anon` y `authenticated` sin escritura en el libro.
 
 ## PR B · Backend
 - [ ] **T8 · `GET /api/conductor/creditos` (criterios 7 y 8).** *Prueba:* jest con `req.supabase` simulado.
