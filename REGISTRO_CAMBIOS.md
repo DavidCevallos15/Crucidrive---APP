@@ -2,6 +2,21 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.92.0] - 2026-11-27 (Hora Local)
+
+### 020 · PR B: créditos del conductor en la API (T8 a T10)
+- `backend/src/controllers/creditosController.js` (`// @ts-check`), todo con `req.supabase`:
+  - `GET /api/conductores/creditos`: saldo, saldo mínimo, si el cobro está activo, comisiones y últimos 50 movimientos propios.
+  - `GET` y `PATCH /api/admin/creditos/parametros`: interruptor de cobro y montos (solo los campos enviados, 2 decimales).
+  - `POST /api/admin/conductores/:id/creditos`: recarga (canal + comprobante, o motivo si es efectivo o cortesía) o ajuste con motivo; `409` si el comprobante se repite o el ajuste deja saldo negativo.
+  - `GET /api/admin/conductores/:id/creditos` y `GET /api/admin/creditos/resumen?desde&hasta`.
+- `saldo_insuficiente` de la BD → `402` con `codigo`, saldo y mínimo, al aceptar (`viajeController`) y al ponerse disponible (`conductorController`).
+- Límite por usuario `RATE_LIMIT_USUARIO_ACREDITAR` (30 cada 15 min por defecto) en acreditar y en cambiar parámetros; agregado a `.env.example`.
+- `validation.js`: canales, comprobante, montos con 2 decimales (con tolerancia de coma flotante) y fechas ISO reales.
+- `// @ts-check` en los archivos tocados (`validation.js`, `viajeController.js`, `conductorController.js`, `adminRoutes.js`, `conductorRoutes.js`). Para lograrlo, `asyncHandler` declara que devuelve `RequestHandler` y `findViajeById`, `any`.
+- Pruebas: `tests/creditos020.test.js` y el límite de recargas en `limitePorUsuario.test.js`. Backend 511/511, typecheck sin errores, `npm audit --omit=dev` sin vulnerabilidades.
+- **Al actualizar la VM:** opcionalmente `RATE_LIMIT_USUARIO_ACREDITAR` en `.env`; sin ella vale 30.
+
 ## [1.91.0] - 2026-11-27 (Hora Local)
 
 ### 020 · PR A: créditos del conductor en la BD (T1 a T6)

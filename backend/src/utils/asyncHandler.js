@@ -7,8 +7,8 @@ const { errorResponse } = require('./response');
  * Elimina la necesidad de repetir el bloque try/catch + res.status(500)
  * en cada función de controlador.
  *
- * @param {Function} fn - Controlador async (req, res, next) => Promise<void>
- * @returns {Function} Middleware de Express con manejo de errores.
+ * @param {(req: any, res: any, next: any) => any} fn - Controlador async (req, res, next) => Promise<void>
+ * @returns {import('express').RequestHandler} Middleware de Express con manejo de errores.
  */
 const asyncHandler = (fn) => (req, res, next) =>
   // Se devuelve la promesa para que quien llame (tests incluidos) pueda esperarla.

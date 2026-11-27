@@ -1,3 +1,4 @@
+// @ts-check
 const asyncHandler = require('../utils/asyncHandler');
 const { errorResponse, successResponse } = require('../utils/response');
 const { toWKT, isValidCoordinate } = require('../utils/geo');
@@ -13,6 +14,7 @@ const viajeEnCurso = require('./viajeEnCursoController');
 // Al cargar el módulo: un valor inválido en el entorno detiene el arranque (007, criterio 13).
 const CONFIG_CANCELACIONES = leerConfigCancelaciones();
 
+/** @param {any} p */
 const tieneCoordenadas = (p) => p != null && p.lat != null && p.lng != null;
 
 /**
@@ -126,7 +128,10 @@ const solicitarViaje = asyncHandler(async (req, res) => {
   successResponse(res, viaje, encomienda ? 'Encomienda solicitada. Acuerda el precio por chat con el conductor.' : 'Viaje solicitado correctamente.', 201);
 });
 
+const { esSaldoInsuficiente, responderSaldoInsuficiente } = require('./creditosController');
+
 // Errores de aceptar_viaje (0012) → respuesta para el conductor.
+/** @type {Record<string, [number, string]>} */
 const ERRORES_ACEPTAR = {
   viaje_no_disponible: [409, 'Este viaje ya fue tomado o ya no está disponible.'],
   oferta_no_vigente: [409, 'La oferta venció o no era para ti.'],
@@ -138,6 +143,7 @@ const ERRORES_ACEPTAR = {
  * `db` lleva el JWT del propio conductor: su teléfono sale de `mi_perfil`, porque desde la 0019
  * (007, criterio 11) la columna no se lee con select.
  */
+/** @param {any} db @param {string} conductorId */
 const datosDelConductor = async (db, conductorId) => {
   const [{ data: perfil }, { data: tricimoto }] = await Promise.all([
     db.rpc('mi_perfil'),
@@ -170,6 +176,8 @@ const aceptarViaje = asyncHandler(async (req, res) => {
   const { data: filas, error: rpcError } = await db.rpc('aceptar_viaje', { p_viaje: viajeId });
 
   if (rpcError) {
+    // Sin saldo para la comisión (020, criterio 3): la BD revirtió toda la aceptación.
+    if (esSaldoInsuficiente(rpcError)) return responderSaldoInsuficiente(res, db, conductorId, rpcError.message);
     const clave = Object.keys(ERRORES_ACEPTAR).find((k) => String(rpcError.message).includes(k));
     const [status, mensaje] = clave ? ERRORES_ACEPTAR[clave] : [500, 'No se pudo aceptar el viaje.'];
     return errorResponse(res, status, mensaje, rpcError.message);
@@ -204,12 +212,14 @@ const aceptarViaje = asyncHandler(async (req, res) => {
  * 005 el estado solo cambia por las funciones de la BD (0017): cada estado se envía al paso
  * correspondiente, que valida quién y en qué orden (criterio 6).
  */
+/** @type {Record<string, import('express').RequestHandler>} */
 const PASOS_POR_ESTADO = {
   en_curso: viajeEnCurso.iniciarViaje,
   finalizado: viajeEnCurso.terminarViaje,
   cancelado: viajeEnCurso.cancelarViaje,
 };
 
+/** @type {import('express').RequestHandler} */
 const cambiarEstadoViaje = (req, res, next) => {
   const paso = PASOS_POR_ESTADO[req.body?.estado];
   if (!paso) return errorResponse(res, 400, 'Estado inválido. Debe ser: "en_curso", "finalizado" o "cancelado".');

@@ -14,9 +14,12 @@ PR A probado el 27 nov 2026 con `bash supabase/tests/run-docker.sh`: `rls_001` a
 - [x] **T7 · Advisors de Supabase sin hallazgos y migración aplicada en producción con `cobro_activo = false`** (autorizada por David el 27 nov 2026). 0020 aplicada por MCP; el linter marcó «RLS Enabled No Policy» en `private.bonos_por_cedula` y lo cerró la 0021 (política restrictiva explícita). Linter de seguridad igual que antes: solo D-10. Producción: 1 conductor aprobado con bono de 2,00 USD; `anon` y `authenticated` sin escritura en el libro.
 
 ## PR B · Backend
-- [ ] **T8 · `GET /api/conductor/creditos` (criterios 7 y 8).** *Prueba:* jest con `req.supabase` simulado.
-- [ ] **T9 · Rutas admin de parámetros, acreditar, historial y resumen, con validación (criterios 6 y 10).** *Prueba:* jest: montos fuera de rango, canal inválido, falta de comprobante o motivo, `409` por comprobante repetido, `403` sin rol admin.
-- [ ] **T10 · `saldo_insuficiente` → `402` al aceptar y al ponerse disponible (criterios 2 y 3).** *Prueba:* jest en `viajeController` y `conductorController`; `npm run typecheck` sin errores.
+
+Probado el 27 nov 2026: `tests/creditos020.test.js` y el límite de recargas en `tests/limitePorUsuario.test.js`; backend 511/511, `npm run typecheck` sin errores, `npm audit --omit=dev` sin vulnerabilidades.
+
+- [x] **T8 · `GET /api/conductor/creditos` (criterios 7 y 8).** *Prueba:* jest con `req.supabase` simulado.
+- [x] **T9 · Rutas admin de parámetros, acreditar, historial y resumen, con validación (criterios 6 y 10).** *Prueba:* jest: montos fuera de rango, canal inválido, falta de comprobante o motivo, `409` por comprobante repetido, `403` sin rol admin.
+- [x] **T10 · `saldo_insuficiente` → `402` al aceptar y al ponerse disponible (criterios 2 y 3).** *Prueba:* jest en `viajeController` y `conductorController`; `npm run typecheck` sin errores.
 
 ## PR C · Frontend y legales
 - [ ] **T11 · Pantalla «Mis créditos» del conductor, sin enlaces de pago, y manejo del `402` (criterios 2 y 7).** *Prueba:* jest de la pantalla y del flujo de disponibilidad.
