@@ -70,6 +70,15 @@ export const AdminDriversScreen: React.FC = () => {
         </View>
         <View style={styles.acciones}>
         <GlassButton
+          label="Cobro"
+          onPress={() => router.push('/(app)/(admin)/creditos' as never)}
+          variant="ghost"
+          disabled={isSigningOut}
+          size="sm"
+          leftIcon={<Ionicons name="wallet" size={16} color={COLORS.glassTextDark} />}
+          style={styles.botonLugares}
+        />
+        <GlassButton
           label="Lugares"
           onPress={() => router.push('/(app)/(admin)/lugares' as never)}
           variant="ghost"

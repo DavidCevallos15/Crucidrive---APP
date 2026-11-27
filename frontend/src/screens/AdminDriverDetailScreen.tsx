@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GlassButton } from '../components/GlassButton';
 import { GlassInput } from '../components/GlassInput';
+import { CreditosConductorAdmin } from '../components/CreditosConductorAdmin';
 import { authFetch } from '../utils/authFetch';
 import { validarMotivo } from '../utils/validators';
 import { API_CONFIG } from '../constants/config';
@@ -135,6 +136,9 @@ export const AdminDriverDetailScreen: React.FC = () => {
               )}
             </View>
           ))}
+
+          {/* Créditos del conductor aprobado (020, criterio 6). */}
+          {detalle.estado === 'aprobado' && <CreditosConductorAdmin conductorId={detalle.conductor_id} />}
 
           {accion === 'rechazar' && (
             <GlassInput

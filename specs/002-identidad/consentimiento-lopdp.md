@@ -1,6 +1,6 @@
-# Consentimiento y aviso de privacidad — CruciDrive (v1.0)
+# Consentimiento y aviso de privacidad — CruciDrive (v1.1)
 
-> Vigente desde el 25 de noviembre de 2026. Basado en la Ley Orgánica de Protección de Datos Personales de Ecuador (LOPDP). Versión publicada en `https://tricimoto.app/privacidad`. Cada cambio de fondo sube la versión (`1.1`, `2.0`, …) y vuelve a solicitar el consentimiento explícito.
+> Vigente desde el 27 de noviembre de 2026. Basado en la Ley Orgánica de Protección de Datos Personales de Ecuador (LOPDP). Versión publicada en `https://tricimoto.app/privacidad`. Cada cambio de fondo sube la versión (`1.1`, `2.0`, …) y vuelve a solicitar el consentimiento explícito.
 
 ## 1. Responsable del tratamiento y contacto
 **David Cevallos** (RUC `1350766547001`), domiciliado en la parroquia **Crucita, cantón Portoviejo, provincia de Manabí, Ecuador**, con correo de contacto para privacidad y soporte **`soporte@tricimoto.app`**, es el responsable del tratamiento de los datos personales recogidos en CruciDrive (aplicación móvil Android y versión web `app.tricimoto.app`).
@@ -16,6 +16,8 @@
 | Mensajes del chat del viaje | Pasajero y conductor del viaje | Coordinar recogida y, en encomiendas, acordar el precio | Ejecución del servicio | Vinculado al viaje; acceso restringido a las partes y administración |
 | Descripción del paquete y nombre del destinatario | Solicitante de encomienda | Coordinar recogida y entrega (el solicitante declara autorización del destinatario) | Ejecución del servicio y consentimiento | Vinculado a la encomienda; visible solo para solicitante, conductor asignado y administración |
 | Cédula, foto personal, foto de cédula y foto de tricimoto con placa | Solo conductores | Verificar identidad y habilitar la unidad por seguridad de los pasajeros | Consentimiento explícito e interés legítimo en seguridad | Mientras sea conductor activo; **30 días** tras rechazo o baja, luego se eliminan |
+| Movimientos de créditos (recargas con canal y número de comprobante, comisiones, devoluciones, bonos y ajustes) | Solo conductores | Llevar el saldo prepago con el que se pagan las comisiones de la plataforma (D-22) | Ejecución del servicio | Mientras la cuenta esté activa; al eliminarla, los montos quedan sin identidad para la contabilidad |
+| Huella (hash SHA-256) de la cédula | Solo conductores aprobados | Evitar que el bono de bienvenida se entregue dos veces a la misma persona | Interés legítimo en prevenir fraude | Se conserva tras eliminar la cuenta; no se guarda la cédula ni se usa para otro fin |
 | Registros técnicos de acceso (IP, ruta sin consulta, fecha, agente de usuario) | Todos | Prevenir abuso, fraude y fallos del servidor (sin nombres, teléfonos ni coordenadas) | Interés legítimo y seguridad informática | **14 días** en el servidor |
 | Preferencias locales (sesión y preferencia de mapa web) | Todos / usuarios web | Mantener sesión iniciada y recordar preferencia de mapa externo (`Google Maps` u `OpenStreetMap`) | Necesario para el servicio / consentimiento en preferencias web | Hasta cierre de sesión o caducidad de 180 días en preferencias web |
 
@@ -24,7 +26,7 @@
 ## 3. Quién puede verlos y proveedores externos
 - **La otra parte del viaje:** solo mientras el viaje esté activo (aceptado o en curso), ve tu nombre, teléfono y, del conductor, la placa y ubicación en tiempo real. Al terminar el viaje, el teléfono deja de mostrarse.
 - **Administración de CruciDrive:** solo lo necesario para aprobar conductores, gestionar lugares, revisar reportes y atender alertas SOS. La cédula y fotos de conductores solo son visibles para el propio conductor y la administración.
-- **Proveedores técnicos:** Supabase (base de datos y autenticación), Microsoft Azure (servidor API y tiempo real), Google (Google Maps y Firebase Cloud Messaging para avisos), Expo (entrega de avisos), Brevo (correo de verificación y recuperación), Vercel (alojamiento web) y, en futuras compras de créditos de conductores, Google Play Billing. Estos proveedores pueden tratar datos fuera de Ecuador bajo sus propias medidas de seguridad.
+- **Proveedores técnicos:** Supabase (base de datos y autenticación), Microsoft Azure (servidor API y tiempo real), Google (Google Maps y Firebase Cloud Messaging para avisos), Expo (entrega de avisos), Brevo (correo de verificación y recuperación), Vercel (alojamiento web). Las recargas de créditos se pagan fuera de la app (DeUna, transferencia, depósito o efectivo) y CruciDrive solo registra el canal y el número de comprobante. Estos proveedores pueden tratar datos fuera de Ecuador bajo sus propias medidas de seguridad.
 - **Autoridades competentes:** únicamente cuando exista obligación legal u orden judicial válida.
 
 ## 4. Ubicación y privacidad
@@ -37,6 +39,6 @@ Puedes ejercer tus derechos de acceso, rectificación, actualización, eliminaci
 CruciDrive está dirigida a personas mayores de 18 años como titulares de cuenta. Los menores solo pueden viajar acompañados por un adulto responsable. El botón SOS abre el marcador telefónico al **911 (ECU 911)**; **CruciDrive no es un servicio de emergencias ni sustituye al 911**.
 
 ## 7. Consentimiento explícito
-Al marcar la casilla correspondiente y crear tu cuenta o perfil, autorizas de forma libre, específica, informada e inequívoca el tratamiento descrito y aceptas los Términos de Uso (`https://tricimoto.app/terminos`). Registramos la fecha y la versión (`1.0`) aceptada.
+Al marcar la casilla correspondiente y crear tu cuenta o perfil, autorizas de forma libre, específica, informada e inequívoca el tratamiento descrito y aceptas los Términos de Uso (`https://tricimoto.app/terminos`). Registramos la fecha y la versión (`1.1`) aceptada.
 
-*Historial: v0.1 (8 oct 2026) · v0.2 (9 oct 2026, segundo plano y avisos) · v0.3 (20 oct 2026, encomiendas) · v1.0 (25 nov 2026, titular David Cevallos RUC 1350766547001, tabla LOPDP completa, plazos, documentos públicos en `tricimoto.app` y preferencias web).*
+*Historial: v0.1 (8 oct 2026) · v0.2 (9 oct 2026, segundo plano y avisos) · v0.3 (20 oct 2026, encomiendas) · v1.0 (25 nov 2026, titular David Cevallos RUC 1350766547001, tabla LOPDP completa, plazos, documentos públicos en `tricimoto.app` y preferencias web) · v1.1 (27 nov 2026, movimientos de créditos de conductores y huella de cédula para el bono; sin Google Play Billing).*

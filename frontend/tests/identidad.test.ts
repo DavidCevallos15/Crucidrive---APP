@@ -269,7 +269,7 @@ describe('enrutamiento por rol (criterios 2, 5 y 9)', () => {
 describe('consentimiento', () => {
   it('la versión de la app coincide con la del servidor y el texto cubre los puntos clave', () => {
     // 1.0 (spec 019): responsable identificado, tabla LOPDP, segundo plano, avisos y sin historial de recorridos.
-    expect(CONSENT_VERSION).toBe('1.0');
+    expect(CONSENT_VERSION).toBe('1.1');
     const texto = CONSENTIMIENTO.map((s) => s.texto).join(' ');
     expect(texto).toContain('segundo plano');
     expect(texto).toContain('avisos');

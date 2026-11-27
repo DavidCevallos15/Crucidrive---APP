@@ -3,7 +3,7 @@
  *
  * @param {import('@supabase/supabase-js').SupabaseClient} db - Cliente del usuario.
  * @param {string} viajeId - ID del viaje.
- * @returns {Promise<{viaje: Object|null, error: Object|null}>}
+ * @returns {Promise<{viaje: any, error: any}>}
  */
 const findViajeById = async (db, viajeId) => {
   const { data: viaje, error } = await db

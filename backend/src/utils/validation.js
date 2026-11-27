@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Validaciones de entrada compartidas por REST y sockets.
  * Deben coincidir con los CHECK de supabase/migrations (la BD es la última barrera).
@@ -25,16 +26,30 @@ const MAX_PASAJEROS = 20;
 // Igual que el CHECK de viajes.motivo_cancelacion (0017, criterio 8 del 005).
 const MOTIVOS_CANCELACION = ['ya_no_lo_necesito', 'tarda_demasiado', 'no_encuentro_al_pasajero', 'otro'];
 const COMENTARIO_MAX = 280;
+// Créditos del conductor (020, 0020). Iguales a los CHECK de movimientos_credito.
+const CANALES_RECARGA = ['deuna', 'transferencia', 'deposito', 'efectivo', 'cortesia'];
+const CANALES_CON_COMPROBANTE = ['deuna', 'transferencia', 'deposito'];
+const TIPOS_ACREDITACION = ['recarga', 'ajuste'];
+const COMPROBANTE_RE = /^[A-Za-z0-9-]{3,40}$/;
+const MOTIVO_CREDITO_MAX = 200;
+const FECHA_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-const isUuid = (v) => typeof v === 'string' && UUID_RE.test(v);
-const isSectorId = (v) => typeof v === 'string' && SECTOR_RE.test(v);
-const isPasajerosValido = (v) => Number.isInteger(v) && v >= 1 && v <= MAX_PASAJEROS;
+/** Número finito con 2 decimales como máximo (dólares y centavos). */
+// Con tolerancia: en coma flotante 1.1 * 100 da 110.00000000000001.
+const isMontoValido = (/** @type {any} */ v) => typeof v === 'number' && Number.isFinite(v)
+  && Math.abs(v * 100 - Math.round(v * 100)) < 1e-6;
+const isFechaIso = (/** @type {any} */ v) => typeof v === 'string' && FECHA_RE.test(v) && !Number.isNaN(Date.parse(`${v}T00:00:00Z`))
+  && new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v;
+
+const isUuid = (/** @type {any} */ v) => typeof v === 'string' && UUID_RE.test(v);
+const isSectorId = (/** @type {any} */ v) => typeof v === 'string' && SECTOR_RE.test(v);
+const isPasajerosValido = (/** @type {any} */ v) => Number.isInteger(v) && v >= 1 && v <= MAX_PASAJEROS;
 
 /**
  * Cédula ecuatoriana: 10 dígitos, provincia 01-24 o 30, tercer dígito menor a 6 y
  * dígito verificador por módulo 10. Evita errores de digitación y datos basura.
  */
-const isCedulaValida = (v) => {
+const isCedulaValida = (/** @type {any} */ v) => {
   if (typeof v !== 'string' || !CEDULA_RE.test(v)) return false;
   const provincia = Number(v.slice(0, 2));
   if (!((provincia >= 1 && provincia <= 24) || provincia === 30)) return false;
@@ -47,18 +62,18 @@ const isCedulaValida = (v) => {
   }
   return (10 - (suma % 10)) % 10 === Number(v[9]);
 };
-const isCategoriaLugar = (v) => CATEGORIAS_LUGAR.includes(v);
-const isNombreLugarValido = (v) => typeof v === 'string' && v.length >= NOMBRE_LUGAR_MIN && v.length <= NOMBRE_LUGAR_MAX;
-const isMotivoValido = (v) => typeof v === 'string' && v.length >= MOTIVO_MIN && v.length <= MOTIVO_MAX;
-const isMotivoCancelacion = (v) => MOTIVOS_CANCELACION.includes(v);
-const isEstrellas = (v) => Number.isInteger(v) && v >= 1 && v <= 5;
+const isCategoriaLugar = (/** @type {any} */ v) => CATEGORIAS_LUGAR.includes(v);
+const isNombreLugarValido = (/** @type {any} */ v) => typeof v === 'string' && v.length >= NOMBRE_LUGAR_MIN && v.length <= NOMBRE_LUGAR_MAX;
+const isMotivoValido = (/** @type {any} */ v) => typeof v === 'string' && v.length >= MOTIVO_MIN && v.length <= MOTIVO_MAX;
+const isMotivoCancelacion = (/** @type {any} */ v) => MOTIVOS_CANCELACION.includes(v);
+const isEstrellas = (/** @type {any} */ v) => Number.isInteger(v) && v >= 1 && v <= 5;
 
 /**
  * Comentario de una calificación (005, criterio 19). Igual que el CHECK de
  * calificaciones.comentario (0017): sin enlaces ni teléfonos (7 o más dígitos, aunque vayan
  * separados). Devuelve el mensaje para el usuario o null si es válido; vacío = sin comentario.
  */
-const errorComentario = (v) => {
+const errorComentario = (/** @type {any} */ v) => {
   if (v == null) return null;
   if (typeof v !== 'string') return 'El comentario no es válido.';
   const texto = v.trim();
@@ -69,14 +84,21 @@ const errorComentario = (v) => {
   return null;
 };
 
-const normalizarCedula = (v) => (typeof v === 'string' ? v.replace(/[\s-]/g, '') : '');
-const normalizarNombre = (v) => (typeof v === 'string' ? v.trim().replace(/\s+/g, ' ') : '');
-const normalizarTelefono = (v) => (typeof v === 'string' ? v.replace(/[\s-]/g, '') : '');
+const normalizarCedula = (/** @type {any} */ v) => (typeof v === 'string' ? v.replace(/[\s-]/g, '') : '');
+const normalizarNombre = (/** @type {any} */ v) => (typeof v === 'string' ? v.trim().replace(/\s+/g, ' ') : '');
+const normalizarTelefono = (/** @type {any} */ v) => (typeof v === 'string' ? v.replace(/[\s-]/g, '') : '');
 // Texto libre opcional (referencia de origen/destino): sin saltos de línea; '' si no hay.
-const normalizarDescripcion = (v) => (typeof v === 'string' ? v.trim().replace(/\s+/g, ' ') : '');
-const normalizarPlaca = (v) => (typeof v === 'string' ? v.trim().toUpperCase() : '');
+const normalizarDescripcion = (/** @type {any} */ v) => (typeof v === 'string' ? v.trim().replace(/\s+/g, ' ') : '');
+const normalizarPlaca = (/** @type {any} */ v) => (typeof v === 'string' ? v.trim().toUpperCase() : '');
 
 module.exports = {
+  CANALES_RECARGA,
+  CANALES_CON_COMPROBANTE,
+  TIPOS_ACREDITACION,
+  MOTIVO_CREDITO_MAX,
+  isMontoValido,
+  isFechaIso,
+  isComprobanteValido: (/** @type {any} */ v) => typeof v === 'string' && COMPROBANTE_RE.test(v),
   CATEGORIAS_LUGAR,
   NOMBRE_LUGAR_MAX,
   isCategoriaLugar,
@@ -98,9 +120,9 @@ module.exports = {
   isMotivoValido,
   normalizarCedula,
   normalizarDescripcion,
-  isNombreValido: (v) => NOMBRE_RE.test(v),
-  isTelefonoValido: (v) => TELEFONO_RE.test(v),
-  isPlacaValida: (v) => PLACA_RE.test(v),
+  isNombreValido: (/** @type {any} */ v) => NOMBRE_RE.test(v),
+  isTelefonoValido: (/** @type {any} */ v) => TELEFONO_RE.test(v),
+  isPlacaValida: (/** @type {any} */ v) => PLACA_RE.test(v),
   normalizarNombre,
   normalizarTelefono,
   normalizarPlaca,

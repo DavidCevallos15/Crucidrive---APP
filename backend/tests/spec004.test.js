@@ -335,7 +335,7 @@ describe('T7 · consentimiento 0.3 para estar disponible (criterio 5; plan P18)'
   };
 
   test('la versión vigente es la 1.0', () => {
-    expect(CONSENT_VERSION).toBe('1.0');
+    expect(CONSENT_VERSION).toBe('1.1');
   });
 
   test('sin haber aceptado la 1.0, ponerse disponible responde 428 y no toca la tricimoto', async () => {
@@ -344,15 +344,15 @@ describe('T7 · consentimiento 0.3 para estar disponible (criterio 5; plan P18)'
       { data: null, error: null },
     ]);
     expect(r.status).toHaveBeenCalledWith(428);
-    expect(r.json.mock.calls[0][0].message).toContain('1.0');
-    expect(filtros).toEqual(expect.arrayContaining([['user_id', CONDUCTOR], ['version', '1.0']]));
+    expect(r.json.mock.calls[0][0].message).toContain('1.1');
+    expect(filtros).toEqual(expect.arrayContaining([['user_id', CONDUCTOR], ['version', '1.1']]));
     expect(updates).toEqual([]);
   });
 
   test('con la 1.0 aceptada se pone disponible (007, criterio 16: sin leer el número interno)', async () => {
     const { r, updates, columnas } = await pedir({ disponible: true }, [
       { data: { estado: 'inactivo' }, error: null },
-      { data: { version: '1.0' }, error: null },
+      { data: { version: '1.1' }, error: null },
       { data: [{ estado: 'disponible', disponible_desde: null }], error: null },
     ]);
     expect(r.status).toHaveBeenCalledWith(200);
@@ -378,7 +378,7 @@ describe('T7 · consentimiento 0.3 para estar disponible (criterio 5; plan P18)'
     const r = { status: jest.fn().mockReturnThis(), json: jest.fn().mockReturnThis() };
     await aceptarConsentimiento({ body: { consentimiento: true, version: '9.9' }, user: { id: CONDUCTOR }, supabase: db }, r);
     expect(r.status).toHaveBeenCalledWith(201);
-    expect(insertados).toEqual([{ user_id: CONDUCTOR, version: '1.0' }]);
+    expect(insertados).toEqual([{ user_id: CONDUCTOR, version: '1.1' }]);
   });
 
   test('sin "consentimiento: true" no registra nada', async () => {
