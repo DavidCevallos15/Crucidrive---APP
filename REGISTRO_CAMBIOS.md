@@ -2,6 +2,17 @@
 
 ## HISTORIAL DE LOGS:
 
+## [1.95.1] - 2026-11-27 (Hora Local)
+
+### fix(web): vista previa con logo al compartir app.tricimoto.app
+- **Problema:** al compartir el enlace por WhatsApp o en un chat no salía logo, título ni descripción. El `<head>` de `frontend/public/index.html` no tenía `<title>`, `description` ni etiquetas Open Graph, y los rastreadores de WhatsApp, Facebook y Telegram no ejecutan JavaScript, así que solo leen ese HTML estático.
+- **Cambio:**
+  - `frontend/public/index.html`: `<title>`, `description`, Open Graph (`og:*`, con `og:image` absoluta y medidas) y Twitter Card `summary_large_image`.
+  - `frontend/public/og-image.png`: 1200×630, 94 KB. Marca de `assets/premium/mark-source.png`, «CruciDrive» en Outfit SemiBold y colores de `DESIGN.md` (papel, vino, arena).
+  - `frontend/tests/vistaPreviaWeb.test.ts`: falla si desaparecen las etiquetas o si la imagen deja de medir 1200×630 o pasa de 300 KB (límite práctico de WhatsApp).
+- **Comprobado:** `npx expo export --platform web` deja las etiquetas en `dist/index.html` y copia `og-image.png` a la raíz de `dist`.
+- **Después del despliegue:** WhatsApp guarda en caché la vista previa vacía. Forzar con el Sharing Debugger de Meta («Scrape Again») o compartir `https://app.tricimoto.app/?v=2` para probar.
+
 ## [1.95.0] - 2026-11-27 (Hora Local)
 
 ### chore: historial de migraciones de Supabase igual al repo, y restaurar lo que revirtió el #90
